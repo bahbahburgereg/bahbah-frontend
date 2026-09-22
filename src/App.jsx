@@ -77,40 +77,40 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
   return (
     <div className="bg-[#050505] text-white overflow-hidden">
       {/* HERO */}
-      <section className="relative min-h-[720px] md:min-h-[calc(100vh-78px)] flex items-stretch overflow-hidden border-b border-[#8d1710]" dir="ltr">
+      <section className="relative min-h-[580px] md:min-h-[calc(100vh-78px)] flex items-center overflow-hidden border-b border-[#8d1710] py-8 md:py-0" dir="ltr">
         <div className="absolute inset-0 bg-[#050505]" />
         <div
-          className="absolute inset-y-0 right-0 w-[85%] md:w-[67%] bg-cover bg-center opacity-40 md:opacity-100"
+          className="absolute inset-y-0 right-0 w-full md:w-[67%] bg-cover bg-center opacity-30 md:opacity-100"
           style={{
             backgroundImage: `url(${featured?.image || siteSettings.heroImage || ''})`,
           }}
         />
-        <div className="absolute inset-y-0 right-0 w-full md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/90 md:to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-full md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/95 md:to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(255,65,10,.28),transparent_34%)]" />
         <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#e62c16]" />
         <div className="absolute left-0 top-0 w-64 h-64 bg-[#e62c16]/20 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-[1500px] mx-auto px-6 md:px-12 flex items-center">
-          <div className="w-full md:w-[55%] py-20 md:py-20">
-            <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-xs md:text-base mb-3">
+          <div className="w-full md:w-[55%] py-4 md:py-20">
+            <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-xs md:text-base mb-2">
               BIGGER · JUICIER · HOTTER
             </div>
 
-            <div className="leading-[0.82] uppercase italic font-black tracking-[-0.055em]">
-              <div className="text-[48px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-white drop-shadow-2xl">
+            <div className="leading-[0.85] uppercase italic font-black tracking-[-0.055em]">
+              <div className="text-[38px] sm:text-[75px] md:text-[104px] lg:text-[122px] text-white drop-shadow-2xl">
                 THE FIRE
               </div>
-              <div className="text-[48px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-[#ef321b] -mt-1 drop-shadow-2xl">
+              <div className="text-[38px] sm:text-[75px] md:text-[104px] lg:text-[122px] text-[#ef321b] mt-1 drop-shadow-2xl">
                 IS COMING
               </div>
             </div>
 
-            {/* تم تنسيق ظهور السماش والناشفيل تشيكن بوضوح لكل الشاشات بدون تداخل */}
-            <div className="mt-4 text-[#ef321b] italic font-black text-xl sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
+            {/* تم توزيع المسافات هنا عشان الكلام ميبقاش ملزق ومفرود بشكل شيك */}
+            <div className="mt-3 md:mt-4 text-[#ef321b] italic font-black text-lg sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
               Smash Burgers & Nashville Chicken
             </div>
 
-            <p className="mt-5 text-white/90 text-base md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+            <p className="mt-3 md:mt-5 text-white/90 text-sm sm:text-base md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               {lang === 'ar'
                 ? 'مش مجرد برجر.. ده بحبح! 🔥'
                 : "Not just a burger... This is Bahbah! 🔥"}
@@ -119,20 +119,20 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
             <Link
               to="/menu"
               dir={lang === 'ar' ? 'rtl' : 'ltr'}
-              className="inline-flex items-center justify-center gap-5 mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
+              className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
               style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}
             >
               {t.orderNow}
               <span className="text-xl leading-none">→</span>
             </Link>
 
-            <div className="mt-8 flex items-center gap-3 text-white/55 text-sm">
-              <span className="h-8 w-px bg-white/40" />
+            <div className="mt-5 md:mt-10 flex items-center gap-3 text-white/55 text-sm">
+              <span className="h-6 md:h-8 w-px bg-white/40" />
               <span>Scroll Down</span>
             </div>
           </div>
 
-          <div className="absolute bottom-10 right-8 md:right-14 flex gap-3 z-20">
+          <div className="hidden md:flex absolute bottom-10 right-8 md:right-14 gap-3 z-20">
             <span className="w-8 h-1 bg-[#ef321b]" />
             <span className="w-8 h-1 bg-white/80" />
             <span className="w-8 h-1 bg-white/30" />
@@ -1620,5 +1620,4 @@ function App() {
   );
 }
 
-App;
 export default App;
