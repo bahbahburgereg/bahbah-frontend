@@ -129,7 +129,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
 
                 <div className="hidden md:block absolute right-8 top-24 text-right z-20">
         <div className="text-[#ef321b] italic text-3xl lg:text-5xl leading-none drop-shadow-lg" style={{fontFamily:'cursive'}}>
-          Smash Burgers<br />Fried Chicken
+          Smash Burgers<br />Nashville Chicken
         </div>
       </div>
           <div className="absolute bottom-10 right-8 md:right-14 flex gap-3 z-20">
