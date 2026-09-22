@@ -1188,7 +1188,7 @@ const CartPage = ({ cart, setCart, lang }) => {
     }
     message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
     
-    const whatsappUrl = `https://wa.me/201042258982?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/201042281510?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 
     setCart([]);
@@ -1485,7 +1485,7 @@ function App() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex flex-col text-center border-l border-[#3A1218] pl-4 ml-2">
               <span className="text-[#FFD700] text-[10px] font-black tracking-widest">{t.hotlineText}</span>
-              <span className="text-white font-bold text-sm tracking-wider">01042258982</span>
+              <span className="text-white font-bold text-sm tracking-wider">01042281510</span>
             </div>
             
             <button 
