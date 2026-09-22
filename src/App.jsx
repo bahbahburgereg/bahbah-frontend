@@ -67,265 +67,230 @@ const getDiscountedPrice = (price, discountPercent) => {
   return Math.round(price * (1 - discountPercent / 100));
 };
 
-// ================= 1. الصفحة الرئيسية - Bahbah Brand =================
+// ================= 1. صفحة الرئيسية (ستايل سينمائي مختلف) =================
 const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, setCart }) => {
   const t = translations[lang];
   const title = lang === 'ar' ? siteSettings.heroTitleAr : siteSettings.heroTitleEn;
   const offerItems = menuItems.filter(item => item.isOffer);
-  const featuredItems = (offerItems.length ? offerItems : menuItems).slice(0, 6);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const nextSlide = () => {
+    if (offerItems.length <= 3) return;
+    setCurrentIndex(prev => (prev + 1) % (offerItems.length - 2));
+  };
+  const prevSlide = () => {
+    if (offerItems.length <= 3) return;
+    setCurrentIndex(prev => prev === 0 ? offerItems.length - 3 : prev - 1);
+  };
+
   useEffect(() => {
-    if (featuredItems.length <= 3) return;
-    const timer = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % Math.max(1, featuredItems.length - 2));
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [featuredItems.length]);
-
-  const changeQty = (item, direction) => {
-    const idx = cart.findIndex(i => i.name === item.name);
-    if (direction === 'minus' && idx !== -1) {
-      const next = [...cart];
-      next.splice(idx, 1);
-      setCart(next);
-    }
-    if (direction === 'plus') {
-      setCart([...cart, { ...item, price: getDiscountedPrice(item.price, item.discount) }]);
-    }
-  };
+    if (offerItems.length <= 3) return;
+    const interval = setInterval(() => setCurrentIndex(prev => (prev + 1) % Math.max(1, offerItems.length - 2)), 4000);
+    return () => clearInterval(interval);
+  }, [offerItems.length]);
 
   return (
-    <main className="bb-site">
-      <section className="bb-hero">
-        <div className="bb-hero-bg" style={{ backgroundImage: `url(${siteSettings.heroImage})` }} />
-        <div className="bb-hero-overlay" />
-        <div className="bb-hero-grain" />
+    <main className="bb-site bg-[#050505] text-white overflow-hidden">
+      <section className="bb-hero relative min-h-[calc(100vh-82px)] flex items-center overflow-hidden">
+        <div className="absolute inset-0 bg-black" />
+        <div className="absolute inset-0 bg-cover bg-center opacity-75 scale-105" style={{ backgroundImage: `url(${siteSettings.heroImage})` }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/20" />
+        <div className="absolute -left-20 top-0 w-64 h-full bg-[#ff2b0c]/20 blur-3xl" />
+        <div className="bb-brush bb-brush-left" />
+        <div className="bb-brush bb-brush-right" />
 
-        <div className="bb-hero-content">
-          <div className="bb-kicker"><span>🔥</span> BIGGER · JUICIER · HOTTER <span>🔥</span></div>
-          <div className="bb-hero-grid">
-            <div className="bb-hero-copy">
-              <div className="bb-small-ar">مش مجرد برجر .. ده بحبح!</div>
-              <h1>
-                <span>THE FIRE</span>
-                <strong>IS COMING</strong>
-              </h1>
-              <p>{title || "أقوى برجر بطابع بحبح الناري."}</p>
-              <Link to="/menu" className="bb-fire-btn">{t.orderNow}<span>↗</span></Link>
+        <div className="relative z-10 w-full max-w-[1450px] mx-auto px-7 md:px-14 py-20 grid lg:grid-cols-[43%_57%] items-center gap-4">
+          <div className="max-w-[620px]">
+            <div className="bb-kicker mb-5">BIGGER <span>•</span> JUICIER <span>•</span> HOTTER</div>
+            <div className="text-[#ff3b16] font-black uppercase tracking-[0.18em] text-sm md:text-base mb-2">BAHBAH BURGER</div>
+            <h1 className="bb-display text-[64px] sm:text-[82px] md:text-[108px] lg:text-[112px] leading-[.78] uppercase font-black italic tracking-[-.06em]">
+              <span className="text-white block">THE FIRE</span>
+              <span className="text-[#f23616] block">IS COMING</span>
+            </h1>
+            <p className="mt-7 text-white/85 text-lg md:text-xl font-bold max-w-md">{title || 'مش مجرد برجر.. ده بيحصل!'}</p>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link to="/menu" className="bb-btn bb-btn-red">{t.orderNow}<span>→</span></Link>
+              <Link to="/menu" className="bb-btn bb-btn-ghost">{t.ourMenu}<span>↗</span></Link>
             </div>
-
-            <div className="bb-hero-food">
-              <div className="bb-food-glow" />
-              {siteSettings.heroImage ? (
-                <img src={siteSettings.heroImage} alt="Bahbah Burger" />
-              ) : (
-                <div className="bb-empty-food">BAHBAH</div>
-              )}
-              <div className="bb-hero-stamp">REAL<br/><b>TASTE</b></div>
+            <div className="mt-12 flex items-center gap-4 text-white/50 text-xs font-bold uppercase tracking-[.25em]">
+              <span className="w-10 h-px bg-[#f23616]" /> Scroll Down <span>↓</span>
             </div>
           </div>
 
-          <div className="bb-scroll">↓ <span>SCROLL DOWN</span></div>
+          <div className="relative min-h-[480px] md:min-h-[600px] flex items-center justify-center lg:justify-end">
+            <div className="absolute w-[85%] h-[75%] rounded-full bg-[#ff4a17]/20 blur-[80px]" />
+            <img src={siteSettings.heroImage} alt="Bahbah Burger" className="relative z-10 w-full max-w-[800px] max-h-[650px] object-cover lg:object-contain drop-shadow-[0_35px_50px_rgba(0,0,0,.8)]" />
+            <div className="absolute right-0 top-16 md:top-10 text-[#e52d13] text-right hidden sm:block">
+              <div className="bb-script text-3xl md:text-5xl rotate-[-8deg]">Real Chicken</div>
+              <div className="bb-script text-2xl md:text-4xl rotate-[-8deg]">Real Taste</div>
+            </div>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#e72f14]" />
       </section>
 
-      <div className="bb-marquee">
-        <div className="bb-marquee-track">
-          <span>BAHBAH BURGER</span><i>♛</i><span>BIGGER</span><i>•</i><span>JUICIER</span><i>•</i><span>HOTTER</span><i>♛</i>
-          <span>BAHBAH BURGER</span><i>♛</i><span>BIGGER</span><i>•</i><span>JUICIER</span><i>•</i><span>HOTTER</span><i>♛</i>
+      <div className="bb-marquee border-y border-[#a52213]/70 bg-[#080808] py-4 overflow-hidden">
+        <div className="bb-marquee-track whitespace-nowrap flex items-center gap-10 text-[#ef3b18] text-xl md:text-2xl font-black italic">
+          <span className="text-white">BAHBAH</span><span>♛</span><span>BIGGER</span><span>•</span><span>JUICIER</span><span>•</span><span>HOTTER</span><span>♛</span>
+          <span className="text-white">BAHBAH</span><span>♛</span><span>BIGGER</span><span>•</span><span>JUICIER</span><span>•</span><span>HOTTER</span><span>♛</span>
+          <span className="text-white">BAHBAH</span><span>♛</span><span>BIGGER</span><span>•</span><span>JUICIER</span><span>•</span><span>HOTTER</span>
         </div>
       </div>
 
-      <section className="bb-section bb-menu-preview">
-        <div className="bb-section-head">
-          <div className="bb-title-block">
-            <span className="bb-red-script">OUR</span>
-            <h2>MENU</h2>
-            <p>قائمة العظمة</p>
+      <section className="relative max-w-[1450px] mx-auto px-6 md:px-12 py-20">
+        <div className="absolute left-0 top-0 bb-side-brush" />
+        <div className="grid lg:grid-cols-[250px_1fr_250px] gap-8 items-start">
+          <div className="pt-2">
+            <div className="bb-script text-[#ef3b18] text-4xl">OUR</div>
+            <h2 className="bb-display text-6xl md:text-7xl leading-[.78] font-black italic">MENU</h2>
+            <div className="text-white font-bold text-xl mt-4">قائمة العظمة</div>
+            <p className="text-white/45 mt-5 text-sm leading-7">من أول قضمة هتحس إن البرجر معمول عشان يبقى هو البطل.</p>
+            <Link to="/menu" className="inline-flex mt-6 bb-btn bb-btn-outline">{t.seeMore}<span>→</span></Link>
           </div>
-          <div className="bb-section-text">
-            <span>THE BAHBAH WAY</span>
-            <p>برجر معمول عشان يتاكل بإيدك، ويتصور قبل ما يختفي.</p>
-            <Link to="/menu" className="bb-outline-btn">{t.seeMore} <b>→</b></Link>
-          </div>
-        </div>
 
-        <div className="bb-product-grid">
-          {featuredItems.slice(currentIndex, currentIndex + 3).map((item, idx) => {
-            const finalPrice = getDiscountedPrice(item.price, item.discount);
-            const quantity = cart.filter(i => i.name === item.name).length;
-            return (
-              <article className={`bb-product-card ${idx === 1 ? 'bb-card-main' : ''}`} key={item._id}>
-                <div className="bb-product-image" onClick={() => handleOpenItemDetails(item)}>
-                  {item.discount > 0 && <span className="bb-discount">-{item.discount}%</span>}
-                  <img src={item.image} alt={item.name} />
-                  <div className="bb-image-number">0{idx + 1}</div>
-                </div>
-                <div className="bb-product-info">
-                  <div>
-                    <h3>{item.name}</h3>
-                    <p>{item.description || "طعم بحبح اللي ملوش بديل."}</p>
+          <div>
+            {offerItems.length > 0 && (
+              <div className="relative">
+                <div className="flex justify-between items-center mb-5">
+                  <div className="flex gap-2">
+                    <button onClick={() => setCurrentIndex(0)} className="bb-mini-dot bg-[#f23616]" />
+                    <button onClick={prevSlide} className="bb-arrow">←</button>
+                    <button onClick={nextSlide} className="bb-arrow">→</button>
                   </div>
-                  <div className="bb-product-bottom">
-                    <strong>{finalPrice} <small>EGP</small></strong>
-                    {quantity === 0 ? (
-                      <button onClick={() => handleOpenItemDetails(item)} className="bb-add">+</button>
-                    ) : (
-                      <div className="bb-qty">
-                        <button onClick={() => changeQty(item, 'minus')}>−</button>
-                        <b>{quantity}</b>
-                        <button onClick={() => changeQty(item, 'plus')}>+</button>
-                      </div>
-                    )}
-                  </div>
+                  <span className="text-white/40 text-xs tracking-[.3em] uppercase">Featured</span>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      {siteSettings.promoBannerImage && (
-        <section className="bb-promo">
-          <img src={siteSettings.promoBannerImage} alt="Bahbah Offer" />
-          <div className="bb-promo-copy">
-            <span>BAHBAH SPECIAL</span>
-            <h2>HOT.<br/>LOUD.<br/><em>BAHBAH.</em></h2>
-            <Link to="/menu" className="bb-fire-btn">شوف المنيو <span>↗</span></Link>
-          </div>
-        </section>
-      )}
-
-      <section className="bb-brand-block">
-        <div className="bb-brand-copy">
-          <span className="bb-red-script">THIS IS</span>
-          <h2>BAHBAH<br/><span>BURGER</span></h2>
-          <p>مش مجرد برجر. دي شخصية. طعم، نار، وقرمشة معمولة بطريقتنا.</p>
-        </div>
-        <div className="bb-brand-mark">
-          <div className="bb-flame">🔥</div>
-          <b>B</b>
-          <span>EST. 2026</span>
-        </div>
-      </section>
-    </main>
-  );
-};
-
-// ================= 2. صفحة المنيو - Bahbah Brand =================
-const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDetails, cart, setCart }) => {
-  const t = translations[lang];
-  const [selectedCategory, setSelectedCategory] = useState('الكل');
-
-  const categoriesToShow = selectedCategory === 'الكل' || selectedCategory === 'All'
-    ? categories
-    : categories.filter(cat => cat.name === selectedCategory);
-
-  const changeQty = (item, direction) => {
-    const idx = cart.findIndex(i => i.name === item.name);
-    if (direction === 'minus' && idx !== -1) {
-      const next = [...cart];
-      next.splice(idx, 1);
-      setCart(next);
-    }
-    if (direction === 'plus') {
-      setCart([...cart, { ...item, price: getDiscountedPrice(item.price, item.discount) }]);
-    }
-  };
-
-  return (
-    <main className="bb-site bb-menu-page">
-      <section className="bb-menu-hero">
-        <div>
-          <span className="bb-red-script">BAHBAH</span>
-          <h1>THE<br/><em>MENU</em></h1>
-          <p>اختار اللي نفسك فيه وخلي الباقي علينا.</p>
-        </div>
-        <div className="bb-menu-hero-mark">B<span>🔥</span></div>
-      </section>
-
-      <div className="bb-category-bar">
-        <button
-          onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')}
-          className={selectedCategory === 'الكل' || selectedCategory === 'All' ? 'active' : ''}
-        >{t.all}</button>
-        {categories.map(cat => (
-          <button
-            key={cat._id}
-            onClick={() => setSelectedCategory(cat.name)}
-            className={selectedCategory === cat.name ? 'active' : ''}
-          >{cat.name}</button>
-        ))}
-      </div>
-
-      {categoriesToShow.length === 0 ? (
-        <div className="bb-empty-menu">لا توجد أقسام مضافة بعد... ⏳</div>
-      ) : (
-        <div className="bb-menu-sections">
-          {categoriesToShow.map(cat => {
-            const catItems = menuItems
-              .filter(item => item.category === cat.name)
-              .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-            if (catItems.length === 0 && selectedCategory !== 'الكل' && selectedCategory !== 'All') {
-              return <div key={cat._id} className="bb-empty-menu">لا توجد أصناف في هذا القسم حالياً.</div>;
-            }
-            if (catItems.length === 0) return null;
-
-            return (
-              <section key={cat._id} className="bb-menu-category">
-                <div className="bb-category-heading">
-                  <span>0{categories.indexOf(cat) + 1}</span>
-                  <div><small>BAHBAH SELECTION</small><h2>{cat.name}</h2></div>
-                  <i>♛</i>
-                </div>
-
-                <div className="bb-menu-grid">
-                  {catItems.map(item => {
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {offerItems.slice(currentIndex, currentIndex + 3).map(item => {
                     const finalPrice = getDiscountedPrice(item.price, item.discount);
                     const quantity = cart.filter(i => i.name === item.name).length;
                     return (
-                      <article className="bb-product-card" key={item._id}>
-                        <div
-                          className="bb-product-image"
-                          onClick={() => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item)}
-                        >
-                          {item.discount > 0 && <span className="bb-discount">-{item.discount}%</span>}
-                          <img src={item.image || "https://via.placeholder.com/600x450/090909/e52b18?text=Bahbah+Burger"} alt={item.name} />
-                        </div>
-                        <div className="bb-product-info">
-                          <h3>{item.name}</h3>
-                          <p>{item.description || "طعم بحبح اللي ملوش بديل."}</p>
-                          <div className="bb-product-bottom">
-                            <strong>{finalPrice} <small>EGP</small></strong>
-                            {item.type === 'box' ? (
-                              <button onClick={() => handleOpenBox(item)} className="bb-order-btn">{t.customizeBox} ↗</button>
-                            ) : quantity === 0 ? (
-                              <button onClick={() => handleOpenItemDetails(item)} className="bb-add">+</button>
-                            ) : (
-                              <div className="bb-qty">
-                                <button onClick={() => changeQty(item, 'minus')}>−</button>
-                                <b>{quantity}</b>
-                                <button onClick={() => changeQty(item, 'plus')}>+</button>
-                              </div>
-                            )}
+                      <article key={item._id} className="bb-product-card group">
+                        <button onClick={() => handleOpenItemDetails(item)} className="w-full text-left">
+                          <div className="bb-product-image">
+                            <img src={item.image} alt={item.name} />
+                            {item.discount > 0 && <span className="bb-tag">-{item.discount}%</span>}
                           </div>
-                        </div>
+                          <div className="p-5">
+                            <h3 className="bb-product-name">{item.name}</h3>
+                            <p className="text-white/45 text-xs mt-2 line-clamp-2">{item.description || 'Bahbah signature burger'}</p>
+                            <div className="mt-5 flex items-end justify-between gap-3">
+                              <div>
+                                {item.discount > 0 && <span className="block text-white/35 text-xs line-through">{item.price} ج</span>}
+                                <span className="bb-price">{finalPrice} <small>EGP</small></span>
+                              </div>
+                              <span className="bb-add">{quantity ? quantity : '+'}</span>
+                            </div>
+                          </div>
+                        </button>
                       </article>
                     );
                   })}
                 </div>
-              </section>
-            );
-          })}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden lg:block bb-poster">
+            <div className="bb-poster-logo">B</div>
+            <div className="bb-script text-4xl text-[#ef3b18]">Bahbah</div>
+            <div className="bb-display text-5xl italic font-black">BURGER</div>
+            <div className="mt-5 text-white/50 text-xs tracking-[.25em]">BEEF • CHICKEN • NASHVILLE</div>
+          </div>
         </div>
+      </section>
+
+      {siteSettings.promoBannerImage && (
+        <section className="max-w-[1450px] mx-auto px-6 md:px-12 pb-20">
+          <div className="bb-banner relative overflow-hidden">
+            <img src={siteSettings.promoBannerImage} alt="Bahbah offer" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-transparent to-black/20" />
+            <div className="absolute left-8 md:left-14 top-1/2 -translate-y-1/2">
+              <div className="bb-script text-[#ff3b16] text-3xl md:text-5xl">Limited</div>
+              <div className="bb-display text-5xl md:text-7xl font-black italic">OFFER</div>
+            </div>
+          </div>
+        </section>
       )}
     </main>
   );
 };
 
-// ================= 3. لوحة التحكم =================
+const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDetails, cart, setCart }) => {
+  const t = translations[lang];
+  const [selectedCategory, setSelectedCategory] = useState('الكل');
+  const categoriesToShow = selectedCategory === 'الكل' || selectedCategory === 'All' ? categories : categories.filter(cat => cat.name === selectedCategory);
+
+  return (
+    <main className="bb-site bg-[#050505] text-white min-h-screen overflow-hidden">
+      <section className="max-w-[1450px] mx-auto px-6 md:px-12 pt-16 pb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="bb-script text-[#ef3b18] text-4xl">THE</div>
+            <h1 className="bb-display text-7xl md:text-9xl leading-[.75] font-black italic">MENU</h1>
+            <p className="mt-4 text-white/45 max-w-lg">{lang === 'ar' ? 'اختار مزاجك وخلي الباقي علينا.' : 'Pick your mood. We handle the rest.'}</p>
+          </div>
+          <div className="bb-menu-mark">Bigger / Juicier / Hotter</div>
+        </div>
+      </section>
+
+      <div className="sticky top-[76px] z-30 bg-[#050505]/95 backdrop-blur-md border-y border-white/10">
+        <div className="max-w-[1450px] mx-auto px-6 md:px-12 py-4 flex gap-2 overflow-x-auto scrollbar-none">
+          <button onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')} className={`bb-tab ${selectedCategory === 'الكل' || selectedCategory === 'All' ? 'active' : ''}`}>{t.all}</button>
+          {categories.map(cat => <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`bb-tab ${selectedCategory === cat.name ? 'active' : ''}`}>{cat.name}</button>)}
+        </div>
+      </div>
+
+      <section className="max-w-[1450px] mx-auto px-6 md:px-12 py-14">
+        {categoriesToShow.length === 0 ? <div className="text-center py-24 text-white/40">لا توجد أقسام مضافة بعد... ⏳</div> : (
+          <div className="space-y-20">
+            {categoriesToShow.map(cat => {
+              const catItems = menuItems.filter(item => item.category === cat.name).sort((a,b)=>(a.order||0)-(b.order||0));
+              if (catItems.length === 0) return null;
+              return (
+                <section key={cat._id}>
+                  <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-5">
+                    <div><span className="bb-script text-[#ef3b18] text-3xl">Taste</span><h2 className="text-4xl md:text-5xl font-black italic uppercase">{cat.name}</h2></div>
+                    <span className="text-white/30 text-xs tracking-[.25em]">{catItems.length} ITEMS</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {catItems.map(item => {
+                      const finalPrice = getDiscountedPrice(item.price, item.discount);
+                      const quantity = cart.filter(i => i.name === item.name).length;
+                      const open = () => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item);
+                      return (
+                        <article key={item._id} className="bb-product-card group">
+                          <button onClick={open} className="w-full text-left">
+                            <div className="bb-product-image h-[280px]">
+                              <img src={item.image || 'https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger'} alt={item.name} />
+                              {item.discount > 0 && <span className="bb-tag">-{item.discount}%</span>}
+                            </div>
+                            <div className="p-5">
+                              <div className="flex justify-between gap-3 items-start">
+                                <h3 className="bb-product-name text-xl">{item.name}</h3>
+                                <span className="text-[#f23616] font-black text-lg">{finalPrice} EGP</span>
+                              </div>
+                              <p className="text-white/45 text-sm mt-2 min-h-[40px] line-clamp-2">{item.description || '...'}</p>
+                              <div className="mt-5 flex items-center justify-between">
+                                <span className="text-xs text-white/35 uppercase tracking-[.18em]">{item.type === 'box' ? 'Customize' : 'Details'}</span>
+                                <span className="bb-add">{quantity || '+'}</span>
+                              </div>
+                            </div>
+                          </button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+};
+
 // ================= 3. لوحة التحكم =================
 const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems, fetchCategories, fetchSettings, isAuthenticated }) => {
   const t = translations[lang];
@@ -1090,131 +1055,240 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 const CartPage = ({ cart, setCart, lang }) => {
   const t = translations[lang];
   const itemsTotal = cart.reduce((sum, item) => sum + item.price, 0);
+
   const [orderType, setOrderType] = useState('delivery');
   const [deliveryZones, setDeliveryZones] = useState([]);
   const [selectedZone, setSelectedZone] = useState(null);
+
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => {
-      setDeliveryZones(data);
-      if (data.length > 0) setSelectedZone(data[0]);
-    }).catch(() => {});
+    fetch(`${API_BASE}/api/zones`)
+      .then(res => res.json())
+      .then(data => {
+        setDeliveryZones(data);
+        if (data.length > 0) setSelectedZone(data[0]);
+      })
+      .catch(err => {});
   }, []);
 
   const groupedCart = cart.reduce((acc, item) => {
     const existing = acc.find(i => i.name === item.name);
-    if (existing) existing.quantity += 1;
-    else acc.push({ ...item, quantity: 1 });
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      acc.push({ ...item, quantity: 1 });
+    }
     return acc;
   }, []);
 
   const deliveryFee = orderType === 'delivery' && selectedZone ? selectedZone.fee : 0;
   const grandTotal = itemsTotal + deliveryFee;
 
-  const handleIncrease = name => {
-    const item = cart.find(i => i.name === name);
-    if (item) setCart([...cart, { ...item }]);
+  const handleIncrease = (itemName) => {
+    const itemToAdd = cart.find(i => i.name === itemName);
+    if (itemToAdd) setCart([...cart, { ...itemToAdd }]);
   };
-  const handleDecrease = name => {
-    const idx = cart.findIndex(i => i.name === name);
-    if (idx !== -1) { const next = [...cart]; next.splice(idx, 1); setCart(next); }
+
+  const handleDecrease = (itemName) => {
+    const indexToRemove = cart.findIndex(i => i.name === itemName);
+    if (indexToRemove !== -1) {
+      const newCart = [...cart];
+      newCart.splice(indexToRemove, 1);
+      setCart(newCart);
+    }
   };
-  const handleRemoveCompletely = name => setCart(cart.filter(i => i.name !== name));
+
+  const handleRemoveCompletely = (itemName) => {
+     setCart(cart.filter(i => i.name !== itemName));
+  };
 
   const sendOrderToWhatsApp = () => {
-    if (!cart.length) return alert("السلة فارغة!");
+    if (cart.length === 0) return alert("السلة فارغة!");
     if (!customerName.trim()) return alert("من فضلك اكتب اسمك الكامل.");
-    if (!customerPhone.trim() || customerPhone.length !== 11 || isNaN(customerPhone)) return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
-    if (orderType === 'delivery' && !customerAddress.trim()) return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
+    if (!customerPhone.trim() || customerPhone.length !== 11 || isNaN(customerPhone)) {
+      return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
+    }
+    if (orderType === 'delivery' && !customerAddress.trim()) {
+      return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
+    }
 
     const orderId = 'BB-' + Date.now().toString().slice(-4) + Math.floor(10 + Math.random() * 90);
+
     let message = `🍔 أهلاً (بحبح برجر)، عندي أوردر جديد!\n`;
     message += `🆔 *رقم الأوردر:* #${orderId}\n\n`;
-    message += `👤 *الاسم:* ${customerName}\n📞 *التليفون:* ${customerPhone}\n`;
+    message += `👤 *الاسم:* ${customerName}\n`;
+    message += `📞 *التليفون:* ${customerPhone}\n`;
     message += `📦 *نوع الاستلام:* ${orderType === 'delivery' ? 'توصيل دليفري 🛵' : 'استلام من الفرع 🏪'}\n`;
+    
     if (orderType === 'delivery') {
       message += `📍 *العنوان:* ${customerAddress}\n`;
-      if (selectedZone) message += `🚚 *منطقة التوصيل:* ${selectedZone.name} (${selectedZone.fee} ج)\n`;
+      if (selectedZone) {
+        message += `🚚 *منطقة التوصيل:* ${selectedZone.name} (${selectedZone.fee} ج)\n`;
+      }
     }
-    message += `\n🛒 *الأصناف المطلوبة:*\n`;
-    groupedCart.forEach(item => message += `▪️ ${item.quantity}× ${item.name} — (${item.price * item.quantity} ج)\n`);
-    message += `\n-------------------\n🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
-    if (orderType === 'delivery') message += `🚚 *سعر التوصيل:* ${deliveryFee} ج\n`;
-    message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
 
-    window.open(`https://wa.me/201042281510?text=${encodeURIComponent(message)}`, '_blank');
+    message += `\n🛒 *الأصناف المطلوبة:*\n`;
+    groupedCart.forEach((item) => {
+      message += `▪️ ${item.quantity}× ${item.name} — (${item.price * item.quantity} ج)\n`;
+    });
+
+    message += `\n-------------------\n`;
+    message += `🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
+    if (orderType === 'delivery') {
+      message += `🚚 *سعر التوصيل:* ${deliveryFee} ج\n`;
+    }
+    message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
+    
+    const whatsappUrl = `https://wa.me/201042281510?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+
     setCart([]);
     setPlacedOrderId(orderId);
   };
 
   if (placedOrderId) {
     return (
-      <section className="bb-cart-page">
-        <div className="bb-success">
-          <span>✓</span>
-          <small>ORDER CONFIRMED</small>
-          <h1>تم إرسال طلبك!</h1>
-          <p>رقم الأوردر</p>
-          <strong>{placedOrderId}</strong>
-          <button onClick={() => setPlacedOrderId(null)}>رجوع للسلة</button>
+      <section className="px-6 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#050304] text-white flex flex-col items-center justify-center">
+        <div className="bg-[#100609] border border-[#25D366] rounded-[2.5rem] p-12 text-center shadow-[0_0_35px_rgba(37,211,102,0.2)] w-full">
+          <div className="text-7xl mb-4">✅</div>
+          <h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
+          <p className="text-xl mb-6 text-zinc-300">رقم الأوردر بتاعك هو:</p>
+          <div className="bg-[#050304] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-2xl inline-block mb-8 tracking-widest shadow-xl">
+            {placedOrderId}
+          </div>
+          <p className="text-sm text-zinc-400 mb-8">تم تحويلك للواتساب لإرسال الطلب للمطعم.</p>
+          <button 
+            onClick={() => setPlacedOrderId(null)} 
+            className="text-white bg-[#FF4500] hover:bg-[#E03D00] px-8 py-4 rounded-2xl font-bold transition shadow-lg"
+          >
+            رجوع للسلة
+          </button>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="bb-cart-page">
-      <div className="bb-cart-title"><span className="bb-red-script">YOUR</span><h1>CART</h1><p>طلباتك كلها في مكان واحد.</p></div>
+    <section className="px-6 py-12 max-w-4xl mx-auto min-h-screen bg-[#050304] text-white">
+      <h2 className="text-3xl font-black text-[#FFB800] mb-8 border-b border-[#1A0B0E] pb-4">{t.cart}</h2>
+      
       {cart.length === 0 ? (
-        <div className="bb-empty-cart">
-          <div>🛒</div><h2>{t.emptyCart}</h2>
-          <Link to="/menu">← {t.backToMenu}</Link>
+        <div className="border border-[#1F0A0E] bg-[#100609] rounded-[2.5rem] p-16 text-center shadow-2xl">
+          <div className="text-zinc-600 text-6xl mb-4">🛒</div>
+          <h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2>
+          <Link to="/menu" className="text-[#FF4500] underline hover:text-white font-bold">{t.backToMenu}</Link>
         </div>
       ) : (
-        <div className="bb-cart-layout">
-          <div className="bb-cart-items">
-            <div className="bb-cart-head"><span>YOUR ORDER</span><b>{cart.length} ITEMS</b></div>
-            {groupedCart.map((item, index) => (
-              <div className="bb-cart-row" key={index}>
-                <img src={item.image} alt={item.name} />
-                <div className="bb-cart-name"><h3>{item.name}</h3><span>{item.price} EGP</span></div>
-                <div className="bb-qty">
-                  <button onClick={() => handleDecrease(item.name)}>−</button><b>{item.quantity}</b><button onClick={() => handleIncrease(item.name)}>+</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] shadow-2xl">
+            <h3 className="text-xl font-bold text-[#FFB800] mb-6">محتويات السلة</h3>
+            <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
+              {groupedCart.map((item, index) => (
+                <div key={index} className="flex justify-between items-center border-b border-[#1F0A0E] pb-4">
+                  <div>
+                    <h4 className="text-base font-bold text-white">{item.name}</h4>
+                    <p className="text-[#FFB800] font-bold text-sm">{item.price * item.quantity} ج</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-[#050304] border border-[#1F0A0E] rounded-2xl px-3 py-1 gap-3">
+                      <button onClick={() => handleDecrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">-</button>
+                      <span className="font-black text-white">{item.quantity}</span>
+                      <button onClick={() => handleIncrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">+</button>
+                    </div>
+                    
+                    <button onClick={() => handleRemoveCompletely(item.name)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20">❌</button>
+                  </div>
                 </div>
-                <button className="bb-remove" onClick={() => handleRemoveCompletely(item.name)}>×</button>
-              </div>
-            ))}
-            <div className="bb-total"><span>{t.total}</span><strong>{grandTotal} <small>EGP</small></strong></div>
+              ))}
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
+              <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
+              {orderType === 'delivery' && (
+                <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>
+              )}
           </div>
 
-          <div className="bb-checkout">
-            <span className="bb-red-script">READY?</span>
-            <h2>LET'S<br/><em>ORDER.</em></h2>
-            <div className="bb-order-types">
-              <button onClick={() => setOrderType('delivery')} className={orderType === 'delivery' ? 'active' : ''}>🛵 دليفري</button>
-              <button onClick={() => setOrderType('pickup')} className={orderType === 'pickup' ? 'active' : ''}>🏪 استلام</button>
-            </div>
-            <label>الاسم<input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="اكتب اسمك" /></label>
-            <label>رقم التليفون<input maxLength="11" value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, ''))} placeholder="010xxxxxxxx" /></label>
-            {orderType === 'delivery' && <>
-              <label>منطقة التوصيل<select value={selectedZone ? selectedZone._id : ''} onChange={e => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))}>
-                {deliveryZones.map(z => <option key={z._id} value={z._id}>{z.name} ({z.fee} جنيه)</option>)}
-              </select></label>
-              <label>العنوان<textarea rows="2" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="الشارع، العمارة، الدور..." /></label>
-            </>}
-            <button className="bb-whatsapp" onClick={sendOrderToWhatsApp}>{t.whatsappOrder} ↗</button>
+          <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center">
+            <span className="text-lg font-bold">{t.total}</span>
+            <span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span>
           </div>
         </div>
-      )}
+
+        <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] flex flex-col justify-between shadow-2xl">
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-[#FFB800] mb-2">بيانات التوصيل والاستلام</h3>
+            
+            <div className="grid grid-cols-2 gap-3 mb-2">
+              <button 
+                type="button"
+                onClick={() => setOrderType('delivery')}
+                className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}
+              >
+                🛵 توصيل دليفري
+              </button>
+              <button 
+                type="button"
+                onClick={() => setOrderType('pickup')}
+                className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}
+              >
+                🏪 استلام من الفرع
+              </button>
+          </div>
+
+          <div>
+            <label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label>
+            <input type="text" placeholder="اكتب اسمك..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label>
+            <input type="text" maxLength="11" placeholder="010xxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm tracking-wider" />
+          </div>
+
+          {orderType === 'delivery' && (
+            <>
+              <div>
+                <label className="block text-xs text-zinc-300 mb-1">اختر منطقة التوصيل *</label>
+                <select 
+                  value={selectedZone ? selectedZone._id : ''}
+                  onChange={(e) => {
+                    const zone = deliveryZones.find(z => z._id === e.target.value);
+                    setSelectedZone(zone);
+                  }}
+                  className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer"
+                >
+                  {deliveryZones.map(zone => (
+                    <option key={zone._id} value={zone._id}>
+                      {zone.name} ({zone.fee} جنيه)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label>
+                <textarea rows="2" placeholder="الشارع، رقم العمارة، الدور..." value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
+              </div>
+            </>
+          )}
+        </div>
+
+        <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black text-lg py-4.5 rounded-2xl hover:bg-[#20bd5a] transition mt-6 flex items-center justify-center gap-2 shadow-2xl cursor-pointer">
+          {t.whatsappOrder}
+        </button>
+      </div>
+    </div>
+  )}
     </section>
   );
 };
 
-// ================= التطبيق الرئيسي =================
 // ================= التطبيق الرئيسي =================
 function App() {
   const navigate = useNavigate();
@@ -1348,43 +1422,64 @@ function App() {
   };
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="bb-app">
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#050505] text-white font-sans flex flex-col justify-between relative selection:bg-[#ef3b18] selection:text-white bb-app">
       <style>{`
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cairo:wght@400;600;700;800;900&family=Permanent+Marker&display=swap');
-:root{--bb-red:#e52b18;--bb-orange:#ff6a00;--bb-black:#050505;--bb-line:#292929;--bb-white:#f7f3ee}
-.bb-app{min-height:100vh;background:#050505;color:var(--bb-white);font-family:'Cairo',Arial,sans-serif}
-.bb-app *{box-sizing:border-box}.bb-app a{text-decoration:none}
-.bb-nav{height:82px;background:rgba(5,5,5,.94);border-bottom:1px solid rgba(229,43,24,.35);display:flex;align-items:center;position:sticky;top:0;z-index:80;backdrop-filter:blur(12px)}
-.bb-nav-inner{width:min(1380px,92%);margin:auto;display:flex;align-items:center;justify-content:space-between;gap:25px}
-.bb-logo{display:flex;align-items:center;min-width:190px}.bb-logo img{height:60px;width:auto;object-fit:contain}.bb-logo-text{font-weight:900;font-size:24px;line-height:.85;color:#fff}
-.bb-nav-links{display:flex;gap:34px}.bb-nav-links a{color:#aaa;font-weight:800;font-size:14px;position:relative}.bb-nav-links a:hover{color:#fff}.bb-nav-links a:after{content:'';position:absolute;bottom:-10px;right:0;width:0;height:2px;background:var(--bb-red);transition:.25s}.bb-nav-links a:hover:after{width:100%}
-.bb-nav-actions{display:flex;align-items:center;gap:12px}.bb-lang{border:0;background:transparent;color:#eee;font-weight:900;cursor:pointer}.bb-cart-link{display:flex;align-items:center;gap:8px;color:#fff;border:1px solid #333;padding:9px 14px;background:#0b0b0b}.bb-cart-count{background:var(--bb-red);min-width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-size:11px}.bb-menu-icon{display:none;background:none;border:0;color:#fff;font-size:25px}
-.bb-site{background:#050505;min-height:100vh;overflow:hidden}.bb-hero{height:calc(100vh - 82px);min-height:650px;position:relative;overflow:hidden;background:#050505}.bb-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.25) contrast(1.1);opacity:.48}.bb-hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,#050505 0%,rgba(5,5,5,.88) 30%,rgba(5,5,5,.12) 70%,#050505 100%)}.bb-hero-grain{position:absolute;inset:0;opacity:.08;background-image:repeating-linear-gradient(115deg,transparent 0 12px,#fff 13px,#fff 14px,transparent 15px 40px);mix-blend-mode:overlay}
-.bb-hero-content{position:relative;height:100%;width:min(1380px,92%);margin:auto;padding-top:55px}.bb-kicker{color:#ff5a32;font-weight:900;letter-spacing:4px;font-size:13px}.bb-hero-grid{display:grid;grid-template-columns:43% 57%;align-items:center;height:calc(100% - 50px)}.bb-hero-copy{z-index:3}.bb-small-ar{color:#bbb;font-weight:700}.bb-hero h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:clamp(80px,10vw,175px);line-height:.72;letter-spacing:-3px;margin:5px 0;text-transform:uppercase}.bb-hero h1 span{display:block;color:#f6f4ef}.bb-hero h1 strong{display:block;color:var(--bb-red);font-weight:400;text-shadow:7px 7px 0 rgba(100,8,0,.5)}.bb-hero-copy>p{color:#ddd;font-size:17px;font-weight:700;max-width:450px;margin:30px 0 22px}.bb-fire-btn{display:inline-flex;align-items:center;gap:25px;background:var(--bb-red);color:#fff;padding:15px 25px;font-weight:900;box-shadow:8px 8px 0 #74140b;transition:.25s}.bb-fire-btn:hover{transform:translate(-3px,-3px);box-shadow:11px 11px 0 #74140b}.bb-hero-food{position:relative;height:100%;display:flex;align-items:center;justify-content:center}.bb-hero-food img{width:min(720px,100%);max-height:78vh;object-fit:contain;position:relative;z-index:2;filter:drop-shadow(0 30px 35px rgba(0,0,0,.85)) saturate(1.15)}.bb-food-glow{position:absolute;width:65%;height:65%;background:radial-gradient(circle,rgba(255,79,0,.32),transparent 65%);filter:blur(25px)}.bb-hero-stamp{position:absolute;right:2%;top:17%;color:var(--bb-red);font-family:'Permanent Marker',cursive;font-size:28px;line-height:.85;transform:rotate(-8deg);z-index:4;text-align:center}.bb-scroll{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:#999;font-size:11px;letter-spacing:2px}
-.bb-marquee{height:56px;border-top:1px solid #572016;border-bottom:1px solid #572016;background:#090909;overflow:hidden;display:flex;align-items:center}.bb-marquee-track{white-space:nowrap;display:flex;align-items:center;gap:30px;color:#bfb7b0;font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:2px}.bb-marquee-track i{color:var(--bb-red);font-style:normal;font-size:25px}
-.bb-section{width:min(1380px,92%);margin:auto;padding:100px 0}.bb-section-head{display:grid;grid-template-columns:38% 1fr;gap:60px;align-items:end;margin-bottom:45px}.bb-title-block{border-left:3px solid var(--bb-red);padding-left:25px}.bb-red-script{font-family:'Permanent Marker',cursive;color:var(--bb-red);font-size:26px;line-height:1}.bb-title-block h2,.bb-cart-title h1{font-family:'Bebas Neue',sans-serif;font-size:95px;line-height:.8;margin:8px 0}.bb-title-block p{margin:0;color:#aaa;font-weight:800}.bb-section-text{max-width:500px}.bb-section-text>span{color:#777;font-size:11px;letter-spacing:3px;font-weight:900}.bb-section-text p{color:#bdbdbd;line-height:1.8;margin:10px 0 20px}.bb-outline-btn{display:inline-flex;gap:30px;color:#fff;border:1px solid #444;padding:12px 18px;font-weight:800}
-.bb-product-grid,.bb-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.bb-product-card{background:#0b0b0b;border:1px solid #252525;position:relative;overflow:hidden;transition:.3s}.bb-product-card:hover{border-color:#6e2219;transform:translateY(-5px)}.bb-card-main{transform:translateY(-20px)}.bb-product-image{height:285px;background:#101010;position:relative;overflow:hidden;cursor:pointer}.bb-product-image:after{content:'';position:absolute;inset:auto 0 0;height:40%;background:linear-gradient(transparent,#0b0b0b)}.bb-product-image img{width:100%;height:100%;object-fit:cover;transition:.6s}.bb-product-card:hover .bb-product-image img{transform:scale(1.07)}.bb-discount{position:absolute;top:14px;right:14px;z-index:3;background:var(--bb-red);color:#fff;padding:6px 10px;font-size:12px;font-weight:900}.bb-image-number{position:absolute;bottom:10px;left:14px;color:#fff;font-family:'Bebas Neue';font-size:30px;z-index:3}.bb-product-info{padding:16px 18px 20px}.bb-product-info h3{font-size:22px;margin:0 0 4px;font-weight:900}.bb-product-info p{font-size:12px;color:#888;line-height:1.6;min-height:38px;margin:0 0 15px}.bb-product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.bb-product-bottom strong{font-family:'Bebas Neue';font-size:32px;color:#ff4a30}.bb-product-bottom small{font-family:'Cairo';font-size:10px;color:#aaa}.bb-add{width:42px;height:42px;background:var(--bb-red);border:0;color:#fff;font-size:27px;cursor:pointer}.bb-qty{display:flex;align-items:center;border:1px solid #3a3a3a;background:#050505}.bb-qty button{width:35px;height:35px;background:transparent;color:#fff;border:0;font-size:19px;cursor:pointer}.bb-qty b{min-width:28px;text-align:center}.bb-order-btn{border:1px solid var(--bb-red);background:transparent;color:#fff;padding:9px 12px;font-weight:800;font-size:12px;cursor:pointer}
-.bb-promo{width:min(1380px,92%);height:440px;margin:0 auto 90px;position:relative;overflow:hidden;border:1px solid #35110d}.bb-promo img{width:100%;height:100%;object-fit:cover;filter:saturate(1.15) brightness(.55)}.bb-promo:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#050505 0%,rgba(5,5,5,.75) 35%,transparent 75%)}.bb-promo-copy{position:absolute;z-index:2;top:50%;left:8%;transform:translateY(-50%)}.bb-promo-copy span{font-size:11px;letter-spacing:4px;color:#aaa}.bb-promo-copy h2{font-family:'Bebas Neue';font-size:90px;line-height:.72;margin:12px 0 28px}.bb-promo-copy em{color:var(--bb-red);font-style:normal}
-.bb-brand-block{min-height:500px;background:#0b0b0b;border-top:1px solid #242424;border-bottom:1px solid #242424;display:flex;align-items:center;justify-content:space-around;padding:70px 8%;position:relative;overflow:hidden}.bb-brand-copy{position:relative;z-index:2}.bb-brand-copy h2{font-family:'Bebas Neue';font-size:120px;line-height:.72;margin:15px 0}.bb-brand-copy h2 span{color:var(--bb-red)}.bb-brand-copy p{max-width:430px;color:#999}.bb-brand-mark{position:relative;z-index:2;width:260px;height:260px;border:2px solid var(--bb-red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:200px;color:#fff;transform:rotate(-5deg)}.bb-brand-mark .bb-flame{position:absolute;top:-50px;right:-25px;font-size:65px}.bb-brand-mark span{position:absolute;bottom:12px;font-family:'Cairo';font-size:11px;letter-spacing:3px;color:#aaa}
-.bb-menu-hero{min-height:360px;width:min(1380px,92%);margin:auto;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #242424}.bb-menu-hero h1{font-family:'Bebas Neue';font-size:145px;line-height:.72;margin:12px 0}.bb-menu-hero h1 em{font-style:normal;color:var(--bb-red)}.bb-menu-hero p{color:#aaa;font-weight:700}.bb-menu-hero-mark{font-family:'Bebas Neue';font-size:280px;color:#151515;line-height:1;position:relative}.bb-menu-hero-mark span{font-size:70px;position:absolute;right:-20px;top:0}.bb-category-bar{width:min(1380px,92%);margin:30px auto 70px;display:flex;gap:8px;overflow:auto;border-bottom:1px solid #242424;padding-bottom:12px}.bb-category-bar button{background:transparent;border:0;color:#777;padding:12px 18px;font-weight:900;white-space:nowrap;cursor:pointer}.bb-category-bar button.active{background:var(--bb-red);color:#fff}.bb-menu-sections{width:min(1380px,92%);margin:auto}.bb-menu-category{padding-bottom:75px;margin-bottom:70px;border-bottom:1px solid #242424}.bb-category-heading{display:grid;grid-template-columns:70px 1fr 60px;align-items:center;margin-bottom:30px}.bb-category-heading>span{font-family:'Bebas Neue';font-size:55px;color:#333}.bb-category-heading small{font-size:9px;letter-spacing:3px;color:#777}.bb-category-heading h2{font-family:'Bebas Neue';font-size:58px;margin:0}.bb-category-heading i{font-style:normal;color:var(--bb-red);font-size:30px}
-.bb-cart-page{min-height:calc(100vh - 82px);width:min(1380px,92%);margin:auto;padding:80px 0}.bb-cart-title p{color:#888}.bb-cart-layout{display:grid;grid-template-columns:1.35fr .65fr;gap:25px}.bb-cart-items,.bb-checkout{background:#0b0b0b;border:1px solid #252525;padding:28px}.bb-cart-head{display:flex;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid #282828;color:#888;font-size:11px;letter-spacing:2px}.bb-cart-row{display:grid;grid-template-columns:75px 1fr auto auto;gap:15px;align-items:center;padding:18px 0;border-bottom:1px solid #222}.bb-cart-row img{width:75px;height:65px;object-fit:cover}.bb-cart-name h3{font-size:14px;margin:0 0 4px}.bb-cart-name span{color:var(--bb-red);font-size:12px;font-weight:900}.bb-remove{background:none;border:0;color:#777;font-size:22px;cursor:pointer}.bb-total{display:flex;justify-content:space-between;align-items:center;padding-top:25px}.bb-total strong{font-family:'Bebas Neue';font-size:42px;color:var(--bb-red)}.bb-total small{font-family:'Cairo';font-size:10px;color:#aaa}.bb-checkout h2{font-family:'Bebas Neue';font-size:70px;line-height:.7;margin:12px 0 25px}.bb-checkout h2 em{color:var(--bb-red);font-style:normal}.bb-order-types{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}.bb-order-types button{background:#050505;color:#777;border:1px solid #2b2b2b;padding:11px;font-weight:800;cursor:pointer}.bb-order-types button.active{background:var(--bb-red);border-color:var(--bb-red);color:#fff}.bb-checkout label{display:block;color:#aaa;font-size:11px;font-weight:800;margin-bottom:12px}.bb-checkout input,.bb-checkout select,.bb-checkout textarea{width:100%;margin-top:5px;background:#050505;color:#fff;border:1px solid #2b2b2b;padding:12px;outline:none}.bb-whatsapp{width:100%;border:0;background:#25d366;color:#041108;padding:14px;font-weight:900;cursor:pointer}.bb-empty-cart,.bb-success{background:#0b0b0b;border:1px solid #252525;padding:70px;text-align:center}.bb-success>span{display:grid;place-items:center;width:70px;height:70px;border:2px solid #25d366;color:#25d366;font-size:35px;margin:0 auto 15px}.bb-success small{color:#25d366;letter-spacing:3px}.bb-success h1{font-family:'Bebas Neue';font-size:60px}.bb-success>strong{display:block;font-family:'Bebas Neue';font-size:45px;color:var(--bb-red);margin:15px}.bb-success button{background:var(--bb-red);border:0;color:#fff;padding:12px 22px;font-weight:900}.bb-empty-menu{width:min(1380px,92%);margin:60px auto;padding:70px;text-align:center;border:1px solid #242424;color:#777}
-@media(max-width:900px){.bb-nav-links{display:none}.bb-menu-icon{display:block}.bb-hero{min-height:720px;height:auto}.bb-hero-grid{grid-template-columns:1fr;height:auto}.bb-hero-copy{padding-top:55px}.bb-hero h1{font-size:88px}.bb-hero-food{height:380px}.bb-section-head{grid-template-columns:1fr;gap:25px}.bb-product-grid,.bb-menu-grid{grid-template-columns:repeat(2,1fr)}.bb-card-main{transform:none}.bb-brand-block{padding:70px 6%}.bb-brand-copy h2{font-size:85px}.bb-menu-hero h1{font-size:100px}.bb-cart-layout{grid-template-columns:1fr}}
-@media(max-width:600px){.bb-logo img{height:50px}.bb-cart-link{padding:8px 10px}.bb-hero-content{width:94%}.bb-kicker{font-size:10px;letter-spacing:2px}.bb-hero h1{font-size:70px}.bb-hero-food{height:310px}.bb-section{width:94%;padding:65px 0}.bb-title-block h2,.bb-cart-title h1{font-size:72px}.bb-product-grid,.bb-menu-grid{grid-template-columns:1fr}.bb-product-image{height:270px}.bb-promo{width:94%;height:350px}.bb-promo-copy h2{font-size:65px}.bb-brand-block{display:block;text-align:center}.bb-brand-copy h2{font-size:80px}.bb-brand-mark{margin:70px auto 0;width:190px;height:190px;font-size:145px}.bb-menu-hero{min-height:280px}.bb-menu-hero h1{font-size:82px}.bb-menu-hero-mark{font-size:170px}.bb-category-heading h2{font-size:43px}.bb-cart-page{padding:55px 0}.bb-cart-items,.bb-checkout{padding:18px}.bb-cart-row{grid-template-columns:55px 1fr auto}.bb-cart-row img{width:55px;height:55px}.bb-cart-row .bb-qty{grid-column:2}.bb-remove{grid-column:3}}
-`}</style>
-      <nav className="bb-nav">
-        <div className="bb-nav-inner">
-          <Link to="/" className="bb-logo">
-            {siteSettings.logoImage ? <img src={siteSettings.logoImage} alt="Bahbah Burger" /> : <span className="bb-logo-text">Bahbah<br/>Burger</span>}
+        .bb-site{--red:#ef3b18;--red2:#b91f0d;--black:#050505;--panel:#0b0b0b;}
+        .bb-display{font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;letter-spacing:-.045em;}
+        .bb-script{font-family:'Brush Script MT','Segoe Script',cursive;font-style:italic;}
+        .bb-kicker{font-size:14px;font-weight:900;letter-spacing:.28em;color:#fff;transform:skewX(-8deg);}
+        .bb-kicker span{color:var(--red);padding:0 6px;}
+        .bb-btn{display:inline-flex;align-items:center;gap:18px;padding:15px 24px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;transition:.25s;clip-path:polygon(4% 0,96% 0,100% 18%,97% 86%,4% 100%,0 78%,2% 14%);}
+        .bb-btn:hover{transform:translateY(-3px) skewX(-2deg);}
+        .bb-btn-red{background:var(--red);color:#fff;box-shadow:0 14px 35px #ef3b1838;}
+        .bb-btn-ghost,.bb-btn-outline{border:1px solid #ffffff30;color:#fff;background:#090909cc;}
+        .bb-btn-outline{border-color:var(--red);color:#fff;}
+        .bb-brush{position:absolute;pointer-events:none;opacity:.8;background:var(--red);filter:drop-shadow(0 0 15px #ef3b1833);}
+        .bb-brush-left{left:-40px;top:30%;width:230px;height:18px;transform:rotate(-18deg);box-shadow:25px 30px 0 -3px var(--red),55px 60px 0 -7px var(--red);}
+        .bb-brush-right{right:-60px;bottom:25%;width:260px;height:14px;transform:rotate(-25deg);box-shadow:-20px 25px 0 -4px #8c190d,-55px 48px 0 -7px var(--red);}
+        .bb-product-card{background:linear-gradient(145deg,#111 0%,#070707 100%);border:1px solid #ffffff18;position:relative;overflow:hidden;transition:.35s;clip-path:polygon(0 0,98% 0,100% 3%,100% 98%,96% 100%,0 100%);}
+        .bb-product-card:before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 55%,#ef3b1809);pointer-events:none;}
+        .bb-product-card:hover{transform:translateY(-7px);border-color:#ef3b1680;box-shadow:0 25px 50px #000;}
+        .bb-product-image{height:250px;position:relative;overflow:hidden;background:#0a0a0a;}
+        .bb-product-image:after{content:'';position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(transparent,#050505);}
+        .bb-product-image img{width:100%;height:100%;object-fit:cover;transition:.6s;}
+        .bb-product-card:hover .bb-product-image img{transform:scale(1.07);}
+        .bb-tag{position:absolute;top:14px;left:14px;z-index:2;background:var(--red);padding:7px 12px;font-size:11px;font-weight:900;clip-path:polygon(4% 0,100% 5%,94% 100%,0 90%);}
+        .bb-product-name{font-size:22px;font-weight:950;text-transform:uppercase;font-style:italic;line-height:1;}
+        .bb-price{font-size:25px;font-weight:950;color:var(--red);font-style:italic;}
+        .bb-price small{font-size:10px;color:#fff;letter-spacing:.12em;}
+        .bb-add{width:36px;height:36px;border:1px solid #ffffff30;background:#0a0a0a;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;transition:.2s;}
+        .bb-product-card:hover .bb-add{background:var(--red);border-color:var(--red);}
+        .bb-poster{min-height:360px;background:radial-gradient(circle at 50% 30%,#7e1a0e,#0b0504 60%);border:1px solid #ef3b1638;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding:25px;position:relative;overflow:hidden;}
+        .bb-poster:before{content:'🔥';position:absolute;font-size:170px;opacity:.15;top:35px;}
+        .bb-poster-logo{position:relative;font-size:100px;line-height:.8;font-weight:950;color:#fff;text-shadow:8px 8px 0 var(--red);font-style:italic;}
+        .bb-banner{height:330px;border:1px solid #ffffff18;background:#0b0b0b;}
+        .bb-banner img{width:100%;height:100%;object-fit:cover;}
+        .bb-tab{white-space:nowrap;padding:11px 20px;background:#0d0d0d;color:#aaa;border:1px solid #ffffff10;font-weight:900;font-size:14px;transition:.2s;clip-path:polygon(3% 0,97% 0,100% 15%,97% 90%,4% 100%,0 82%);}
+        .bb-tab.active,.bb-tab:hover{background:var(--red);color:#fff;border-color:var(--red);}
+        .bb-arrow{width:34px;height:34px;border:1px solid #ffffff22;background:#0b0b0b;color:#fff;font-weight:900;}
+        .bb-mini-dot{width:34px;height:4px;margin-top:15px;}
+        .bb-menu-mark{color:#ef3b18;font-size:12px;font-weight:900;letter-spacing:.25em;text-transform:uppercase;transform:rotate(-3deg);}
+        .bb-side-brush{width:150px;height:420px;opacity:.15;background:linear-gradient(180deg,transparent,var(--red),transparent);filter:blur(30px);}
+        .bb-marquee-track{animation:bbMarquee 28s linear infinite;width:max-content;}
+        @keyframes bbMarquee{from{transform:translateX(0)}to{transform:translateX(-33.33%)}}
+        @media(max-width:768px){.bb-display{letter-spacing:-.055em}.bb-hero{min-height:820px}.bb-hero .bb-display{font-size:66px}.bb-product-image{height:240px}.bb-banner{height:240px}.bb-kicker{font-size:11px}.bb-menu-mark{display:none}}
+      `}</style>
+      <nav className="bg-[#050505]/92 border-b border-[#ef3b18]/30 sticky top-0 z-50 backdrop-blur-xl">
+        <div className="max-w-[1450px] mx-auto px-6 md:px-10 h-[78px] flex items-center justify-between gap-8">
+          <Link to="/" className="shrink-0">
+            {siteSettings.logoImage ? <img src={siteSettings.logoImage} alt="Bahbah Burger" className="h-14 md:h-16 w-auto object-contain" /> : <span className="bb-display text-2xl">BAHBAH</span>}
           </Link>
-          <div className="bb-nav-links">
-            <Link to="/">{t.home}</Link>
-            <Link to="/menu">{t.menu}</Link>
-            <Link to="/menu">Offers</Link>
+          <div className="hidden md:flex items-center gap-10 text-sm font-black uppercase tracking-wider">
+            <Link to="/" className="relative py-3 hover:text-[#ef3b18] transition">{t.home}<span className="absolute bottom-0 left-0 w-5 h-[2px] bg-[#ef3b18]" /></Link>
+            <Link to="/menu" className="py-3 hover:text-[#ef3b18] transition">{t.menu}</Link>
+            <a href="/#offers" className="py-3 hover:text-[#ef3b18] transition">Offers</a>
+            <a href="/#about" className="py-3 hover:text-[#ef3b18] transition">About</a>
           </div>
-          <div className="bb-nav-actions">
-            <button className="bb-lang" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}>{lang === 'ar' ? 'EN' : 'عربي'}</button>
-            <Link to="/cart" className="bb-cart-link">🛒 <span>{t.cart}</span><b className="bb-cart-count">{cart.length}</b></Link>
-            <button className="bb-menu-icon">☰</button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="text-xs font-black border-r border-white/15 pr-4 hover:text-[#ef3b18]">{lang === 'ar' ? 'EN' : 'عربي'}</button>
+            <Link to="/cart" className="flex items-center gap-2 px-3 py-2 hover:text-[#ef3b18] transition"><span className="text-xl">🛒</span><span className="text-[11px] font-black">{cart.length}</span></Link>
+            <button className="w-10 h-10 flex flex-col justify-center gap-1.5 items-end" aria-label="Menu"><span className="w-7 h-[2px] bg-white"/><span className="w-5 h-[2px] bg-[#ef3b18]"/><span className="w-7 h-[2px] bg-white"/></button>
           </div>
         </div>
       </nav>
@@ -1399,7 +1494,7 @@ function App() {
 
       {selectedItemDetail && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-          <div className="bg-[#0b0b0b] border border-[#6e2219] rounded-none w-full max-w-lg p-8 relative shadow-2xl">
+          <div className="bg-[#0b0b0b] border border-[#ef3b18]/50 rounded-none w-full max-w-lg p-8 relative shadow-2xl">
             <button onClick={() => setSelectedItemDetail(null)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
             <h3 className="text-3xl font-black text-white mb-6">{selectedItemDetail.name}</h3>
               
@@ -1459,7 +1554,7 @@ function App() {
                 </div>
               </div>
             )}
-            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#FF4500] text-white font-black py-4 rounded-2xl hover:bg-[#E03D00] transition text-lg shadow-2xl">
+            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#ef3b18] text-white font-black py-4 rounded-none hover:bg-[#E03D00] transition text-lg shadow-2xl">
               أضف للسلة • {currentItemTotalPrice} ج
             </button>
           </div>
@@ -1468,7 +1563,7 @@ function App() {
 
       {isBoxModalOpen && activeBox && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-          <div className="bg-[#0b0b0b] border border-[#6e2219] rounded-none w-full max-w-lg p-8 relative shadow-2xl">
+          <div className="bg-[#0b0b0b] border border-[#ef3b18]/50 rounded-none w-full max-w-lg p-8 relative shadow-2xl">
             <button onClick={() => setIsBoxModalOpen(false)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
               
             <h3 className="text-3xl font-black text-[#FFB800] mb-1">{activeBox.name}</h3>
@@ -1499,7 +1594,7 @@ function App() {
         </div>
       )}
 
-      <footer onClick={handleSecretLogoClick} className="bg-[#080808] border-t border-[#3b1712] mt-24 text-zinc-400 py-8 text-center text-xs cursor-default select-none">
+      <footer onClick={handleSecretLogoClick} className="bg-[#050505] border-t border-[#ef3b18]/30 mt-16 text-white/35 py-10 text-center text-xs cursor-default select-none">
         جميع الحقوق محفوظة © 2026 بحبح برجر — Bahbah Burger
       </footer>
     </div>
