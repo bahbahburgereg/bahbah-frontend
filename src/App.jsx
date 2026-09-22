@@ -128,11 +128,10 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
           </div>
 
           <div className="hidden md:block absolute right-8 top-24 text-right z-20">
-            <div className="text-[#ef321b] italic text-3xl lg:text-5xl leading-none drop-shadow-lg" style={{fontFamily:'cursive'}}>
-               Real Chicken<br />Real Taste
+           <div className="text-[#ef321b] italic text-3xl lg:text-5xl leading-none drop-shadow-lg" style={{fontFamily:'cursive'}}>
+              Real Chicken<br />Real Taste
             </div>
           </div>
-
           <div className="absolute bottom-10 right-8 md:right-14 flex gap-3 z-20">
             <span className="w-8 h-1 bg-[#ef321b]" />
             <span className="w-8 h-1 bg-white/80" />
