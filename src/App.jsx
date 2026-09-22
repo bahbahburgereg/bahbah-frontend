@@ -110,17 +110,10 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
       <style>{customStyles}</style>
       
       {/* 1. Hero Section */}
-      <header className="relative w-full min-h-screen flex items-center justify-between px-6 md:px-16 pt-20 overflow-hidden">
-        {/* Atmospheric background image (smoke / fire embers) */}
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-60"
-          style={{ backgroundImage: `url(${siteSettings.heroBackgroundImage || "https://images.unsplash.com/photo-1554855180-1e6c67c5c1ba?auto=format&fit=crop&w=1600&q=80"})` }}
-        ></div>
-        <div className="absolute inset-0 z-0 bg-[#050000]/70"></div>
+      <header className="relative w-full min-h-screen flex items-center justify-between px-6 md:px-16 pt-20">
         {/* Background Gradients */}
-        <div className="absolute top-0 right-0 w-2/3 h-full bg-[radial-gradient(ellipse_at_top_right,_rgba(225,29,72,0.25),_transparent_60%)] pointer-events-none z-0"></div>
-        <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-[radial-gradient(circle_at_bottom_left,_rgba(225,29,72,0.15),_transparent_70%)] pointer-events-none z-0"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050000]/40 to-[#050000] z-0 pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-[radial-gradient(ellipse_at_top_right,_rgba(225,29,72,0.15),_transparent_60%)] pointer-events-none z-0"></div>
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-[radial-gradient(circle_at_bottom_left,_rgba(225,29,72,0.1),_transparent_70%)] pointer-events-none z-0"></div>
 
         <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
           
