@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 // ⚠️ حط هنا لينك الباك إند الجديد بتاع بحبح برجر لما تعمله على Railway أو Vercel
-const API_BASE = 'https://YOUR_NEW_BACKEND_URL_HERE.up.railway.app';
-
+const API_BASE = 'https://bahbah-backend-production.up.railway.app';
 const translations = {
   ar: {
     home: "الرئيسية",
