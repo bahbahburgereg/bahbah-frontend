@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 const API_BASE = 'https://bahbah-backend-production.up.railway.app';
@@ -9,8 +9,8 @@ const translations = {
     cart: "السلة",
     admin: "الإدارة",
     all: "الكل",
-    orderNow: "اطلب  دلوقتي 🍔",
-    ourMenu: "  (المنيو)",
+    orderNow: "اطلب أكلتك دلوقتي 🍔",
+    ourMenu: "قائمة العظمة (المنيو)",
     bestOffers: "العروض النارية 🔥",
     seeMore: "عرض الكل ➔",
     hotlineText: "الخط الساخن",
@@ -68,11 +68,17 @@ const getDiscountedPrice = (price, discountPercent) => {
 };
 
 // ================= 1. صفحة الرئيسية — Bahbah Brand Layout =================
-const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, setCart }) => {
+const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDetails, cart, setCart, menuRef }) => {
   const t = translations[lang];
   const offers = menuItems.filter(item => item.isOffer);
   const featured = offers[0] || menuItems[0];
   const previewItems = (offers.length ? offers : menuItems).slice(0, 3);
+
+  const scrollToMenu = () => {
+    if (menuRef.current) {
+      menuRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="bg-[#050505] text-white overflow-hidden">
@@ -96,8 +102,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
               BIGGER · JUICIER · HOTTER
             </div>
 
-            {/* تم إضافة الميلان (Rotation) والخط العريض لتكون مطابقة لنفس شكل التصميم */}
-            <div className="leading-[0.82] uppercase italic font-black tracking-[-0.05em] transform -rotate-6 origin-left my-4">
+            <div className="leading-[0.82] uppercase italic font-black tracking-[-0.05em] my-4">
               <div className="text-[38px] sm:text-[72px] md:text-[98px] lg:text-[115px] text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]">
                 THE FIRE
               </div>
@@ -116,15 +121,15 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
                 : "Not just a burger... This is Bahbah! 🔥"}
             </p>
 
-            <Link
-              to="/menu"
+            <button
+              onClick={scrollToMenu}
               dir={lang === 'ar' ? 'rtl' : 'ltr'}
-              className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
+              className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)] cursor-pointer"
               style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}
             >
               {t.orderNow}
               <span className="text-xl leading-none">→</span>
-            </Link>
+            </button>
 
             <div className="mt-5 md:mt-10 flex items-center gap-3 text-white/55 text-sm">
               <span className="h-6 md:h-8 w-px bg-white/40" />
@@ -151,7 +156,8 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
         </div>
       </div>
 
-      {/* MENU PREVIEW */}
+      {/* MENU PREVIEW (تم ربطه بالريفينس عشان يشتغل كأنها الصفحة الرئيسية للمنيو) */}
+      <div ref={menuRef}></div>
       <section className="relative max-w-[1500px] mx-auto px-5 md:px-10 py-16 md:py-20">
         <div className="absolute left-0 top-10 w-40 h-80 bg-[#ef321b]/10 blur-3xl pointer-events-none" />
 
@@ -161,23 +167,21 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
             <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">
               MENU
             </div>
-            <div className="mt-5 text-xl font-black"> </div>
+            <div className="mt-5 text-xl font-black">قائمة العظمة</div>
             <p className="mt-4 text-white/55 text-sm leading-7">
               من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.
             </p>
-            <Link to="/menu" className="inline-flex mt-7 border border-[#ef321b] text-white px-6 py-3 font-black hover:bg-[#ef321b] transition">
-              {t.seeMore}
-            </Link>
           </div>
 
           <div>
+            {/* تم شيل الزراير الثابتة واستبدالها بالأقسام الحقيقية القادمة من الداشبورد ديناميكياً */}
             <div className="flex gap-2 overflow-x-auto pb-5 mb-2 scrollbar-none">
-              <button className="shrink-0 bg-[#ef321b] text-white px-8 py-3 font-black"
+              <span className="shrink-0 bg-[#ef321b] text-white px-8 py-3 font-black"
                 style={{clipPath:'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)'}}>
-                الكل
-              </button>
-              {['برجر','فراخ','وجبات','مشروبات'].map((x) => (
-                <span key={x} className="shrink-0 bg-[#111] text-white/60 px-7 py-3 font-bold border border-white/5">{x}</span>
+                {t.all}
+              </span>
+              {categories.map((cat) => (
+                <span key={cat._id} className="shrink-0 bg-[#111] text-white/80 px-7 py-3 font-bold border border-white/5">{cat.name}</span>
               ))}
             </div>
 
@@ -255,6 +259,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
           <div className="text-right text-[#ef321b] italic font-black text-2xl" dir="ltr">BIGGER<br/>JUICIER<br/>HOTTER</div>
         </div>
 
+        {/* أقسام المنيو الديناميكية من الداشبورد */}
         <div className="flex gap-2 overflow-x-auto py-7 scrollbar-none border-b border-white/5">
           <button
             onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')}
@@ -1334,6 +1339,7 @@ const CartPage = ({ cart, setCart, lang }) => {
 // ================= التطبيق الرئيسي =================
 function App() {
   const navigate = useNavigate();
+  const menuRef = useRef(null);
   const [cart, setCart] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -1502,7 +1508,7 @@ function App() {
 
       <div className="flex-1">
         <Routes>
-          <Route path="/" element={<HomePage lang={lang} siteSettings={siteSettings} menuItems={menuItems} handleOpenItemDetails={handleOpenItemDetailsModal} cart={cart} setCart={setCart} />} />
+          <Route path="/" element={<HomePage lang={lang} siteSettings={siteSettings} menuItems={menuItems} categories={categories} handleOpenItemDetails={handleOpenItemDetailsModal} cart={cart} setCart={setCart} menuRef={menuRef} />} />
           <Route path="/menu" element={<MenuPage menuItems={menuItems} categories={categories} lang={lang} handleOpenBox={handleOpenBox} handleOpenItemDetails={handleOpenItemDetailsModal} cart={cart} setCart={setCart} />} />
           <Route path="/secret-admin-dashboard" element={<AdminDashboard menuItems={menuItems} categories={categories} siteSettings={siteSettings} lang={lang} fetchItems={fetchItems} fetchCategories={fetchCategories} fetchSettings={fetchSettings} isAuthenticated={isAuthenticated} />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
