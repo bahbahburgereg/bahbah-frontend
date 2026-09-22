@@ -67,153 +67,131 @@ const getDiscountedPrice = (price, discountPercent) => {
   return Math.round(price * (1 - discountPercent / 100));
 };
 
-// ================= 1. صفحة الرئيسية (ستايل سينمائي مختلف) =================
+// ================= 1. صفحة الرئيسية (ستايل بيلو جراوند حديث ومميز) =================
 const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, setCart }) => {
   const t = translations[lang];
   const title = lang === 'ar' ? siteSettings.heroTitleAr : siteSettings.heroTitleEn;
   const offerItems = menuItems.filter(item => item.isOffer);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const nextSlide = () => {
-    if (offerItems.length <= 3) return;
-    setCurrentIndex((prev) => (prev + 1) % (offerItems.length - 2));
-  };
-
-  const prevSlide = () => {
-    if (offerItems.length <= 3) return;
-    setCurrentIndex((prev) => (prev === 0 ? offerItems.length - 3 : prev - 1));
-  };
-
-  useEffect(() => {
-    if (offerItems.length <= 3) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % Math.max(1, offerItems.length - 2));
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [offerItems.length]);
-
   return (
-    <div className="bg-[#050304] min-h-screen text-white selection:bg-[#FF4500] selection:text-white">
-      {/* Hero Section بتصميم مختلف كلياً */}
-      <header className="relative w-full min-h-[600px] md:min-h-[700px] bg-[#050304] flex flex-col items-center justify-center overflow-hidden border-b border-[#FF4500]/20 py-16">
+    <div className="bg-[#030203] min-h-screen text-white">
+      {/* Hero Section بتصميم Split Screen فخم ومختلف تماماً */}
+      <header className="relative w-full min-h-[75vh] flex items-center justify-center overflow-hidden border-b border-zinc-900 px-6 py-12">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 scale-105 transition duration-1000 blur-[2px]"
+          className="absolute inset-0 bg-cover bg-center opacity-30 scale-105 filter blur-sm"
           style={{ backgroundImage: `url(${siteSettings.heroImage})` }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050304] via-[#050304]/80 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#030203] via-[#030203]/90 to-transparent"></div>
         
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 bg-[#FF4500]/10 border border-[#FF4500]/30 text-[#FFB800] px-5 py-2 rounded-full text-xs md:text-sm font-black tracking-widest mb-6 backdrop-blur-xl shadow-lg">
-            <span>🔥</span> الليلة دي أحلى برجر في مصر <span>🔥</span>
-          </div>
-          
-          <h1 className="text-4xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#FF8C00] to-[#FF4500] drop-shadow-[0_15px_25px_rgba(0,0,0,0.9)] mb-8 leading-tight">
-            {title}
-          </h1>
-
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <Link to="/menu" className="bg-gradient-to-r from-[#FF4500] to-[#FF6B35] hover:from-[#E03D00] hover:to-[#D25A2B] text-white px-10 py-4 text-lg font-black rounded-full hover:scale-105 transition shadow-[0_0_35px_rgba(255,69,0,0.6)]">
-              {t.orderNow}
-            </Link>
+        <div className="relative z-10 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6 text-right">
+            <span className="inline-block bg-[#FF4500]/10 border border-[#FF4500]/40 text-[#FFB800] px-4 py-2 rounded-xl text-sm font-black tracking-wider">
+              🍔 برجر لحم وستريت فود حقيقي
+            </span>
+            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-none">
+              {title}
+            </h1>
+            <p className="text-zinc-400 text-lg max-w-lg">
+              انسى أي طعم تاني، وعيش تجربة البرجر الأصلي بأعلى جودة وصوصات خاصة بينا لوحدنا.
+            </p>
+            <div className="flex gap-4 pt-4">
+              <Link to="/menu" className="bg-[#FF4500] hover:bg-[#e03d00] text-white px-8 py-4 text-lg font-black rounded-2xl shadow-xl transition transform hover:-translate-y-1">
+                {t.orderNow}
+              </Link>
+            </div>
           </div>
 
           {siteSettings.promoBannerImage && (
-            <div className="w-full max-w-2xl mt-10 px-4">
+            <div className="relative hidden lg:block">
               <img 
                 src={siteSettings.promoBannerImage} 
-                alt="Banner Offer" 
-                className="w-full h-auto max-h-[340px] object-cover rounded-[2.5rem] border border-[#FF4500]/40 shadow-[0_0_40px_rgba(255,69,0,0.3)] hover:scale-[1.02] transition duration-500" 
+                alt="Promo Banner" 
+                className="w-full h-[400px] object-cover rounded-3xl border-2 border-[#FF4500]/30 shadow-2xl rotate-1 hover:rotate-0 transition duration-500"
               />
             </div>
           )}
         </div>
       </header>
 
-      {/* قسم العروض النارية */}
-      <section className="px-6 py-16 max-w-7xl mx-auto relative">
-        <div className="flex justify-between items-center mb-12 border-b border-[#1A0B0E] pb-6">
+      {/* قسم العروض النارية بستايل شبكي عصري */}
+      <section className="px-6 py-20 max-w-7xl mx-auto">
+        <div className="flex justify-between items-end mb-12 border-b border-zinc-900 pb-6">
           <div>
-            <h2 className="text-3xl md:text-4xl font-black text-[#FFB800] tracking-wide">{t.bestOffers}</h2>
-            <p className="text-zinc-400 text-sm mt-1">عروض دمار مش هتتكرر تاني!</p>
+            <span className="text-[#FF4500] font-black tracking-widest text-sm uppercase">Hot Deals</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white mt-1">{t.bestOffers}</h2>
           </div>
-          <Link to="/menu" className="text-[#FF4500] font-black hover:text-white text-base flex items-center gap-2 bg-[#100609] border border-[#220B11] px-5 py-2.5 rounded-2xl transition">
+          <Link to="/menu" className="text-zinc-400 hover:text-[#FF4500] font-bold text-sm transition">
             {t.seeMore}
           </Link>
         </div>
 
         {offerItems.length > 0 ? (
-          <div className="relative overflow-hidden px-2">
-            {offerItems.length > 3 && (
-              <>
-                <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#100609] border border-[#FF4500]/40 text-[#FF4500] w-12 h-12 rounded-full font-black text-xl flex items-center justify-center shadow-2xl hover:bg-[#FF4500] hover:text-white transition">❮</button>
-                <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#100609] border border-[#FF4500]/40 text-[#FF4500] w-12 h-12 rounded-full font-black text-xl flex items-center justify-center shadow-2xl hover:bg-[#FF4500] hover:text-white transition">❯</button>
-              </>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {offerItems.slice(0, 3).map((item) => {
+              const finalPrice = getDiscountedPrice(item.price, item.discount);
+              const cartItem = cart.find(i => i.name === item.name);
+              const quantity = cartItem ? cart.filter(i => i.name === item.name).length : 0;
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 transition-all duration-300">
-              {offerItems.slice(currentIndex, currentIndex + 3).map((item) => {
-                const finalPrice = getDiscountedPrice(item.price, item.discount);
-                const cartItem = cart.find(i => i.name === item.name);
-                const quantity = cartItem ? cart.filter(i => i.name === item.name).length : 0;
-
-                return (
-                  <div 
-                    key={item._id} 
-                    className="bg-[#0D0507] border border-[#1F0A0E] rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-[#FF4500] transition-all duration-500 group flex flex-col relative pt-10 hover:-translate-y-2"
-                  >
+              return (
+                <div 
+                  key={item._id} 
+                  className="bg-[#0A0708] border border-zinc-900 rounded-3xl overflow-hidden hover:border-[#FF4500]/60 transition-all duration-300 flex flex-col group shadow-2xl"
+                >
+                  <div onClick={() => handleOpenItemDetails(item)} className="w-full h-64 bg-black overflow-hidden relative cursor-pointer">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     {item.discount > 0 && (
-                      <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF8C00] to-[#FF4500] text-white text-center py-2 font-black text-sm md:text-base shadow-xl tracking-wider">
-                        ⚡ خصم دمار {item.discount}% ⚡
-                      </div>
+                      <span className="absolute top-4 right-4 bg-[#FF4500] text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-lg">
+                        خصم {item.discount}%
+                      </span>
                     )}
-                    <div onClick={() => handleOpenItemDetails(item)} className="w-full h-[300px] bg-[#050304] overflow-hidden relative cursor-pointer">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                  </div>
+                  <div className="p-6 flex flex-col flex-1 justify-between">
+                    <div>
+                      <h4 className="font-black text-xl text-white group-hover:text-[#FFB800] transition">{item.name}</h4>
+                      <p className="text-zinc-400 text-xs mt-2 line-clamp-2">{item.description}</p>
                     </div>
-                    <div className="p-6 flex items-center justify-between bg-[#100609] border-t border-[#1F0A0E]">
+                    
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-900/80">
                       <div>
-                        <h4 className="font-black text-xl text-white group-hover:text-[#FFB800] transition">{item.name}</h4>
-                        <div className="flex items-center gap-3 mt-2">
-                          {item.discount > 0 ? (
-                            <>
-                              <span className="text-zinc-500 line-through text-sm font-bold">{item.price} ج</span>
-                              <span className="text-[#FFB800] font-black text-2xl">{finalPrice} ج</span>
-                            </>
-                          ) : (
-                            <span className="text-[#FFB800] font-black text-2xl">{item.price} ج</span>
-                          )}
-                        </div>
+                        {item.discount > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-600 line-through text-xs font-bold">{item.price} ج</span>
+                            <span className="text-[#FFB800] font-black text-2xl">{finalPrice} ج</span>
+                          </div>
+                        ) : (
+                          <span className="text-[#FFB800] font-black text-2xl">{item.price} ج</span>
+                        )}
                       </div>
-                      
+
                       {quantity === 0 ? (
-                        <button onClick={() => handleOpenItemDetails(item)} className="bg-[#FF4500] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-[#E03D00] transition active:scale-95">
+                        <button onClick={() => handleOpenItemDetails(item)} className="bg-[#FF4500] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-[#e03d00] transition">
                           اطلب 🛒
                         </button>
                       ) : (
-                        <div className="flex items-center bg-[#050304] border border-[#FF4500] rounded-2xl px-4 py-2 gap-3 shadow-inner">
+                        <div className="flex items-center bg-black border border-zinc-800 rounded-xl px-3 py-1 gap-3">
                           <button onClick={() => {
                             const idx = cart.findIndex(i => i.name === item.name);
                             if (idx !== -1) { const nc = [...cart]; nc.splice(idx, 1); setCart(nc); }
-                          }} className="text-[#FF4500] font-black text-lg px-1 hover:text-white">-</button>
-                          <span className="font-black text-white">{quantity}</span>
-                          <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="text-[#FF4500] font-black text-lg px-1 hover:text-white">+</button>
-                      </div>
-                    )}
+                          }} className="text-[#FF4500] font-black text-lg">-</button>
+                          <span className="font-black text-white text-sm">{quantity}</span>
+                          <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="text-[#FF4500] font-black text-lg">+</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      ) : (
-        <div className="text-center text-zinc-500 py-16 bg-[#100609] rounded-[2.5rem] border border-[#1F0A0E]">لا توجد عروض رئيسية حالياً.</div>
-      )}
+        ) : (
+          <div className="text-center text-zinc-600 py-12 bg-[#0A0708] rounded-3xl border border-zinc-900">لا توجد عروض حالياً.</div>
+        )}
       </section>
     </div>
   );
 };
 
-// ================= 2. صفحة المنيو (بتصميم جديد كلياً) =================
+// ================= 2. صفحة المنيو (تصميم عصري متطور جداً) =================
 const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDetails, cart, setCart }) => {
   const t = translations[lang];
   const [selectedCategory, setSelectedCategory] = useState('الكل');
@@ -223,17 +201,20 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
     : categories.filter(cat => cat.name === selectedCategory);
 
   return (
-    <section className="px-6 py-12 max-w-7xl mx-auto min-h-screen relative bg-[#050304] text-white">
-      <h2 className="text-3xl md:text-4xl font-black text-[#FFB800] mb-8 border-b border-[#1A0B0E] pb-6">{t.ourMenu}</h2>
+    <section className="px-6 py-16 max-w-7xl mx-auto min-h-screen bg-[#030203] text-white">
+      <div className="mb-12">
+        <h2 className="text-4xl font-black text-white tracking-tight">{t.ourMenu}</h2>
+        <p className="text-zinc-400 text-sm mt-1">اختر وجبتك المفضلة واستمتع بالطعم الأصلي</p>
+      </div>
       
-      {/* فلتر الأقسام بتصميم بيلز سينمائي */}
-      <div className="flex gap-4 overflow-x-auto pb-4 mb-14 scrollbar-none sticky top-24 bg-[#050304]/90 py-4 z-30 backdrop-blur-xl">
+      {/* تاب الأقسام بشكل عصري شيك جداً */}
+      <div className="flex gap-3 overflow-x-auto pb-4 mb-12 scrollbar-none">
         <button
           onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')}
-          className={`px-8 py-3.5 rounded-2xl font-black whitespace-nowrap transition-all duration-300 border ${
+          className={`px-6 py-3 rounded-2xl font-black text-sm whitespace-nowrap transition-all ${
             selectedCategory === 'الكل' || selectedCategory === 'All'
-              ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_25px_rgba(255,69,0,0.6)] scale-105' 
-              : 'bg-[#100609] text-zinc-400 border-[#1F0A0E] hover:border-[#FF4500] hover:text-white'
+              ? 'bg-[#FF4500] text-white shadow-lg shadow-[#FF4500]/30' 
+              : 'bg-[#0A0708] text-zinc-400 border border-zinc-900 hover:text-white'
           }`}
         >
           {t.all}
@@ -242,10 +223,10 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
           <button
             key={cat._id}
             onClick={() => setSelectedCategory(cat.name)}
-            className={`px-8 py-3.5 rounded-2xl font-black whitespace-nowrap transition-all duration-300 border ${
+            className={`px-6 py-3 rounded-2xl font-black text-sm whitespace-nowrap transition-all ${
               selectedCategory === cat.name 
-                ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_25px_rgba(255,69,0,0.6)] scale-105' 
-                : 'bg-[#100609] text-zinc-400 border-[#1F0A0E] hover:border-[#FF4500] hover:text-white'
+                ? 'bg-[#FF4500] text-white shadow-lg shadow-[#FF4500]/30' 
+                : 'bg-[#0A0708] text-zinc-400 border border-zinc-900 hover:text-white'
             }`}
           >
             {cat.name}
@@ -254,27 +235,19 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
       </div>
 
       {categoriesToShow.length === 0 ? (
-        <div className="text-zinc-400 text-center py-24 text-xl">لا توجد أقسام مضافة بعد... ⏳</div>
+        <div className="text-zinc-500 text-center py-20 text-lg">لا توجد أقسام متاحة حالياً.</div>
       ) : (
-        <div className="space-y-20">
+        <div className="space-y-16">
           {categoriesToShow.map(cat => {
             const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
-            
-            if (catItems.length === 0 && selectedCategory !== 'الكل' && selectedCategory !== 'All') {
-              return (
-                <div key={cat._id} className="border-b border-[#1A0B0E] pb-12">
-                  <h3 className="text-2xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-4">{cat.name}</h3>
-                  <p className="text-zinc-500 text-sm">لا توجد أصناف في هذا القسم حالياً.</p>
-                </div>
-              );
-            }
             if (catItems.length === 0) return null;
 
             return (
-              <div key={cat._id} className="border-b border-[#1A0B0E] pb-16">
-                <h3 className="text-2xl md:text-3xl font-black text-[#FFB800] mb-8 border-r-4 border-[#FF4500] pr-4 flex items-center gap-3">
-                  {cat.name}
-                </h3>
+              <div key={cat._id} className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-2xl font-black text-[#FFB800]">{cat.name}</h3>
+                  <div className="flex-1 h-[1px] bg-zinc-900"></div>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                   {catItems.map(item => {
@@ -285,64 +258,65 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
                     return (
                       <div 
                         key={item._id} 
-                        className="bg-[#0D0507] border border-[#1F0A0E] rounded-[2.5rem] overflow-hidden flex flex-col hover:border-[#FF4500] transition-all duration-500 group shadow-2xl relative pt-10 hover:-translate-y-2"
+                        className="bg-[#0A0708] border border-zinc-900 rounded-3xl overflow-hidden flex flex-col hover:border-[#FF4500]/50 transition-all group shadow-xl"
                       >
-                        {item.discount > 0 && (
-                          <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF8C00] to-[#FF4500] text-white text-center py-2 font-black text-sm md:text-base shadow-xl tracking-wider">
-                            ⚡ خصم {item.discount}% ⚡
-                          </div>
-                        )}
-                        <div onClick={() => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item)} className="w-full h-60 object-cover bg-[#050304] overflow-hidden cursor-pointer">
-                          <img src={item.image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger"} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                        <div onClick={() => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item)} className="w-full h-56 bg-black overflow-hidden relative cursor-pointer">
+                          <img src={item.image || "https://via.placeholder.com/400x300"} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          {item.discount > 0 && (
+                            <span className="absolute top-3 right-3 bg-[#FF4500] text-white text-xs font-black px-2.5 py-1 rounded-lg">
+                              -{item.discount}%
+                            </span>
+                          )}
                         </div>
-                        <div className="p-6 flex-1 flex flex-col bg-[#0D0507]">
-                          <h3 className="text-xl font-black mb-2 text-white group-hover:text-[#FFB800] transition">{item.name}</h3>
-                          <p className="text-xs md:text-sm text-zinc-400 mb-6 line-clamp-2 leading-relaxed">{item.description || "..."}</p>
-                          
-                          <div className="flex items-center gap-3 mb-6 mt-auto">
-                            {item.discount > 0 ? (
-                              <>
-                                <span className="text-zinc-500 line-through text-base font-bold">{item.price} ج</span>
-                                <span className="text-[#FFB800] text-3xl font-black">{finalPrice} ج</span>
-                              </>
-                            ) : (
-                              <span className="text-[#FFB800] text-3xl font-black">{item.price} ج</span>
-                            )}
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div>
+                            <h4 className="text-lg font-black text-white group-hover:text-[#FFB800] transition">{item.name}</h4>
+                            <p className="text-xs text-zinc-400 mt-2 line-clamp-2">{item.description}</p>
                           </div>
                           
-                          {item.type === 'box' ? (
-                              <button onClick={() => handleOpenBox(item)} className="w-full bg-[#FF4500] text-white font-black py-3.5 rounded-2xl hover:bg-[#E03D00] transition shadow-xl">
-                              {t.customizeBox}
-                              </button>
-                          ) : (
-                              quantity === 0 ? (
-                                <button onClick={() => handleOpenItemDetails(item)} className="w-full border border-[#FF4500] text-[#FF4500] font-black py-3.5 rounded-2xl hover:bg-[#FF4500] hover:text-white transition shadow-xl">
-                                  {t.details} 🛒
+                          <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-900">
+                            <div>
+                              {item.discount > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-zinc-600 line-through text-xs">{item.price} ج</span>
+                                  <span className="text-[#FFB800] font-black text-2xl">{finalPrice} ج</span>
+                                </div>
+                              ) : (
+                                <span className="text-[#FFB800] font-black text-2xl">{item.price} ج</span>
+                              )}
+                            </div>
+                            
+                            {item.type === 'box' ? (
+                              <button onClick={() => handleOpenBox(item)} className="bg-[#FF4500] text-white font-bold px-4 py-2.5 rounded-xl text-xs hover:bg-[#e03d00] transition">
+                                {t.customizeBox}
                               </button>
                             ) : (
-                              <div className="flex items-center justify-between bg-[#050304] border border-[#FF4500] rounded-2xl px-5 py-3 shadow-inner">
-                                <span className="text-xs text-[#FF4500] font-bold">الكمية:</span>
-                                <div className="flex items-center gap-5">
+                              quantity === 0 ? (
+                                <button onClick={() => handleOpenItemDetails(item)} className="bg-zinc-900 text-white font-bold px-4 py-2.5 rounded-xl text-xs hover:bg-[#FF4500] transition">
+                                  {t.details}
+                                </button>
+                              ) : (
+                                <div className="flex items-center bg-black border border-zinc-800 rounded-xl px-3 py-1 gap-3">
                                   <button onClick={() => {
                                     const idx = cart.findIndex(i => i.name === item.name);
                                     if (idx !== -1) { const nc = [...cart]; nc.splice(idx, 1); setCart(nc); }
-                                  }} className="w-9 h-9 bg-[#0D0707] rounded-xl text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white transition">-</button>
-                                  <span className="font-black text-white text-lg">{quantity}</span>
-                                  <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="w-9 h-9 bg-[#0D0707] rounded-xl text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white transition">+</button>
+                                  }} className="text-[#FF4500] font-black text-lg">-</button>
+                                  <span className="font-black text-white text-sm">{quantity}</span>
+                                  <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="text-[#FF4500] font-black text-lg">+</button>
                                 </div>
-                              </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  )}
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 };
@@ -374,9 +348,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     } catch (err) {}
   };
 
-  useEffect(() => {
-    fetchZones();
-  }, []);
+  useEffect(() => { fetchZones(); }, []);
 
   const handleAddZone = async (e) => {
     e.preventDefault();
@@ -387,11 +359,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: zoneName.trim(), fee: Number(zoneFee) })
       });
-      if (res.ok) {
-        setZoneName('');
-        setZoneFee('');
-        fetchZones();
-      }
+      if (res.ok) { setZoneName(''); setZoneFee(''); fetchZones(); }
     } catch (err) {}
   };
 
@@ -407,21 +375,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width; let height = img.height;
-          const MAX_WIDTH = 1200; const MAX_HEIGHT = 800;
-          if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
-          else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          setHeroImg(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        img.src = event.target.result;
-      };
+      reader.onload = (event) => setHeroImg(event.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -430,22 +384,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width; let height = img.height;
-          const MAX_WIDTH = 1000; const MAX_HEIGHT = 600;
-          if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
-          else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.85);
-          setBannerImg(compressed);
-        };
-        img.src = event.target.result;
-      };
+      reader.onload = (event) => setBannerImg(event.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -454,21 +393,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width; let height = img.height;
-          const MAX_WIDTH = 300; const MAX_HEIGHT = 300;
-          if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
-          else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          setLogoImg(canvas.toDataURL('image/png', 0.9));
-        };
-        img.src = event.target.result;
-      };
+      reader.onload = (event) => setLogoImg(event.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -479,184 +404,49 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       const res = await fetch(`${API_BASE}/api/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          heroImage: heroImg, 
-          heroTitleAr: titleAr, 
-          heroTitleEn: titleEn, 
-          logoImage: logoImg, 
-          promoBannerImage: bannerImg 
-        })
+        body: JSON.stringify({ heroImage: heroImg, heroTitleAr: titleAr, heroTitleEn: titleEn, logoImage: logoImg, promoBannerImage: bannerImg })
       });
-      if (res.ok) {
-        alert("تم تحديث الواجهة واللوجو وصورة العرض بنجاح! 🚀🔥");
-        fetchSettings();
-      }
-    } catch (err) {
-      alert("خطأ أثناء الحفظ");
-    }
-  };
-
-  const handleMoveCategory = async (index, direction) => {
-    const newCategories = [...categories];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newCategories.length) return;
-    const temp = newCategories[index];
-    newCategories[index] = newCategories[targetIndex];
-    newCategories[targetIndex] = temp;
-
-    try {
-      await Promise.all(
-        newCategories.map((cat, idx) => 
-          fetch(`${API_BASE}/api/categories/${cat._id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: idx })
-          })
-        )
-      );
-      fetchCategories();
+      if (res.ok) { alert("تم التحديث بنجاح!"); fetchSettings(); }
     } catch (err) {}
   };
 
-  const handleMoveItem = async (index, direction, catItems) => {
-    const newItems = [...catItems];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newItems.length) return;
-
-    const temp = newItems[index];
-    newItems[index] = newItems[targetIndex];
-    newItems[targetIndex] = temp;
-
-    try {
-      await Promise.all(
-        newItems.map((itm, idx) => 
-          fetch(`${API_BASE}/api/items/${itm._id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...itm, order: idx })
-          })
-        )
-      );
-      fetchItems();
-    } catch (err) {}
-  };
-
-  const [editCatId, setEditCatId] = useState(null);
   const [catName, setCatName] = useState('');
-
-  const [editId, setEditId] = useState(null);
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [discount, setDiscount] = useState(''); 
-  const [image, setImage] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(categories[0]?.name || '');
-  const [type, setType] = useState('normal');
-  const [maxItems, setMaxItems] = useState('');
-  const [isOffer, setIsOffer] = useState(false);
-  
-  const [addonName, setAddonName] = useState('');
-  const [addonPrice, setAddonPrice] = useState('');
-  const [addonsList, setAddonsList] = useState([]);
-
-  const [boxItemNameInput, setBoxItemNameInput] = useState('');
-  const [boxItemsList, setBoxItemsList] = useState([]);
-
-  const [sizeNameInput, setSizeNameInput] = useState('');
-  const [sizePriceInput, setSizePriceInput] = useState('');
-  const [sizesList, setSizesList] = useState([]);
-
-  const handleAddSize = () => {
-    if (!sizeNameInput.trim() || !sizePriceInput) return;
-    setSizesList([...sizesList, { name: sizeNameInput.trim(), price: Number(sizePriceInput) }]);
-    setSizeNameInput('');
-    setSizePriceInput('');
-  };
-
-  const handleRemoveSize = (index) => {
-    setSizesList(sizesList.filter((_, i) => i !== index));
-  };
-
-  const handleAddBoxItemName = () => {
-    if (!boxItemNameInput.trim()) return;
-    setBoxItemsList([...boxItemsList, { name: boxItemNameInput.trim() }]);
-    setBoxItemNameInput('');
-  };
-
-  const handleRemoveBoxItemName = (index) => {
-    setBoxItemsList(boxItemsList.filter((_, i) => i !== index));
-  };
-
-  const handleAddAddon = () => {
-    if (!addonName.trim() || !addonPrice) return;
-    setAddonsList([...addonsList, { name: addonName.trim(), price: Number(addonPrice) }]);
-    setAddonName('');
-    setAddonPrice('');
-  };
-
-  const handleRemoveAddon = (index) => {
-    setAddonsList(addonsList.filter((_, i) => i !== index));
-  };
-
   const handleSaveCategory = async (e) => {
     e.preventDefault();
     if (!catName.trim()) return;
     try {
-      let res;
-      if (editCatId) {
-        res = await fetch(`${API_BASE}/api/categories/${editCatId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: catName.trim() })
-        });
-      } else {
-        res = await fetch(`${API_BASE}/api/categories`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: catName.trim() })
-        });
-      }
-
-      if (res.ok) {
-        setCatName('');
-        setEditCatId(null);
-        fetchCategories();
-      }
+      const res = await fetch(`${API_BASE}/api/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: catName.trim() })
+      });
+      if (res.ok) { setCatName(''); fetchCategories(); }
     } catch (err) {}
   };
 
-  const handleEditCategoryClick = (cat) => {
-    setEditCatId(cat._id);
-    setCatName(cat.name);
-  };
-
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm("Delete?")) return;
+    if (!window.confirm("حذف القسم؟")) return;
     try {
       const res = await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE' });
       if (res.ok) fetchCategories();
     } catch (err) {}
   };
 
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [image, setImage] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState(categories[0]?.name || '');
+  const [type, setType] = useState('normal');
+  const [maxItems, setMaxItems] = useState('');
+  const [isOffer, setIsOffer] = useState(false);
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width; let height = img.height;
-          const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
-          if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
-          else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          setImage(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.src = event.target.result;
-      };
+      reader.onload = (event) => setImage(event.target.result);
       reader.readAsDataURL(file);
     }
   };
@@ -664,72 +454,26 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const handleSaveItem = async (e) => {
     e.preventDefault();
     const itemData = {
-      name,
-      price: Number(price),
-      discount: Number(discount) || 0,
-      image: image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger",
-      description,
-      category: category || categories[0]?.name || 'General',
-      type,
-      maxItems: type === 'box' ? Number(maxItems) : undefined,
-      isOffer,
-      addons: addonsList,
-      boxItems: type === 'box' ? boxItemsList : [],
-      sizes: sizesList
+      name, price: Number(price), discount: Number(discount) || 0,
+      image: image || "https://via.placeholder.com/400x300",
+      description, category: category || categories[0]?.name || 'عام', type,
+      maxItems: type === 'box' ? Number(maxItems) : undefined, isOffer
     };
-
     try {
-      let res;
-      if (editId) {
-        res = await fetch(`${API_BASE}/api/items/${editId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemData)
-        });
-      } else {
-        res = await fetch(`${API_BASE}/api/items`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemData)
-        });
-      }
-
+      const res = await fetch(`${API_BASE}/api/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData)
+      });
       if (res.ok) {
-        resetForm();
-        fetchItems();
-        alert("تم حفظ الصنف بنجاح! 🚀");
+        setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription('');
+        fetchItems(); alert("تم حفظ الصنف بنجاح!");
       }
     } catch (err) {}
   };
 
-  const handleEditItemClick = (item) => {
-    setEditId(item._id);
-    setName(item.name);
-    setPrice(item.price);
-    setDiscount(item.discount || '');
-    setImage(item.image);
-    setDescription(item.description || '');
-    setCategory(item.category);
-    setType(item.type || 'normal');
-    setMaxItems(item.maxItems || '');
-    setIsOffer(item.isOffer || false);
-    setAddonsList(item.addons || []);
-    setBoxItemsList(item.boxItems || []);
-    setSizesList(item.sizes || []);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const resetForm = () => {
-    setEditId(null);
-    setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setMaxItems(''); setType('normal');
-    setIsOffer(false);
-    setAddonsList([]);
-    setBoxItemsList([]);
-    setSizesList([]);
-  };
-
   const handleDeleteItem = async (id) => {
-    if (!window.confirm("Delete item?")) return;
+    if (!window.confirm("حذف الصنف؟")) return;
     try {
       const res = await fetch(`${API_BASE}/api/items/${id}`, { method: 'DELETE' });
       if (res.ok) fetchItems();
@@ -737,374 +481,88 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   };
 
   return (
-    <section className="px-6 py-12 max-w-5xl mx-auto min-h-[80vh] bg-[#050304] text-white">
-      <div className="flex justify-between items-center mb-8 border-b border-[#1A0B0E] pb-4">
+    <section className="px-6 py-12 max-w-5xl mx-auto min-h-screen bg-[#030203] text-white">
+      <div className="flex justify-between items-center mb-8 border-b border-zinc-900 pb-4">
         <h2 className="text-3xl font-black text-[#FFB800]">⚙️ لوحة الإدارة الذكية</h2>
-        <Link className="text-zinc-400 hover:text-white underline font-bold" to="/menu">{t.menu}</Link>
+        <Link to="/menu" className="text-zinc-400 hover:text-white font-bold underline">المنيو</Link>
       </div>
 
-      <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
-        <h3 className="text-xl font-bold text-[#FFB800] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
-        <form onSubmit={handleAddZone} className="flex flex-col md:flex-row gap-4 mb-6">
-          <input 
-            type="text" 
-            placeholder="اسم المنطقة (مثل: الشروق)" 
-            value={zoneName} 
-            onChange={(e) => setZoneName(e.target.value)}
-            className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm"
-          />
-          <input 
-            type="number" 
-            placeholder="سعر التوصيل (مثل: 30)" 
-            value={zoneFee} 
-            onChange={(e) => setZoneFee(e.target.value)}
-            className="w-full md:w-40 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm"
-          />
-          <button type="submit" className="bg-[#FF4500] text-white font-bold px-8 py-4 rounded-2xl hover:bg-[#E03D00] transition shadow cursor-pointer">
-            ➕ إضافة منطقة
-          </button>
+      <div className="bg-[#0A0708] p-8 rounded-3xl border border-zinc-900 mb-8 shadow-xl space-y-6">
+        <h3 className="text-xl font-bold text-[#FFB800]">🚚 إدارة مناطق التوصيل</h3>
+        <form onSubmit={handleAddZone} className="flex gap-4">
+          <input type="text" placeholder="اسم المنطقة" value={zoneName} onChange={(e) => setZoneName(e.target.value)} className="flex-1 bg-black border border-zinc-800 rounded-2xl p-3.5 text-white text-sm" />
+          <input type="number" placeholder="السعر" value={zoneFee} onChange={(e) => setZoneFee(e.target.value)} className="w-32 bg-black border border-zinc-800 rounded-2xl p-3.5 text-white text-sm" />
+          <button type="submit" className="bg-[#FF4500] px-6 rounded-2xl font-bold text-sm">إضافة</button>
         </form>
-
-        <div className="space-y-3">
-          {deliveryZones.length === 0 ? (
-            <p className="text-zinc-500 text-sm">لم يتم إضافة مناطق توصيل بعد.</p>
-          ) : (
-            deliveryZones.map((zone) => (
-              <div key={zone._id} className="bg-[#050304] border border-[#1F0A0E] px-5 py-3.5 rounded-2xl flex items-center justify-between text-sm">
-                <span className="font-bold text-[#FFB800]">{zone.name} — <span className="text-white">{zone.fee} جنيه</span></span>
-                <button onClick={() => handleDeleteZone(zone._id)} className="text-red-400 bg-red-500/10 px-3.5 py-1.5 rounded-xl font-bold text-xs">✕ مسح</button>
-              </div>
-            ))
-          )}
+        <div className="space-y-2">
+          {deliveryZones.map(zone => (
+            <div key={zone._id} className="flex justify-between items-center bg-black p-3.5 rounded-xl border border-zinc-900 text-sm">
+              <span>{zone.name} — <strong className="text-[#FFB800]">{zone.fee} ج</strong></span>
+              <button onClick={() => handleDeleteZone(zone._id)} className="text-red-400 font-bold text-xs">✕ مسح</button>
+            </div>
+          ))}
         </div>
       </div>
 
-      <form onSubmit={handleSaveSettings} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
-        <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.siteSettings}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <form onSubmit={handleSaveSettings} className="bg-[#0A0708] p-8 rounded-3xl border border-zinc-900 mb-8 shadow-xl space-y-4">
+        <h3 className="text-xl font-bold text-[#FFB800]">🖼️ إعدادات الموقع والواجهة</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm mb-2 text-zinc-300">شعار المطعم (اللوجو)</label>
-            <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            {logoImg && <img src={logoImg} alt="Logo Preview" className="w-20 h-20 object-contain rounded-2xl border border-[#1F0A0E] bg-[#050304]" />}
+            <label className="block text-xs text-zinc-400 mb-1">اللوجو</label>
+            <input type="file" onChange={handleLogoUpload} className="w-full bg-black border border-zinc-800 rounded-xl p-2 text-xs" />
           </div>
           <div>
-            <label className="block text-sm mb-2 text-zinc-300">خلفية الهيدر الثابتة فوق</label>
-            <input type="file" accept="image/*" onChange={handleHeroImageUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            <img src={heroImg} alt="Hero" className="w-full h-20 object-cover rounded-2xl border border-[#1F0A0E]" />
-          </div>
-
-          <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30">
-            <label className="block text-sm mb-2 text-[#FFB800] font-bold">🖼️ صورة العرض الكبيرة (البوستر تحت زرار اطلب دلوقتي)</label>
-            <input type="file" accept="image/*" onChange={handleBannerImageUpload} className="w-full bg-[#100609] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            <div className="flex items-center gap-4 mt-2">
-              {bannerImg ? (
-                <>
-                  <img src={bannerImg} alt="Banner Preview" className="w-40 h-24 object-cover rounded-2xl border border-[#FF4500]" />
-                  <button type="button" onClick={() => { setBannerImg(''); }} className="bg-red-600/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold border border-red-500/30">🗑️ إزالة البوستر</button>
-                </>
-              ) : (
-                <span className="text-zinc-500 text-xs">لا توجد صورة بوستر مفعلة حالياً.</span>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs mb-1 text-zinc-300">العنوان بالعربي</label>
-            <input type="text" value={titleAr} onChange={(e) => setTitleAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-3.5 text-white text-sm" />
+            <label className="block text-xs text-zinc-400 mb-1">صورة الهيدر الكبيرة</label>
+            <input type="file" onChange={handleHeroImageUpload} className="w-full bg-black border border-zinc-800 rounded-xl p-2 text-xs" />
           </div>
           <div>
-            <label className="block text-xs mb-1 text-zinc-300">العنوان بالإنجليزي</label>
-            <input type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-3.5 text-white text-sm" />
+            <label className="block text-xs text-zinc-400 mb-1">العنوان بالعربي</label>
+            <input type="text" value={titleAr} onChange={(e) => setTitleAr(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white" />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">العنوان بالإنجليزي</label>
+            <input type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white" />
           </div>
         </div>
-        <button type="submit" className="w-full bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">
-          💾 حفظ تعديلات اللوجو والواجهة وصورة العرض
-        </button>
+        <button type="submit" className="w-full bg-[#FF4500] py-3.5 rounded-2xl font-bold text-sm">حفظ التعديلات العامة</button>
       </form>
 
-      <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
-        <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.catManage}</h3>
-        <form onSubmit={handleSaveCategory} className="flex gap-4 mb-6">
-          <input 
-            type="text" 
-            placeholder="Category Name..." 
-            value={catName} 
-            onChange={(e) => setCatName(e.target.value)}
-            className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white"
-          />
-          <button type="submit" className="bg-[#FF4500] text-white font-bold px-8 py-4 rounded-2xl hover:bg-[#E03D00] transition shadow">
-            {editCatId ? t.save : t.addCat}
-          </button>
-          {editCatId && (
-            <button type="button" onClick={() => { setEditCatId(null); setCatName(''); }} className="bg-zinc-700 text-white px-5 rounded-2xl font-bold">
-              {t.cancel}
-            </button>
-          )}
+      <div className="bg-[#0A0708] p-8 rounded-3xl border border-zinc-900 mb-8 shadow-xl space-y-4">
+        <h3 className="text-xl font-bold text-[#FFB800]">📁 إدارة الأقسام</h3>
+        <form onSubmit={handleSaveCategory} className="flex gap-4">
+          <input type="text" placeholder="اسم القسم الجديد" value={catName} onChange={(e) => setCatName(e.target.value)} className="flex-1 bg-black border border-zinc-800 rounded-2xl p-3.5 text-white text-sm" />
+          <button type="submit" className="bg-[#FF4500] px-6 rounded-2xl font-bold text-sm">إضافة قسم</button>
         </form>
-
-        <div className="space-y-3">
-          {categories.map((cat, index) => (
-            <div key={cat._id} className="bg-[#050304] border border-[#1F0A0E] px-5 py-4 rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-zinc-500 font-bold text-sm">#{index + 1}</span>
-                <span className="font-bold text-[#FFB800]">{cat.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => handleMoveCategory(index, 'up')}
-                  disabled={index === 0}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-bold ${index === 0 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                >
-                  ◀ تحريك للخارج
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => handleMoveCategory(index, 'down')}
-                  disabled={index === categories.length - 1}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-bold ${index === categories.length - 1 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                >
-                  تحريك للداخل ▶
-                </button>
-                <button onClick={() => handleEditCategoryClick(cat)} className="text-[#FFB800] bg-[#FF4500]/20 px-3.5 py-1.5 rounded-xl text-xs font-bold">✏️</button>
-                <button onClick={() => handleDeleteCategory(cat._id)} className="text-red-400 bg-red-500/10 px-3.5 py-1.5 rounded-xl text-xs font-bold">✕</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  
-    <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
-      <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Item Name *</label>
-        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Name" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Price *</label>
-        <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Price" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم % (اختياري)</label>
-        <input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Category *</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
+        <div className="flex flex-wrap gap-2">
           {categories.map(cat => (
-            <option key={cat._id} value={cat.name}>{cat.name}</option>
+            <div key={cat._id} className="bg-black border border-zinc-800 px-4 py-2 rounded-xl flex items-center gap-3 text-sm">
+              <span>{cat.name}</span>
+              <button onClick={() => handleDeleteCategory(cat._id)} className="text-red-400 font-bold">✕</button>
+            </div>
           ))}
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Image</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" />
-      </div>
-
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
-        <input 
-          type="checkbox" 
-          id="isOfferCheck" 
-          checked={isOffer} 
-          onChange={(e) => setIsOffer(e.target.checked)}
-          className="w-5 h-5 accent-[#FF4500] cursor-pointer" 
-        />
-        <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">
-          🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)
-        </label>
-      </div>
-
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Type</label>
-        <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
-          <option value="normal">Normal (سندوتش أو وجبة عادية)</option>
-          <option value="box">Box (بوكس مخصص قابل للاختيار)</option>
-        </select>
-      </div>
-
-      {type === 'box' && (
-        <div>
-          <label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label>
-          <input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" placeholder="3" />
         </div>
-      )}
+      </div>
 
-      {type === 'box' && (
-        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم المكون" 
-              value={boxItemNameInput} 
-              onChange={(e) => setBoxItemNameInput(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddBoxItemName} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة
-            </button>
+      <form onSubmit={handleSaveItem} className="bg-[#0A0708] p-8 rounded-3xl border border-zinc-900 shadow-xl space-y-4">
+        <h3 className="text-xl font-bold text-[#FFB800]">🍔 إضافة صنف جديد للمنيو</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text" placeholder="اسم الصنف" required value={name} onChange={(e) => setName(e.target.value)} className="bg-black border border-zinc-800 rounded-2xl p-3.5 text-sm text-white" />
+          <input type="number" placeholder="السعر" required value={price} onChange={(e) => setPrice(e.target.value)} className="bg-black border border-zinc-800 rounded-2xl p-3.5 text-sm text-white" />
+          <input type="number" placeholder="نسبة الخصم % (اختياري)" value={discount} onChange={(e) => setDiscount(e.target.value)} className="bg-black border border-zinc-800 rounded-2xl p-3.5 text-sm text-white" />
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="bg-black border border-zinc-800 rounded-2xl p-3.5 text-sm text-white">
+            {categories.map(cat => <option key={cat._id} value={cat.name}>{cat.name}</option>)}
+          </select>
+          <input type="file" onChange={handleImageUpload} className="bg-black border border-zinc-800 rounded-2xl p-2 text-xs text-white" />
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="offer" checked={isOffer} onChange={(e) => setIsOffer(e.target.checked)} className="w-5 h-5 accent-[#FF4500]" />
+            <label htmlFor="offer" className="text-sm font-bold text-[#FFB800]">عرض رئيسي بالواجهة</label>
           </div>
-
-          {boxItemsList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {boxItemsList.map((bItem, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span className="text-[#FFB800] font-bold">{bItem.name}</span>
-                  <button type="button" onClick={() => handleRemoveBoxItemName(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-      )}
-
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم الحجم (مثل: كبير)" 
-              value={sizeNameInput} 
-              onChange={(e) => setSizeNameInput(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <input 
-              type="number" 
-              placeholder="السعر (مثل: 400)" 
-              value={sizePriceInput} 
-              onChange={(e) => setSizePriceInput(e.target.value)}
-              className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddSize} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة حجم
-            </button>
-          </div>
-
-          {sizesList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {sizesList.map((sz, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span className="text-[#FFB800] font-bold">{sz.name} — {sz.price} ج</span>
-                  <button type="button" onClick={() => handleRemoveSize(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
-      </div>
-
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم الإضافة (مثلاً: إضافة جبنة)" 
-              value={addonName} 
-              onChange={(e) => setAddonName(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <input 
-              type="number" 
-              placeholder="السعر (مثلاً: 10)" 
-              value={addonPrice} 
-              onChange={(e) => setAddonPrice(e.target.value)}
-              className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddAddon} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة
-            </button>
-          </div>
-
-          {addonsList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {addonsList.map((addon, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span>{addon.name} (+{addon.price} ج)</span>
-                  <button type="button" onClick={() => handleRemoveAddon(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
-      </div>
-
-      <div className="md:col-span-2">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
-          <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Description..." />
-      </div>
-
-      <div className="md:col-span-2 mt-4 flex gap-4">
-          <button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">
-            {editId ? t.save : t.addItem}
-          </button>
-          {editId && (
-            <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">
-              {t.cancel}
-            </button>
-          )}
-      </div>
-    </form>
-
-    <div className="space-y-12 mt-12">
-      <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
-        
-      {categories.map(cat => {
-        const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
-          
-        return (
-          <div key={cat._id} className="bg-[#100609] border border-[#1F0A0E] rounded-[2.5rem] p-8 shadow-2xl">
-            <h4 className="text-xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-4">
-              📁 قسم: {cat.name} ({catItems.length} صنف)
-            </h4>
-
-            {catItems.length === 0 ? (
-              <p className="text-zinc-500 text-sm">لا توجد أصناف في هذا القسم حالياً.</p>
-            ) : (
-              <div className="space-y-4">
-                {catItems.map((item, itemIndex) => (
-                  <div key={item._id} className="bg-[#050304] border border-[#1F0A0E] p-4.5 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-zinc-500 font-bold text-sm">#{itemIndex + 1}</span>
-                      <img src={item.image} alt="" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
-                      <div>
-                        <h4 className="font-bold text-white">
-                          {item.name} 
-                          {item.discount > 0 && <span className="bg-[#FF4500] text-white text-xs px-2.5 py-0.5 rounded-lg font-black mr-2">خصم {item.discount}%</span>}
-                        </h4>
-                        <span className="text-xs text-[#FFB800]">
-                          {item.discount > 0 ? `${getDiscountedPrice(item.price, item.discount)} ج (بدل ${item.price})` : `${item.price} ج`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => handleMoveItem(itemIndex, 'up', catItems)}
-                        disabled={itemIndex === 0}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === 0 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                      >
-                        ▲
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleMoveItem(itemIndex, 'down', catItems)}
-                        disabled={itemIndex === catItems.length - 1}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === catItems.length - 1 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                      >
-                        ▼
-                      </button>
-                      <button onClick={() => handleEditItemClick(item)} className="text-[#FFB800] bg-[#FF4500]/20 px-4 py-2 rounded-xl text-xs font-bold">✏️ تعديل</button>
-                      <button onClick={() => handleDeleteItem(item._id)} className="text-red-400 bg-red-500/10 px-4 py-2 rounded-xl text-xs font-bold">✕ مسح</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  </section>
-);
+        <textarea placeholder="وصف الصنف..." rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-2xl p-3.5 text-sm text-white"></textarea>
+        <button type="submit" className="w-full bg-[#FF4500] py-4 rounded-2xl font-bold">إضافة الصنف للمنيو 🚀</button>
+      </form>
+    </section>
+  );
 };
 
 // ================= 4. صفحة السلة =================
@@ -1119,228 +577,104 @@ const CartPage = ({ cart, setCart, lang }) => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/zones`)
       .then(res => res.json())
-      .then(data => {
-        setDeliveryZones(data);
-        if (data.length > 0) setSelectedZone(data[0]);
-      })
+      .then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); })
       .catch(err => {});
   }, []);
 
   const groupedCart = cart.reduce((acc, item) => {
     const existing = acc.find(i => i.name === item.name);
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      acc.push({ ...item, quantity: 1 });
-    }
+    if (existing) existing.quantity += 1;
+    else acc.push({ ...item, quantity: 1 });
     return acc;
   }, []);
 
   const deliveryFee = orderType === 'delivery' && selectedZone ? selectedZone.fee : 0;
   const grandTotal = itemsTotal + deliveryFee;
 
-  const handleIncrease = (itemName) => {
-    const itemToAdd = cart.find(i => i.name === itemName);
-    if (itemToAdd) setCart([...cart, { ...itemToAdd }]);
-  };
-
-  const handleDecrease = (itemName) => {
-    const indexToRemove = cart.findIndex(i => i.name === itemName);
-    if (indexToRemove !== -1) {
-      const newCart = [...cart];
-      newCart.splice(indexToRemove, 1);
-      setCart(newCart);
-    }
-  };
-
-  const handleRemoveCompletely = (itemName) => {
-     setCart(cart.filter(i => i.name !== itemName));
-  };
-
   const sendOrderToWhatsApp = () => {
     if (cart.length === 0) return alert("السلة فارغة!");
-    if (!customerName.trim()) return alert("من فضلك اكتب اسمك الكامل.");
-    if (!customerPhone.trim() || customerPhone.length !== 11 || isNaN(customerPhone)) {
-      return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
-    }
-    if (orderType === 'delivery' && !customerAddress.trim()) {
-      return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
-    }
+    if (!customerName.trim()) return alert("اكتب اسمك الكامل.");
+    if (!customerPhone.trim() || customerPhone.length !== 11) return alert("رقم التليفون غير صحيح.");
+    if (orderType === 'delivery' && !customerAddress.trim()) return alert("اكتب العنوان بالتفصيل.");
 
-    const orderId = 'BB-' + Date.now().toString().slice(-4) + Math.floor(10 + Math.random() * 90);
+    const orderId = 'BB-' + Math.floor(1000 + Math.random() * 9000);
+    let message = `🍔 أهلاً بحبح برجر، أوردر جديد!\n🆔 رقم الطلب: #${orderId}\n👤 الاسم: ${customerName}\n📞 التليفون: ${customerPhone}\n`;
+    if (orderType === 'delivery') message += `📍 العنوان: ${customerAddress} (${selectedZone?.name})\n`;
+    message += `\n🛒 الأصناف:\n`;
+    groupedCart.forEach(i => { message += `▪️ ${i.quantity}× ${i.name} (${i.price * i.quantity} ج)\n`; });
+    message += `\n💰 الإجمالي النهائي: ${grandTotal} جنيه`;
 
-    let message = `🍔 أهلاً (بحبح برجر)، عندي أوردر جديد!\n`;
-    message += `🆔 *رقم الأوردر:* #${orderId}\n\n`;
-    message += `👤 *الاسم:* ${customerName}\n`;
-    message += `📞 *التليفون:* ${customerPhone}\n`;
-    message += `📦 *نوع الاستلام:* ${orderType === 'delivery' ? 'توصيل دليفري 🛵' : 'استلام من الفرع 🏪'}\n`;
-    
-    if (orderType === 'delivery') {
-      message += `📍 *العنوان:* ${customerAddress}\n`;
-      if (selectedZone) {
-        message += `🚚 *منطقة التوصيل:* ${selectedZone.name} (${selectedZone.fee} ج)\n`;
-      }
-    }
-
-    message += `\n🛒 *الأصناف المطلوبة:*\n`;
-    groupedCart.forEach((item) => {
-      message += `▪️ ${item.quantity}× ${item.name} — (${item.price * item.quantity} ج)\n`;
-    });
-
-    message += `\n-------------------\n`;
-    message += `🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
-    if (orderType === 'delivery') {
-      message += `🚚 *سعر التوصيل:* ${deliveryFee} ج\n`;
-    }
-    message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
-    
-    const whatsappUrl = `https://wa.me/201042281510?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-
-    setCart([]);
-    setPlacedOrderId(orderId);
+    window.open(`https://wa.me/201042281510?text=${encodeURIComponent(message)}`, '_blank');
+    setCart([]); setPlacedOrderId(orderId);
   };
 
   if (placedOrderId) {
     return (
-      <section className="px-6 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#050304] text-white flex flex-col items-center justify-center">
-        <div className="bg-[#100609] border border-[#25D366] rounded-[2.5rem] p-12 text-center shadow-[0_0_35px_rgba(37,211,102,0.2)] w-full">
-          <div className="text-7xl mb-4">✅</div>
-          <h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
-          <p className="text-xl mb-6 text-zinc-300">رقم الأوردر بتاعك هو:</p>
-          <div className="bg-[#050304] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-2xl inline-block mb-8 tracking-widest shadow-xl">
-            {placedOrderId}
-          </div>
-          <p className="text-sm text-zinc-400 mb-8">تم تحويلك للواتساب لإرسال الطلب للمطعم.</p>
-          <button 
-            onClick={() => setPlacedOrderId(null)} 
-            className="text-white bg-[#FF4500] hover:bg-[#E03D00] px-8 py-4 rounded-2xl font-bold transition shadow-lg"
-          >
-            رجوع للسلة
-          </button>
+      <div className="px-6 py-20 max-w-xl mx-auto min-h-[70vh] flex flex-col items-center justify-center text-center">
+        <div className="bg-[#0A0708] border border-[#25D366] p-10 rounded-3xl shadow-2xl">
+          <div className="text-6xl mb-4">✅</div>
+          <h2 className="text-2xl font-black text-[#25D366] mb-2">تم إرسال طلبك بنجاح!</h2>
+          <p className="text-zinc-400 mb-6">رقم طلبك: <strong className="text-[#FFB800]">{placedOrderId}</strong></p>
+          <button onClick={() => setPlacedOrderId(null)} className="bg-[#FF4500] text-white px-6 py-3 rounded-xl font-bold">العودة للسلة</button>
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="px-6 py-12 max-w-4xl mx-auto min-h-screen bg-[#050304] text-white">
-      <h2 className="text-3xl font-black text-[#FFB800] mb-8 border-b border-[#1A0B0E] pb-4">{t.cart}</h2>
-      
+    <section className="px-6 py-12 max-w-5xl mx-auto min-h-screen bg-[#030203] text-white">
+      <h2 className="text-3xl font-black text-[#FFB800] mb-8 border-b border-zinc-900 pb-4">{t.cart}</h2>
       {cart.length === 0 ? (
-        <div className="border border-[#1F0A0E] bg-[#100609] rounded-[2.5rem] p-16 text-center shadow-2xl">
-          <div className="text-zinc-600 text-6xl mb-4">🛒</div>
-          <h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2>
-          <Link to="/menu" className="text-[#FF4500] underline hover:text-white font-bold">{t.backToMenu}</Link>
+        <div className="bg-[#0A0708] border border-zinc-900 rounded-3xl p-16 text-center">
+          <p className="text-zinc-500 text-lg mb-4">{t.emptyCart}</p>
+          <Link to="/menu" className="text-[#FF4500] underline font-bold">{t.backToMenu}</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] shadow-2xl">
-            <h3 className="text-xl font-bold text-[#FFB800] mb-6">محتويات السلة</h3>
-            <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
-              {groupedCart.map((item, index) => (
-                <div key={index} className="flex justify-between items-center border-b border-[#1F0A0E] pb-4">
+          <div className="bg-[#0A0708] p-6 rounded-3xl border border-zinc-900 space-y-4">
+            <h3 className="font-bold text-lg text-[#FFB800]">محتويات الطلب</h3>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {groupedCart.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center border-b border-zinc-900 pb-3">
                   <div>
-                    <h4 className="text-base font-bold text-white">{item.name}</h4>
-                    <p className="text-[#FFB800] font-bold text-sm">{item.price * item.quantity} ج</p>
+                    <h4 className="font-bold text-sm">{item.name}</h4>
+                    <span className="text-[#FFB800] text-xs font-bold">{item.price * item.quantity} ج</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-[#050304] border border-[#1F0A0E] rounded-2xl px-3 py-1 gap-3">
-                      <button onClick={() => handleDecrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">-</button>
-                      <span className="font-black text-white">{item.quantity}</span>
-                      <button onClick={() => handleIncrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">+</button>
-                    </div>
-                    
-                    <button onClick={() => handleRemoveCompletely(item.name)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20">❌</button>
-                  </div>
+                  <span className="bg-black border border-zinc-800 px-3 py-1 rounded-xl text-xs font-bold">{item.quantity}x</span>
                 </div>
               ))}
             </div>
-            
-            <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
-              <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
-              {orderType === 'delivery' && (
-                <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>
-              )}
+            <div className="pt-4 border-t border-zinc-900 flex justify-between text-lg font-black">
+              <span>{t.total}</span>
+              <span className="text-[#FFB800]">{grandTotal} جنيه</span>
+            </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center">
-            <span className="text-lg font-bold">{t.total}</span>
-            <span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span>
-          </div>
-        </div>
-
-        <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] flex flex-col justify-between shadow-2xl">
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-[#FFB800] mb-2">بيانات التوصيل والاستلام</h3>
-            
-            <div className="grid grid-cols-2 gap-3 mb-2">
-              <button 
-                type="button"
-                onClick={() => setOrderType('delivery')}
-                className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}
-              >
-                🛵 توصيل دليفري
-              </button>
-              <button 
-                type="button"
-                onClick={() => setOrderType('pickup')}
-                className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}
-              >
-                🏪 استلام من الفرع
-              </button>
-          </div>
-
-          <div>
-            <label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label>
-            <input type="text" placeholder="اكتب اسمك..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
-          </div>
-          <div>
-            <label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label>
-            <input type="text" maxLength="11" placeholder="010xxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm tracking-wider" />
-          </div>
-
-          {orderType === 'delivery' && (
-            <>
-              <div>
-                <label className="block text-xs text-zinc-300 mb-1">اختر منطقة التوصيل *</label>
-                <select 
-                  value={selectedZone ? selectedZone._id : ''}
-                  onChange={(e) => {
-                    const zone = deliveryZones.find(z => z._id === e.target.value);
-                    setSelectedZone(zone);
-                  }}
-                  className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer"
-                >
-                  {deliveryZones.map(zone => (
-                    <option key={zone._id} value={zone._id}>
-                      {zone.name} ({zone.fee} جنيه)
-                    </option>
-                  ))}
+          <div className="bg-[#0A0708] p-6 rounded-3xl border border-zinc-900 space-y-4">
+            <h3 className="font-bold text-lg text-[#FFB800]">بيانات التوصيل</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setOrderType('delivery')} className={`py-3 rounded-xl font-bold text-xs ${orderType === 'delivery' ? 'bg-[#FF4500] text-white' : 'bg-black text-zinc-400'}`}>دليفري 🛵</button>
+              <button type="button" onClick={() => setOrderType('pickup')} className={`py-3 rounded-xl font-bold text-xs ${orderType === 'pickup' ? 'bg-[#FF4500] text-white' : 'bg-black text-zinc-400'}`}>استلام من الفرع 🏪</button>
+            </div>
+            <input type="text" placeholder="الاسم الكامل" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white" />
+            <input type="text" maxLength="11" placeholder="رقم الموبايل (11 رقم)" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white" />
+            {orderType === 'delivery' && (
+              <>
+                <select value={selectedZone?._id || ''} onChange={(e) => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white">
+                  {deliveryZones.map(z => <option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>)}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label>
-                <textarea rows="2" placeholder="الشارع، رقم العمارة، الدور..." value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
-              </div>
-            </>
-          )}
+                <textarea placeholder="العنوان بالتفصيل..." rows="2" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white"></textarea>
+              </>
+            )}
+            <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black py-4 rounded-xl text-base shadow-lg">{t.whatsappOrder}</button>
+          </div>
         </div>
-
-        <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black text-lg py-4.5 rounded-2xl hover:bg-[#20bd5a] transition mt-6 flex items-center justify-center gap-2 shadow-2xl cursor-pointer">
-          {t.whatsappOrder}
-        </button>
-      </div>
-    </div>
-  )}
+      )}
     </section>
   );
 };
@@ -1360,56 +694,39 @@ function App() {
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedAddon, setSelectedAddon] = useState(null);
 
-  const t = translations[lang];
-
   const fetchItems = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/items`);
-      let data = await res.json();
-      
-      data = data.map(item => ({
-        ...item,
-        discount: Number(item.discount) || 0
-      }));
-
-      setMenuItems(data);
+      const data = await res.json();
+      setMenuItems(data.map(i => ({ ...i, discount: Number(i.discount) || 0 })));
     } catch (err) {}
   };
 
   const fetchCategories = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/categories`);
-      const data = await res.json();
-      setCategories(data);
+      setCategories(await res.json());
     } catch (err) {}
   };
 
   const fetchSettings = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/settings`);
-      const data = await res.json();
-      setSiteSettings(data);
+      setSiteSettings(await res.json());
     } catch (err) {}
   };
 
-  useEffect(() => {
-    fetchItems();
-    fetchCategories();
-    fetchSettings();
-  }, []);
+  useEffect(() => { fetchItems(); fetchCategories(); fetchSettings(); }, []);
 
   const handleSecretLogoClick = () => {
     setLogoClicks(prev => {
-      const newCount = prev + 1;
-      if (newCount === 3) {
-        const pass = window.prompt("🔒 Admin Password:");
-        if (pass === "15926") {
-          setIsAuthenticated(true);
-          navigate('/secret-admin-dashboard');
-        } else if (pass !== null) { alert("Wrong password!"); }
+      const nc = prev + 1;
+      if (nc === 3) {
+        const pass = window.prompt("🔒 كلمة مرور الإدارة:");
+        if (pass === "15926") { setIsAuthenticated(true); navigate('/secret-admin-dashboard'); }
         return 0;
       }
-      return newCount;
+      return nc;
     });
   };
 
@@ -1419,98 +736,61 @@ function App() {
 
   const handleOpenBox = (boxItem) => {
     setActiveBox(boxItem);
-    const initialSelections = {};
-    if (boxItem.boxItems && boxItem.boxItems.length > 0) {
-      boxItem.boxItems.forEach(b => { initialSelections[b.name] = 0; });
-    }
-    setBoxSelections(initialSelections);
+    const init = {};
+    boxItem.boxItems?.forEach(b => { init[b.name] = 0; });
+    setBoxSelections(init);
     setIsBoxModalOpen(true);
   };
 
   const totalSelected = Object.values(boxSelections).reduce((a, b) => a + b, 0);
 
-  const handleUpdateSelection = (name, operation) => {
-    if (operation === 'add' && totalSelected < activeBox.maxItems) {
-      setBoxSelections({ ...boxSelections, [name]: boxSelections[name] + 1 });
-    } else if (operation === 'remove' && boxSelections[name] > 0) {
-      setBoxSelections({ ...boxSelections, [name]: boxSelections[name] - 1 });
-    }
-  };
-
   const handleAddBoxToCart = () => {
     if (totalSelected === activeBox.maxItems) {
-      const detailsStr = Object.entries(boxSelections)
-        .filter(([_, count]) => count > 0)
-        .map(([name, count]) => `${name}: ${count}`)
-        .join(', ');
-
-      const customBoxItem = { ...activeBox, name: `${activeBox.name} (${detailsStr})` };
-      setCart([...cart, customBoxItem]);
+      const details = Object.entries(boxSelections).filter(([_, c]) => c > 0).map(([n, c]) => `${n}: ${c}`).join(', ');
+      setCart([...cart, { ...activeBox, name: `${activeBox.name} (${details})` }]);
       setIsBoxModalOpen(false);
     }
   };
 
   const handleOpenItemDetailsModal = (item) => {
     const finalPrice = getDiscountedPrice(item.price, item.discount);
-    const hasSizes = item.sizes && item.sizes.length > 0;
-    const hasAddons = item.addons && item.addons.length > 0;
-    if (hasSizes || hasAddons) {
+    if (item.sizes?.length > 0 || item.addons?.length > 0) {
       setSelectedItemDetail(item);
-      setSelectedSize(hasSizes ? item.sizes[0] : null);
+      setSelectedSize(item.sizes?.[0] || null);
       setSelectedAddon(null);
     } else {
       setCart([...cart, { ...item, price: finalPrice }]);
     }
   };
 
-  const basePrice = selectedSize ? selectedSize.price : (selectedItemDetail ? selectedItemDetail.price : 0);
-  const currentItemTotalPrice = getDiscountedPrice(basePrice, selectedItemDetail?.discount) + (selectedAddon ? selectedAddon.price : 0);
-
-  const handleAddCustomizedItemToCart = () => {
-    if (!selectedItemDetail) return;
-    let itemName = selectedItemDetail.name;
-    if (selectedSize) itemName += ` (${selectedSize.name})`;
-    if (selectedAddon) itemName += ` - ${selectedAddon.name}`;
-
-    const finalItem = { ...selectedItemDetail, name: itemName, price: currentItemTotalPrice };
-    setCart([...cart, finalItem]);
-    setSelectedItemDetail(null); setSelectedSize(null); setSelectedAddon(null);
-  };
+  const basePrice = selectedSize ? selectedSize.price : (selectedItemDetail?.price || 0);
+  const currentItemTotalPrice = getDiscountedPrice(basePrice, selectedItemDetail?.discount) + (selectedAddon?.price || 0);
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#050304] text-white font-sans flex flex-col justify-between relative selection:bg-[#FF4500] selection:text-white">
-      {/* النافبار العائمة العصرية المبتكرة */}
-      <nav className="bg-[#100609]/80 border-b border-[#FF4500]/30 sticky top-0 z-50 backdrop-blur-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-          <Link to="/" className="flex items-center cursor-pointer select-none">
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#030203] text-white font-sans flex flex-col justify-between selection:bg-[#FF4500] selection:text-white">
+      {/* النافبار العصرية العائمة الجديدة تماماً */}
+      <nav className="bg-[#0A0708]/90 border-b border-zinc-900 sticky top-0 z-50 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" onClick={handleSecretLogoClick} className="flex items-center">
             {siteSettings.logoImage ? (
-              <img src={siteSettings.logoImage} alt="Logo" style={{ height: '70px', width: 'auto' }} className="object-contain hover:scale-105 transition duration-300" />
+              <img src={siteSettings.logoImage} alt="Logo" className="h-12 w-auto object-contain" />
             ) : (
-              <span className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF4500] to-[#FFB800] tracking-tighter">Bahbah Burger</span>
+              <span className="text-2xl font-black text-[#FF4500]">Bahbah Burger</span>
             )}
           </Link>
-          
-          <ul className="hidden md:flex gap-4 text-base font-bold">
-            <li><Link to="/" className="bg-[#050304] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#1F0A0E] px-7 py-3 rounded-2xl transition shadow-md">{t.home}</Link></li>
-            <li><Link to="/menu" className="bg-[#050304] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#1F0A0E] px-7 py-3 rounded-2xl transition shadow-md">{t.menu}</Link></li>
-          </ul>
+
+          <div className="hidden md:flex items-center gap-8 font-bold text-sm">
+            <Link to="/" className="hover:text-[#FF4500] transition">الرئيسية</Link>
+            <Link to="/menu" className="hover:text-[#FF4500] transition">المنيو</Link>
+          </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col text-center border-l border-[#1F0A0E] pl-4 ml-2">
-              <span className="text-[#FF4500] text-[10px] font-black tracking-widest">{t.hotlineText}</span>
-              <span className="text-white font-bold text-sm tracking-wider">01042281510</span>
-            </div>
-            
-            <button 
-              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} 
-              className="bg-[#050304] text-zinc-300 border border-[#1F0A0E] px-4 py-2.5 rounded-2xl text-sm font-extrabold hover:text-white hover:border-[#FF4500] transition"
-            >
+            <button onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="bg-black border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-bold hover:border-[#FF4500]">
               {lang === 'ar' ? 'EN' : 'عربي'}
             </button>
-
-            <Link to="/cart" className="flex items-center gap-2.5 bg-gradient-to-r from-[#FF4500] to-[#FF6B35] text-white px-7 py-3.5 rounded-2xl font-black hover:scale-105 transition shadow-[0_0_25px_rgba(255,69,0,0.5)]">
-              <span>🛒 {t.cart}</span>
-              <span className="bg-[#050304] text-[#FFB800] px-2.5 py-0.5 rounded-full text-xs font-black">{cart.length}</span>
+            <Link to="/cart" className="bg-[#FF4500] text-white px-5 py-2.5 rounded-2xl font-black text-sm flex items-center gap-2 shadow-lg shadow-[#FF4500]/20">
+              <span>🛒 السلة</span>
+              <span className="bg-black text-[#FFB800] px-2 py-0.5 rounded-full text-xs">{cart.length}</span>
             </Link>
           </div>
         </div>
@@ -1526,113 +806,52 @@ function App() {
       </div>
 
       {selectedItemDetail && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-          <div className="bg-[#100609] border border-[#FF4500]/50 rounded-[2.5rem] w-full max-w-lg p-8 relative shadow-2xl">
-            <button onClick={() => setSelectedItemDetail(null)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
-            <h3 className="text-3xl font-black text-white mb-6">{selectedItemDetail.name}</h3>
-              
-            {selectedItemDetail.sizes && selectedItemDetail.sizes.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-extrabold text-[#FFB800]">اختر الحجم:</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {selectedItemDetail.sizes.map((sz, idx) => {
-                    const finalSzPrice = getDiscountedPrice(sz.price, selectedItemDetail.discount);
-                    return (
-                      <div key={idx} onClick={() => setSelectedSize(sz)} className={`p-4 rounded-2xl border cursor-pointer flex flex-col items-center justify-center transition ${selectedSize === sz ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800] shadow-lg' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                        <span className="font-bold">{sz.name}</span>
-                        {selectedItemDetail.discount > 0 ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-zinc-500 line-through font-bold">{sz.price} ج</span>
-                            <span className="text-sm font-black text-[#FFB800]">{finalSzPrice} ج</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-black text-[#FFB800]">{sz.price} ج</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {selectedItemDetail.addons && selectedItemDetail.addons.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-extrabold text-[#FFB800]">✨ الإضافات الاختيارية:</h4>
-                <div className="flex flex-col gap-3">
-                    
-                  <label className={`p-4 rounded-2xl border cursor-pointer flex items-center justify-between transition ${!selectedAddon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="radio" name="addon" checked={!selectedAddon} onChange={() => setSelectedAddon(null)} className="hidden" />
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!selectedAddon ? 'border-[#FF4500]' : 'border-[#1F0A0E]'}`}>
-                        {!selectedAddon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
-                      </div>
-                      <span className="font-bold text-sm">بدون إضافات</span>
-                    </div>
-                    <span className="text-sm font-black">+0 ج</span>
-                  </label>
-
-                  {selectedItemDetail.addons.map((addon, idx) => (
-                    <label key={idx} className={`p-4 rounded-2xl border cursor-pointer flex items-center justify-between transition ${selectedAddon === addon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="addon" checked={selectedAddon === addon} onChange={() => setSelectedAddon(addon)} className="hidden" />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedAddon === addon ? 'border-[#FF4500]' : 'border-[#1F0A0E]'}`}>
-                          {selectedAddon === addon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
-                        </div>
-                        <span className="font-bold text-sm">{addon.name}</span>
-                      </div>
-                      <span className="text-sm font-black text-[#FFB800]">+{addon.price} ج</span>
-                    </label>
-                  ))}
-
-                </div>
-              </div>
-            )}
-            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#FF4500] text-white font-black py-4 rounded-2xl hover:bg-[#E03D00] transition text-lg shadow-2xl">
-              أضف للسلة • {currentItemTotalPrice} ج
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0A0708] border border-zinc-800 rounded-3xl max-w-md w-full p-6 relative">
+            <button onClick={() => setSelectedItemDetail(null)} className="absolute top-4 left-4 text-red-400 font-bold">✕</button>
+            <h3 className="text-xl font-black mb-4">{selectedItemDetail.name}</h3>
+            <button onClick={() => {
+              setCart([...cart, { ...selectedItemDetail, name: selectedItemDetail.name, price: currentItemTotalPrice }]);
+              setSelectedItemDetail(null);
+            }} className="w-full bg-[#FF4500] text-white py-3 rounded-xl font-bold mt-4">
+              إضافة للسلة • {currentItemTotalPrice} ج
             </button>
           </div>
         </div>
       )}
 
       {isBoxModalOpen && activeBox && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-          <div className="bg-[#100609] border border-[#FF4500]/50 rounded-[2.5rem] w-full max-w-lg p-8 relative shadow-2xl">
-            <button onClick={() => setIsBoxModalOpen(false)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
-              
-            <h3 className="text-3xl font-black text-[#FFB800] mb-1">{activeBox.name}</h3>
-            <p className="text-zinc-300 mb-6 border-b border-[#1F0A0E] pb-4 text-sm">
-              اختر {activeBox.maxItems} أصناف. 
-              <span className={`block mt-1 font-extrabold text-base ${totalSelected === activeBox.maxItems ? 'text-green-400' : 'text-[#FFB800]'}`}>
-                تم اختيار: ({totalSelected} / {activeBox.maxItems})
-              </span>
-            </p>
-
-            <div className="space-y-4 mb-8 max-h-[50vh] overflow-y-auto pr-1">
-              {activeBox.boxItems && activeBox.boxItems.map((bItem, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
-                  <span className="font-bold text-base text-white">{bItem.name}</span>
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => handleUpdateSelection(bItem.name, 'remove')} className="w-10 h-10 bg-[#100609] rounded-xl text-[#FF4500] font-black text-lg hover:bg-[#FF4500] hover:text-white transition">-</button>
-                    <span className="text-xl w-6 text-center font-black text-white">{boxSelections[bItem.name] || 0}</span>
-                    <button onClick={() => handleUpdateSelection(bItem.name, 'add')} className="w-10 h-10 bg-[#100609] rounded-xl text-[#FF4500] font-black text-lg hover:bg-[#FF4500] hover:text-white transition">+</button>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0A0708] border border-zinc-800 rounded-3xl max-w-md w-full p-6 relative">
+            <button onClick={() => setIsBoxModalOpen(false)} className="absolute top-4 left-4 text-red-400 font-bold">✕</button>
+            <h3 className="text-xl font-black text-[#FFB800] mb-2">{activeBox.name}</h3>
+            <p className="text-xs text-zinc-400 mb-4">اختر {activeBox.maxItems} أصناف (تم اختيار: {totalSelected})</p>
+            <div className="space-y-3 mb-6 max-h-48 overflow-y-auto">
+              {activeBox.boxItems?.map((b, i) => (
+                <div key={i} className="flex justify-between items-center bg-black p-3 rounded-xl text-sm">
+                  <span>{b.name}</span>
+                  <div className="flex gap-3 items-center">
+                    <button onClick={() => setBoxSelections({ ...boxSelections, [b.name]: Math.max(0, boxSelections[b.name] - 1) })} className="text-[#FF4500] font-bold text-lg">-</button>
+                    <span>{boxSelections[b.name] || 0}</span>
+                    <button onClick={() => {
+                      if (totalSelected < activeBox.maxItems) setBoxSelections({ ...boxSelections, [b.name]: (boxSelections[b.name] || 0) + 1 });
+                    }} className="text-[#FF4500] font-bold text-lg">+</button>
                   </div>
                 </div>
               ))}
             </div>
-
-            <button onClick={handleAddBoxToCart} disabled={totalSelected !== activeBox.maxItems} className={`w-full py-4 rounded-2xl font-black text-lg transition ${totalSelected === activeBox.maxItems ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] cursor-pointer shadow-2xl' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}>
-              Add to Cart
+            <button onClick={handleAddBoxToCart} disabled={totalSelected !== activeBox.maxItems} className={`w-full py-3 rounded-xl font-bold ${totalSelected === activeBox.maxItems ? 'bg-[#FF4500] text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+              تأكيد وإضافة للسلة
             </button>
           </div>
         </div>
       )}
 
-      <footer onClick={handleSecretLogoClick} className="bg-[#100609] border-t border-[#1F0A0E] mt-24 text-zinc-400 py-8 text-center text-xs cursor-default select-none">
-        جميع الحقوق محفوظة © 2026 بحبح برجر — Bahbah Burger
+      <footer className="bg-[#0A0708] border-t border-zinc-900 py-6 text-center text-xs text-zinc-500">
+        جميع الحقوق محفوظة © 2026 بحبح برجر - Bahbah Burger
       </footer>
     </div>
   );
 }
 
-App;
 export default App;
