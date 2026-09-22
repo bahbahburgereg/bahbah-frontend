@@ -9,9 +9,9 @@ const translations = {
     cart: "السلة",
     admin: "الإدارة",
     all: "الكل",
-    orderNow: "اطلب أكلتك دلوقتي 🍔",
-    ourMenu: "قائمة العظمة (المنيو)",
-    bestOffers: "العروض النارية 🔥",
+    orderNow: "اطلب دلوقتي 🍔",
+    ourMenu: " (المنيو)",
+    bestOffers: "العروض  🔥",
     seeMore: "عرض الكل ➔",
     hotlineText: "الخط الساخن",
     rights: "جميع الحقوق محفوظة © 2026 بحبح برجر - Bahbah Burger",
@@ -77,22 +77,21 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
   return (
     <div className="bg-[#050505] text-white overflow-hidden">
       {/* HERO */}
-      <section className="relative min-h-[580px] md:min-h-[calc(100vh-78px)] flex items-center overflow-hidden border-b border-[#8d1710] py-8 md:py-0">
+      <section className="relative min-h-[580px] md:min-h-[calc(100vh-78px)] flex items-center overflow-hidden border-b border-[#8d1710] py-8 md:py-0" dir="ltr">
         <div className="absolute inset-0 bg-[#050505]" />
-        {/* تم تعديل الخلفية هنا عشان تظهر كاملة وواضحة على الموبايل واللاب توب من غير ما تتقص */}
         <div
-          className="absolute inset-0 md:inset-y-0 md:right-0 w-full md:w-[67%] bg-cover bg-center md:bg-right opacity-60 md:opacity-100"
+          className="absolute inset-y-0 right-0 w-full md:w-[67%] bg-cover bg-center opacity-30 md:opacity-100"
           style={{
             backgroundImage: `url(${featured?.image || siteSettings.heroImage || ''})`,
           }}
         />
-        <div className="absolute inset-y-0 right-0 w-full md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/90 md:to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-full md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/95 md:to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(255,65,10,.28),transparent_34%)]" />
         <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#e62c16]" />
         <div className="absolute left-0 top-0 w-64 h-64 bg-[#e62c16]/20 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-[1500px] mx-auto px-6 md:px-12 flex items-center">
-          <div className="w-full md:w-[55%] py-4 md:py-20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="w-full md:w-[55%] py-4 md:py-20">
             <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-xs md:text-base mb-2">
               BIGGER · JUICIER · HOTTER
             </div>
@@ -106,11 +105,12 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
               </div>
             </div>
 
+            {/* تم توزيع المسافات هنا عشان الكلام ميبقاش ملزق ومفرود بشكل شيك */}
             <div className="mt-3 md:mt-4 text-[#ef321b] italic font-black text-lg sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
               Smash Burgers & Nashville Chicken
             </div>
 
-            <p className="mt-3 md:mt-5 text-white/90 text-sm sm:text-base md:text-xl font-bold max-w-md leading-relaxed">
+            <p className="mt-3 md:mt-5 text-white/90 text-sm sm:text-base md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               {lang === 'ar'
                 ? 'مش مجرد برجر.. ده بحبح! 🔥'
                 : "Not just a burger... This is Bahbah! 🔥"}
@@ -118,6 +118,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
 
             <Link
               to="/menu"
+              dir={lang === 'ar' ? 'rtl' : 'ltr'}
               className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
               style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}
             >
@@ -160,7 +161,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
             <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">
               MENU
             </div>
-            <div className="mt-5 text-xl font-black">قائمة العظمة</div>
+            <div className="mt-5 text-xl font-black"></div>
             <p className="mt-4 text-white/55 text-sm leading-7">
               من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.
             </p>
@@ -1482,6 +1483,7 @@ function App() {
             </Link>
             <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">{t.menu}</Link>
             <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">{lang === 'ar' ? 'العروض' : 'Offers'}</Link>
+            <a href="#footer" className="py-7 hover:text-[#ef321b] transition">{lang === 'ar' ? 'عن بحبح' : 'About'}</a>
           </div>
 
           <div className="flex items-center gap-4">
