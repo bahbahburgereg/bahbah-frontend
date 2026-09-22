@@ -76,36 +76,41 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
 
   return (
     <div className="bg-[#050505] text-white overflow-hidden">
-      {/* HERO — ضفنا هنا dir="ltr" عشان نمنع تداخل العناصر في اليمين */}
+      {/* HERO */}
       <section className="relative min-h-[720px] md:min-h-[calc(100vh-78px)] flex items-stretch overflow-hidden border-b border-[#8d1710]" dir="ltr">
         <div className="absolute inset-0 bg-[#050505]" />
         <div
-          className="absolute inset-y-0 right-0 w-[72%] md:w-[67%] bg-cover bg-center"
+          className="absolute inset-y-0 right-0 w-[85%] md:w-[67%] bg-cover bg-center opacity-40 md:opacity-100"
           style={{
             backgroundImage: `url(${featured?.image || siteSettings.heroImage || ''})`,
           }}
         />
-        <div className="absolute inset-y-0 right-0 w-[78%] md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/35 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-full md:w-[72%] bg-gradient-to-r from-[#050505] via-[#050505]/90 md:to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_40%,rgba(255,65,10,.28),transparent_34%)]" />
         <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#e62c16]" />
         <div className="absolute left-0 top-0 w-64 h-64 bg-[#e62c16]/20 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-[1500px] mx-auto px-6 md:px-12 flex items-center">
-          <div className="w-full md:w-[48%] py-24 md:py-20">
-            <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-sm md:text-base mb-4">
+          <div className="w-full md:w-[55%] py-20 md:py-20">
+            <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-xs md:text-base mb-3">
               BIGGER · JUICIER · HOTTER
             </div>
 
-            <div className="leading-[0.78] uppercase italic font-black tracking-[-0.055em]">
-              <div className="text-[58px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-white drop-shadow-2xl">
+            <div className="leading-[0.82] uppercase italic font-black tracking-[-0.055em]">
+              <div className="text-[48px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-white drop-shadow-2xl">
                 THE FIRE
               </div>
-              <div className="text-[58px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-[#ef321b] -mt-1 drop-shadow-2xl">
+              <div className="text-[48px] sm:text-[82px] md:text-[104px] lg:text-[122px] text-[#ef321b] -mt-1 drop-shadow-2xl">
                 IS COMING
               </div>
             </div>
 
-            <p className="mt-8 text-white/90 text-lg md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+            {/* تم تنسيق ظهور السماش والناشفيل تشيكن بوضوح لكل الشاشات بدون تداخل */}
+            <div className="mt-4 text-[#ef321b] italic font-black text-xl sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
+              Smash Burgers & Nashville Chicken
+            </div>
+
+            <p className="mt-5 text-white/90 text-base md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               {lang === 'ar'
                 ? 'مش مجرد برجر.. ده بحبح! 🔥'
                 : "Not just a burger... This is Bahbah! 🔥"}
@@ -114,24 +119,19 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
             <Link
               to="/menu"
               dir={lang === 'ar' ? 'rtl' : 'ltr'}
-              className="inline-flex items-center justify-center gap-5 mt-8 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
+              className="inline-flex items-center justify-center gap-5 mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)]"
               style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}
             >
               {t.orderNow}
               <span className="text-xl leading-none">→</span>
             </Link>
 
-            <div className="mt-10 flex items-center gap-3 text-white/55 text-sm">
+            <div className="mt-8 flex items-center gap-3 text-white/55 text-sm">
               <span className="h-8 w-px bg-white/40" />
               <span>Scroll Down</span>
             </div>
           </div>
 
-                <div className="hidden md:block absolute right-8 top-24 text-right z-20">
-        <div className="text-[#ef321b] italic text-3xl lg:text-5xl leading-none drop-shadow-lg" style={{fontFamily:'cursive'}}>
-          Smash Burgers<br />Nashville Chicken
-        </div>
-      </div>
           <div className="absolute bottom-10 right-8 md:right-14 flex gap-3 z-20">
             <span className="w-8 h-1 bg-[#ef321b]" />
             <span className="w-8 h-1 bg-white/80" />
@@ -854,243 +854,243 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
                 </button>
                 <button onClick={() => handleEditCategoryClick(cat)} className="text-[#FFB800] bg-[#FF4500]/20 px-3.5 py-1.5 rounded-xl text-xs font-bold">✏️</button>
                 <button onClick={() => handleDeleteCategory(cat._id)} className="text-red-400 bg-red-500/10 px-3.5 py-1.5 rounded-xl text-xs font-bold">✕</button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  
-    <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
-      <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Item Name *</label>
-        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Name" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Price *</label>
-        <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Price" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم % (اختياري)</label>
-        <input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" />
-      </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Category *</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
-          {categories.map(cat => (
-            <option key={cat._id} value={cat.name}>{cat.name}</option>
           ))}
-        </select>
+        </div>
       </div>
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Image</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" />
-      </div>
-
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
-        <input 
-          type="checkbox" 
-          id="isOfferCheck" 
-          checked={isOffer} 
-          onChange={(e) => setIsOffer(e.target.checked)}
-          className="w-5 h-5 accent-[#FF4500] cursor-pointer" 
-        />
-        <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">
-          🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)
-        </label>
-      </div>
-
-      <div>
-        <label className="block text-sm mb-2 text-zinc-300">Type</label>
-        <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
-          <option value="normal">Normal (سندوتش أو وجبة عادية)</option>
-          <option value="box">Box (بوكس مخصص قابل للاختيار)</option>
-        </select>
-      </div>
-
-      {type === 'box' && (
+  
+      <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
+        <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
         <div>
-          <label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label>
-          <input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" placeholder="3" />
+          <label className="block text-sm mb-2 text-zinc-300">Item Name *</label>
+          <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Name" />
         </div>
-      )}
-
-      {type === 'box' && (
-        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم المكون" 
-              value={boxItemNameInput} 
-              onChange={(e) => setBoxItemNameInput(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddBoxItemName} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة
-            </button>
-          </div>
-
-          {boxItemsList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {boxItemsList.map((bItem, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span className="text-[#FFB800] font-bold">{bItem.name}</span>
-                  <button type="button" onClick={() => handleRemoveBoxItemName(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div>
+          <label className="block text-sm mb-2 text-zinc-300">Price *</label>
+          <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Price" />
         </div>
-      )}
+        <div>
+          <label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم % (اختياري)</label>
+          <input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" />
+        </div>
+        <div>
+          <label className="block text-sm mb-2 text-zinc-300">Category *</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
+            {categories.map(cat => (
+              <option key={cat._id} value={cat.name}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm mb-2 text-zinc-300">Image</label>
+          <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" />
+        </div>
 
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم الحجم (مثل: كبير)" 
-              value={sizeNameInput} 
-              onChange={(e) => setSizeNameInput(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <input 
-              type="number" 
-              placeholder="السعر (مثل: 400)" 
-              value={sizePriceInput} 
-              onChange={(e) => setSizePriceInput(e.target.value)}
-              className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddSize} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة حجم
-            </button>
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
+          <input 
+            type="checkbox" 
+            id="isOfferCheck" 
+            checked={isOffer} 
+            onChange={(e) => setIsOffer(e.target.checked)}
+            className="w-5 h-5 accent-[#FF4500] cursor-pointer" 
+          />
+          <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">
+            🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm mb-2 text-zinc-300">Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">
+            <option value="normal">Normal (سندوتش أو وجبة عادية)</option>
+            <option value="box">Box (بوكس مخصص قابل للاختيار)</option>
+          </select>
+        </div>
+
+        {type === 'box' && (
+          <div>
+            <label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label>
+            <input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" placeholder="3" />
           </div>
+        )}
 
-          {sizesList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {sizesList.map((sz, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span className="text-[#FFB800] font-bold">{sz.name} — {sz.price} ج</span>
-                  <button type="button" onClick={() => handleRemoveSize(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
+        {type === 'box' && (
+          <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
+            <div className="flex gap-2 mb-3">
+              <input 
+                type="text" 
+                placeholder="اسم المكون" 
+                value={boxItemNameInput} 
+                onChange={(e) => setBoxItemNameInput(e.target.value)}
+                className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
+              />
+              <button type="button" onClick={handleAddBoxItemName} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
+                ➕ إضافة
+              </button>
             </div>
-          )}
-      </div>
 
-      <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text" 
-              placeholder="اسم الإضافة (مثلاً: إضافة جبنة)" 
-              value={addonName} 
-              onChange={(e) => setAddonName(e.target.value)}
-              className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <input 
-              type="number" 
-              placeholder="السعر (مثلاً: 10)" 
-              value={addonPrice} 
-              onChange={(e) => setAddonPrice(e.target.value)}
-              className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
-            />
-            <button type="button" onClick={handleAddAddon} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
-              ➕ إضافة
-            </button>
-          </div>
-
-          {addonsList.length > 0 && (
-            <div className="space-y-2 mt-2">
-              {addonsList.map((addon, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
-                  <span>{addon.name} (+{addon.price} ج)</span>
-                  <button type="button" onClick={() => handleRemoveAddon(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
-      </div>
-
-      <div className="md:col-span-2">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
-          <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Description..." />
-      </div>
-
-      <div className="md:col-span-2 mt-4 flex gap-4">
-          <button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">
-            {editId ? t.save : t.addItem}
-          </button>
-          {editId && (
-            <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">
-              {t.cancel}
-            </button>
-          )}
-      </div>
-    </form>
-
-    <div className="space-y-12 mt-12">
-      <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
-        
-      {categories.map(cat => {
-        const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
-          
-        return (
-          <div key={cat._id} className="bg-[#100609] border border-[#1F0A0E] rounded-[2.5rem] p-8 shadow-2xl">
-            <h4 className="text-xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-4">
-              📁 قسم: {cat.name} ({catItems.length} صنف)
-            </h4>
-
-            {catItems.length === 0 ? (
-              <p className="text-zinc-500 text-sm">لا توجد أصناف في هذا القسم حالياً.</p>
-            ) : (
-              <div className="space-y-4">
-                {catItems.map((item, itemIndex) => (
-                  <div key={item._id} className="bg-[#050304] border border-[#1F0A0E] p-4.5 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-zinc-500 font-bold text-sm">#{itemIndex + 1}</span>
-                      <img src={item.image} alt="" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
-                      <div>
-                        <h4 className="font-bold text-white">
-                          {item.name} 
-                          {item.discount > 0 && <span className="bg-[#FF4500] text-white text-xs px-2.5 py-0.5 rounded-lg font-black mr-2">خصم {item.discount}%</span>}
-                        </h4>
-                        <span className="text-xs text-[#FFB800]">
-                          {item.discount > 0 ? `${getDiscountedPrice(item.price, item.discount)} ج (بدل ${item.price})` : `${item.price} ج`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => handleMoveItem(itemIndex, 'up', catItems)}
-                        disabled={itemIndex === 0}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === 0 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                      >
-                        ▲
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleMoveItem(itemIndex, 'down', catItems)}
-                        disabled={itemIndex === catItems.length - 1}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === catItems.length - 1 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
-                      >
-                        ▼
-                      </button>
-                      <button onClick={() => handleEditItemClick(item)} className="text-[#FFB800] bg-[#FF4500]/20 px-4 py-2 rounded-xl text-xs font-bold">✏️ تعديل</button>
-                      <button onClick={() => handleDeleteItem(item._id)} className="text-red-400 bg-red-500/10 px-4 py-2 rounded-xl text-xs font-bold">✕ مسح</button>
-                    </div>
+            {boxItemsList.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {boxItemsList.map((bItem, index) => (
+                  <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
+                    <span className="text-[#FFB800] font-bold">{bItem.name}</span>
+                    <button type="button" onClick={() => handleRemoveBoxItemName(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        );
-      })}
-    </div>
-  </section>
-);
+        )}
+
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
+            <div className="flex gap-2 mb-3">
+              <input 
+                type="text" 
+                placeholder="اسم الحجم (مثل: كبير)" 
+                value={sizeNameInput} 
+                onChange={(e) => setSizeNameInput(e.target.value)}
+                className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
+              />
+              <input 
+                type="number" 
+                placeholder="السعر (مثل: 400)" 
+                value={sizePriceInput} 
+                onChange={(e) => setSizePriceInput(e.target.value)}
+                className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
+              />
+              <button type="button" onClick={handleAddSize} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
+                ➕ إضافة حجم
+              </button>
+            </div>
+
+            {sizesList.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {sizesList.map((sz, index) => (
+                  <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
+                    <span className="text-[#FFB800] font-bold">{sz.name} — {sz.price} ج</span>
+                    <button type="button" onClick={() => handleRemoveSize(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
+            <div className="flex gap-2 mb-3">
+              <input 
+                type="text" 
+                placeholder="اسم الإضافة (مثلاً: إضافة جبنة)" 
+                value={addonName} 
+                onChange={(e) => setAddonName(e.target.value)}
+                className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
+              />
+              <input 
+                type="number" 
+                placeholder="السعر (مثلاً: 10)" 
+                value={addonPrice} 
+                onChange={(e) => setAddonPrice(e.target.value)}
+                className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm"
+              />
+              <button type="button" onClick={handleAddAddon} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm hover:bg-[#E03D00]">
+                ➕ إضافة
+              </button>
+            </div>
+
+            {addonsList.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {addonsList.map((addon, index) => (
+                  <div key={index} className="flex justify-between items-center bg-[#050304] px-4 py-2.5 rounded-xl border border-[#1F0A0E] text-sm">
+                    <span>{addon.name} (+{addon.price} ج)</span>
+                    <button type="button" onClick={() => handleRemoveAddon(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        <div className="md:col-span-2">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
+            <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Description..." />
+        </div>
+
+        <div className="md:col-span-2 mt-4 flex gap-4">
+            <button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">
+              {editId ? t.save : t.addItem}
+            </button>
+            {editId && (
+              <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">
+                {t.cancel}
+              </button>
+            )}
+        </div>
+      </form>
+
+      <div className="space-y-12 mt-12">
+        <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
+          
+        {categories.map(cat => {
+          const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
+          
+          return (
+            <div key={cat._id} className="bg-[#100609] border border-[#1F0A0E] rounded-[2.5rem] p-8 shadow-2xl">
+              <h4 className="text-xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-4">
+                📁 قسم: {cat.name} ({catItems.length} صنف)
+              </h4>
+
+              {catItems.length === 0 ? (
+                <p className="text-zinc-500 text-sm">لا توجد أصناف في هذا القسم حالياً.</p>
+              ) : (
+                <div className="space-y-4">
+                  {catItems.map((item, itemIndex) => (
+                    <div key={item._id} className="bg-[#050304] border border-[#1F0A0E] p-4.5 rounded-2xl flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-zinc-500 font-bold text-sm">#{itemIndex + 1}</span>
+                        <img src={item.image} alt="" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
+                        <div>
+                          <h4 className="font-bold text-white">
+                            {item.name} 
+                            {item.discount > 0 && <span className="bg-[#FF4500] text-white text-xs px-2.5 py-0.5 rounded-lg font-black mr-2">خصم {item.discount}%</span>}
+                          </h4>
+                          <span className="text-xs text-[#FFB800]">
+                            {item.discount > 0 ? `${getDiscountedPrice(item.price, item.discount)} ج (بدل ${item.price})` : `${item.price} ج`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => handleMoveItem(itemIndex, 'up', catItems)}
+                          disabled={itemIndex === 0}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === 0 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
+                        >
+                          ▲
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => handleMoveItem(itemIndex, 'down', catItems)}
+                          disabled={itemIndex === catItems.length - 1}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold ${itemIndex === catItems.length - 1 ? 'bg-[#100609] text-zinc-600 cursor-not-allowed' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}
+                        >
+                          ▼
+                        </button>
+                        <button onClick={() => handleEditItemClick(item)} className="text-[#FFB800] bg-[#FF4500]/20 px-4 py-2 rounded-xl text-xs font-bold">✏️ تعديل</button>
+                        <button onClick={() => handleDeleteItem(item._id)} className="text-red-400 bg-red-500/10 px-4 py-2 rounded-xl text-xs font-bold">✕ مسح</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
 };
 
 // ================= 4. صفحة السلة =================
@@ -1515,7 +1515,7 @@ function App() {
           <div className="bg-[#100609] border border-[#FF4500]/50 rounded-[2.5rem] w-full max-w-lg p-8 relative shadow-2xl">
             <button onClick={() => setSelectedItemDetail(null)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
             <h3 className="text-3xl font-black text-white mb-6">{selectedItemDetail.name}</h3>
-              
+            
             {selectedItemDetail.sizes && selectedItemDetail.sizes.length > 0 && (
               <div className="mb-6 space-y-3">
                 <h4 className="text-sm font-extrabold text-[#FFB800]">اختر الحجم:</h4>
@@ -1583,7 +1583,7 @@ function App() {
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
           <div className="bg-[#100609] border border-[#FF4500]/50 rounded-[2.5rem] w-full max-w-lg p-8 relative shadow-2xl">
             <button onClick={() => setIsBoxModalOpen(false)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
-              
+            
             <h3 className="text-3xl font-black text-[#FFB800] mb-1">{activeBox.name}</h3>
             <p className="text-zinc-300 mb-6 border-b border-[#1F0A0E] pb-4 text-sm">
               اختر {activeBox.maxItems} أصناف. 
