@@ -9,9 +9,9 @@ const translations = {
     cart: "السلة",
     admin: "الإدارة",
     all: "الكل",
-    orderNow: "اطلب دلوقتي 🍔",
-    ourMenu: " (المنيو)",
-    bestOffers: "العروض  🔥",
+    orderNow: "اطلب  دلوقتي 🍔",
+    ourMenu: "  (المنيو)",
+    bestOffers: "العروض النارية 🔥",
     seeMore: "عرض الكل ➔",
     hotlineText: "الخط الساخن",
     rights: "جميع الحقوق محفوظة © 2026 بحبح برجر - Bahbah Burger",
@@ -91,22 +91,22 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
         <div className="absolute left-0 top-0 w-64 h-64 bg-[#e62c16]/20 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-[1500px] mx-auto px-6 md:px-12 flex items-center">
-          <div className="w-full md:w-[55%] py-4 md:py-20">
+          <div className="w-full md:w-[60%] py-4 md:py-20">
             <div className="font-black italic uppercase tracking-[0.22em] text-[#ff4a22] text-xs md:text-base mb-2">
               BIGGER · JUICIER · HOTTER
             </div>
 
-            <div className="leading-[0.85] uppercase italic font-black tracking-[-0.055em]">
-              <div className="text-[38px] sm:text-[75px] md:text-[104px] lg:text-[122px] text-white drop-shadow-2xl">
+            {/* تم إضافة الميلان (Rotation) والخط العريض لتكون مطابقة لنفس شكل التصميم */}
+            <div className="leading-[0.82] uppercase italic font-black tracking-[-0.05em] transform -rotate-6 origin-left my-4">
+              <div className="text-[38px] sm:text-[72px] md:text-[98px] lg:text-[115px] text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]">
                 THE FIRE
               </div>
-              <div className="text-[38px] sm:text-[75px] md:text-[104px] lg:text-[122px] text-[#ef321b] mt-1 drop-shadow-2xl">
+              <div className="text-[38px] sm:text-[72px] md:text-[98px] lg:text-[115px] text-[#ef321b] mt-1 drop-shadow-[0_10px_20px_rgba(239,50,27,0.5)]">
                 IS COMING
               </div>
             </div>
 
-            {/* تم توزيع المسافات هنا عشان الكلام ميبقاش ملزق ومفرود بشكل شيك */}
-            <div className="mt-3 md:mt-4 text-[#ef321b] italic font-black text-lg sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
+            <div className="mt-6 text-[#ef321b] italic font-black text-lg sm:text-2xl md:text-3xl tracking-wide drop-shadow-md" style={{fontFamily:'cursive'}}>
               Smash Burgers & Nashville Chicken
             </div>
 
@@ -161,7 +161,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
             <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">
               MENU
             </div>
-            <div className="mt-5 text-xl font-black"></div>
+            <div className="mt-5 text-xl font-black"> </div>
             <p className="mt-4 text-white/55 text-sm leading-7">
               من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.
             </p>
@@ -1483,7 +1483,6 @@ function App() {
             </Link>
             <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">{t.menu}</Link>
             <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">{lang === 'ar' ? 'العروض' : 'Offers'}</Link>
-            <a href="#footer" className="py-7 hover:text-[#ef321b] transition">{lang === 'ar' ? 'عن بحبح' : 'About'}</a>
           </div>
 
           <div className="flex items-center gap-4">
