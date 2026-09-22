@@ -1473,7 +1473,7 @@ function App() {
             {siteSettings.logoImage ? (
               <img src={siteSettings.logoImage} alt="Logo" style={{ height: '75px', width: 'auto' }} className="object-contain" />
             ) : (
-              <span className="text-3xl font-black text-[#FFD700] tracking-tighter">بحبح برجر <span className="text-white text-sm">🍔</span></span>
+              <span className="text-3xl font-black text-[#FFD700] tracking-tighter">Bahbah Burger <span className="text-white text-sm">🍔</span></span>
             )}
           </Link>
           
