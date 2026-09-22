@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 
-// ⚠️ حط هنا لينك الباك إند الجديد بتاع بحبح برجر لما تعمله على Railway أو Vercel
 const API_BASE = 'https://bahbah-backend-production.up.railway.app';
 const translations = {
   ar: {
@@ -95,19 +94,19 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
   }, [offerItems.length]);
 
   return (
-    <div className="bg-[#12080A] min-h-screen text-white">
-      <header className="relative w-full min-h-[520px] md:min-h-[620px] bg-[#12080A] flex flex-col items-center justify-center overflow-hidden border-b-4 border-[#FF4500] shadow-2xl py-12">
+    <div className="bg-[#0D0708] min-h-screen text-white">
+      <header className="relative w-full min-h-[520px] md:min-h-[620px] bg-[#0D0708] flex flex-col items-center justify-center overflow-hidden border-b-2 border-[#FF4500]/30 shadow-2xl py-12">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-70 scale-105 transition duration-700"
+          className="absolute inset-0 bg-cover bg-center opacity-60 scale-105 transition duration-700"
           style={{ backgroundImage: `url(${siteSettings.heroImage})` }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#12080A] via-[#12080A]/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0708] via-[#0D0708]/60 to-transparent"></div>
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
-          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF4500] via-[#FF6347] to-[#E63900] drop-shadow-[0_5px_5px_rgba(0,0,0,0.9)] mb-4">
+          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF4500] via-[#FF8C00] to-[#FFB800] drop-shadow-[0_5px_5px_rgba(0,0,0,0.9)] mb-4">
             {title}
           </h1>
-          <Link to="/menu" className="inline-block bg-[#FF4500] hover:bg-[#E63900] text-white border-2 border-[#FF4500] px-8 py-3 text-xl font-black rounded-2xl hover:scale-105 transition shadow-[0_0_30px_rgba(255,69,0,0.4)] mb-6">
+          <Link to="/menu" className="inline-block bg-[#FF4500] hover:bg-[#E03D00] text-white px-8 py-3.5 text-xl font-black rounded-2xl hover:scale-105 transition shadow-[0_0_25px_rgba(255,69,0,0.4)] mb-6">
             {t.orderNow}
           </Link>
 
@@ -116,7 +115,7 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
               <img 
                 src={siteSettings.promoBannerImage} 
                 alt="Banner Offer" 
-                className="w-full h-auto max-h-[320px] object-cover rounded-2xl border-2 border-[#FF4500] shadow-[0_0_30px_rgba(255,69,0,0.4)]" 
+                className="w-full h-auto max-h-[320px] object-cover rounded-2xl border border-[#FF4500]/50 shadow-[0_0_25px_rgba(255,69,0,0.3)]" 
               />
             </div>
           )}
@@ -124,8 +123,8 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
       </header>
 
       <section className="px-8 py-14 max-w-7xl mx-auto relative">
-        <div className="flex justify-between items-center mb-8 border-b border-[#3A1218] pb-4">
-          <h2 className="text-3xl font-bold text-[#FF4500]">{t.bestOffers}</h2>
+        <div className="flex justify-between items-center mb-8 border-b border-[#241014] pb-4">
+          <h2 className="text-3xl font-bold text-[#FFB800]">{t.bestOffers}</h2>
           <Link to="/menu" className="text-[#FF4500] font-bold hover:underline text-lg flex items-center gap-1 hover:text-white transition">
             {t.seeMore}
           </Link>
@@ -135,8 +134,8 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
           <div className="relative overflow-hidden px-4">
             {offerItems.length > 3 && (
               <>
-                <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#FF4500] text-white w-10 h-10 rounded-full font-black text-xl flex items-center justify-center shadow-lg hover:bg-[#E63900] transition">❮</button>
-                <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#FF4500] text-white w-10 h-10 rounded-full font-black text-xl flex items-center justify-center shadow-lg hover:bg-[#E63900] transition">❯</button>
+                <button onClick={prevSlide} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A0D10] border border-[#FF4500]/50 text-[#FF4500] w-10 h-10 rounded-full font-black text-xl flex items-center justify-center shadow-lg hover:bg-[#FF4500] hover:text-white transition">❮</button>
+                <button onClick={nextSlide} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1A0D10] border border-[#FF4500]/50 text-[#FF4500] w-10 h-10 rounded-full font-black text-xl flex items-center justify-center shadow-lg hover:bg-[#FF4500] hover:text-white transition">❯</button>
               </>
             )}
 
@@ -149,37 +148,37 @@ const HomePage = ({ lang, siteSettings, menuItems, handleOpenItemDetails, cart, 
                 return (
                   <div 
                     key={item._id} 
-                    className="bg-[#1C0D10] border border-[#3A1218] rounded-2xl overflow-hidden shadow-2xl hover:border-[#FF4500] transition duration-300 group flex flex-col relative pt-8"
+                    className="bg-[#160B0D] border border-[#241014] rounded-2xl overflow-hidden shadow-xl hover:border-[#FF4500] transition duration-300 group flex flex-col relative pt-8"
                   >
                     {item.discount > 0 && (
-                      <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF7300] to-[#FF4500] text-white text-center py-2 font-black text-base md:text-lg shadow-xl border-b-2 border-black/20 tracking-wider">
+                      <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF6B35] to-[#FF4500] text-white text-center py-2 font-black text-base md:text-lg shadow-md tracking-wider">
                         🔥 خصم  {item.discount}%  🔥
                       </div>
                     )}
-                    <div onClick={() => handleOpenItemDetails(item)} className="w-full h-[320px] bg-[#12080A] overflow-hidden relative cursor-pointer">
+                    <div onClick={() => handleOpenItemDetails(item)} className="w-full h-[320px] bg-[#0D0708] overflow-hidden relative cursor-pointer">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                     </div>
-                    <div className="p-4 flex items-center justify-between bg-[#220E13] border-t border-[#3A1218]">
+                    <div className="p-4 flex items-center justify-between bg-[#1A0D10] border-t border-[#241014]">
                       <div>
                         <h4 className="font-bold text-lg text-white">{item.name}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           {item.discount > 0 ? (
                             <>
-                              <span className="text-zinc-400 line-through text-sm font-bold">{item.price} ج</span>
-                              <span className="text-[#FF4500] font-black text-lg">{finalPrice} ج</span>
+                              <span className="text-zinc-500 line-through text-sm font-bold">{item.price} ج</span>
+                              <span className="text-[#FFB800] font-black text-lg">{finalPrice} ج</span>
                             </>
                           ) : (
-                            <span className="text-[#FF4500] font-black text-lg">{item.price} ج</span>
+                            <span className="text-[#FFB800] font-black text-lg">{item.price} ج</span>
                           )}
                         </div>
                       </div>
                       
                       {quantity === 0 ? (
-                        <button onClick={() => handleOpenItemDetails(item)} className="bg-[#FF4500] text-white px-4 py-2 rounded-xl font-bold text-sm shadow hover:bg-[#E63900] transition">
+                        <button onClick={() => handleOpenItemDetails(item)} className="bg-[#FF4500] text-white px-4 py-2 rounded-xl font-bold text-sm shadow hover:bg-[#E03D00] transition">
                           أضف للسلة 🛒
                         </button>
                       ) : (
-                        <div className="flex items-center bg-[#12080A] border border-[#FF4500] rounded-xl px-2 py-1 gap-2">
+                        <div className="flex items-center bg-[#0D0708] border border-[#FF4500] rounded-xl px-2 py-1 gap-2">
                           <button onClick={() => {
                             const idx = cart.findIndex(i => i.name === item.name);
                             if (idx !== -1) { const nc = [...cart]; nc.splice(idx, 1); setCart(nc); }
@@ -212,16 +211,16 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
     : categories.filter(cat => cat.name === selectedCategory);
 
   return (
-    <section className="px-8 py-12 max-w-7xl mx-auto min-h-screen relative bg-[#12080A] text-white">
-      <h2 className="text-3xl font-bold text-[#FF4500] mb-6 border-b border-[#3A1218] pb-4">{t.ourMenu}</h2>
+    <section className="px-8 py-12 max-w-7xl mx-auto min-h-screen relative bg-[#0D0708] text-white">
+      <h2 className="text-3xl font-bold text-[#FFB800] mb-6 border-b border-[#241014] pb-4">{t.ourMenu}</h2>
       
-      <div className="flex gap-3 overflow-x-auto pb-4 mb-12 scrollbar-none sticky top-20 bg-[#12080A]/95 py-3 z-30 backdrop-blur-md">
+      <div className="flex gap-3 overflow-x-auto pb-4 mb-12 scrollbar-none sticky top-20 bg-[#0D0708]/95 py-3 z-30 backdrop-blur-md">
         <button
           onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')}
           className={`px-6 py-2.5 rounded-full font-bold whitespace-nowrap transition border ${
             selectedCategory === 'الكل' || selectedCategory === 'All'
-              ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_15px_rgba(255,69,0,0.5)]' 
-              : 'bg-[#1C0D10] text-zinc-300 border-[#3A1218] hover:border-[#FF4500]'
+              ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_15px_rgba(255,69,0,0.4)]' 
+              : 'bg-[#160B0D] text-zinc-300 border-[#241014] hover:border-[#FF4500]'
           }`}
         >
           {t.all}
@@ -232,8 +231,8 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
             onClick={() => setSelectedCategory(cat.name)}
             className={`px-6 py-2.5 rounded-full font-bold whitespace-nowrap transition border ${
               selectedCategory === cat.name 
-                ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_15px_rgba(255,69,0,0.5)]' 
-                : 'bg-[#1C0D10] text-zinc-300 border-[#3A1218] hover:border-[#FF4500]'
+                ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-[0_0_15px_rgba(255,69,0,0.4)]' 
+                : 'bg-[#160B0D] text-zinc-300 border-[#241014] hover:border-[#FF4500]'
             }`}
           >
             {cat.name}
@@ -250,8 +249,8 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
             
             if (catItems.length === 0 && selectedCategory !== 'الكل' && selectedCategory !== 'All') {
               return (
-                <div key={cat._id} className="border-b border-[#3A1218] pb-10">
-                  <h3 className="text-2xl font-black text-[#FF4500] mb-6 border-r-4 border-[#FF4500] pr-3">{cat.name}</h3>
+                <div key={cat._id} className="border-b border-[#241014] pb-10">
+                  <h3 className="text-2xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-3">{cat.name}</h3>
                   <p className="text-zinc-500 text-sm">لا توجد أصناف في هذا القسم حالياً.</p>
                 </div>
               );
@@ -259,8 +258,8 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
             if (catItems.length === 0) return null;
 
             return (
-              <div key={cat._id} className="border-b border-[#3A1218] pb-12">
-                <h3 className="text-2xl font-black text-[#FF4500] mb-6 border-r-4 border-[#FF4500] pr-3">
+              <div key={cat._id} className="border-b border-[#241014] pb-12">
+                <h3 className="text-2xl font-black text-[#FFB800] mb-6 border-r-4 border-[#FF4500] pr-3">
                   {cat.name}
                 </h3>
 
@@ -273,50 +272,50 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
                     return (
                       <div 
                         key={item._id} 
-                        className="bg-[#1C0D10] border border-[#3A1218] rounded-2xl overflow-hidden flex flex-col hover:border-[#FF4500] transition group shadow-xl relative pt-8"
+                        className="bg-[#160B0D] border border-[#241014] rounded-2xl overflow-hidden flex flex-col hover:border-[#FF4500] transition group shadow-xl relative pt-8"
                       >
                         {item.discount > 0 && (
-                          <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF7300] to-[#FF4500] text-white text-center py-2 font-black text-base md:text-lg shadow-xl border-b-2 border-black/20 tracking-wider">
+                          <div className="absolute top-0 inset-x-0 z-20 bg-gradient-to-r from-[#FF4500] via-[#FF6B35] to-[#FF4500] text-white text-center py-2 font-black text-base md:text-lg shadow-md tracking-wider">
                             🔥 خصم  {item.discount}%   🔥
                           </div>
                         )}
-                        <div onClick={() => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item)} className="w-full h-48 object-cover bg-[#12080A] overflow-hidden cursor-pointer">
-                          <img src={item.image || "https://via.placeholder.com/400x300/222/FF4500?text=Bahbah+Burger"} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        <div onClick={() => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item)} className="w-full h-48 object-cover bg-[#0D0708] overflow-hidden cursor-pointer">
+                          <img src={item.image || "https://via.placeholder.com/400x300/160B0D/FF4500?text=Bahbah+Burger"} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                         </div>
-                        <div className="p-4 flex-1 flex flex-col bg-[#1C0D10]">
+                        <div className="p-4 flex-1 flex flex-col bg-[#160B0D]">
                           <h3 className="text-xl font-bold mb-1 text-white">{item.name}</h3>
                           <p className="text-xs text-zinc-400 mb-2 line-clamp-2">{item.description || "..."}</p>
                           
                           <div className="flex items-center gap-3 mb-4 mt-auto">
                             {item.discount > 0 ? (
                               <>
-                                <span className="text-zinc-400 line-through text-base font-bold">{item.price} ج</span>
-                                <span className="text-[#FF4500] text-2xl font-black">{finalPrice} ج</span>
+                                <span className="text-zinc-500 line-through text-base font-bold">{item.price} ج</span>
+                                <span className="text-[#FFB800] text-2xl font-black">{finalPrice} ج</span>
                               </>
                             ) : (
-                              <span className="text-[#FF4500] text-2xl font-black">{item.price} ج</span>
+                              <span className="text-[#FFB800] text-2xl font-black">{item.price} ج</span>
                             )}
                           </div>
                           
                           {item.type === 'box' ? (
-                              <button onClick={() => handleOpenBox(item)} className="w-full bg-[#FF4500] text-white font-bold py-2.5 rounded-xl hover:bg-[#E63900] transition shadow">
+                              <button onClick={() => handleOpenBox(item)} className="w-full bg-[#FF4500] text-white font-bold py-2.5 rounded-xl hover:bg-[#E03D00] transition shadow">
                               {t.customizeBox}
                               </button>
                           ) : (
                               quantity === 0 ? (
-                                <button onClick={() => handleOpenItemDetails(item)} className="w-full border-2 border-[#FF4500] text-[#FF4500] font-bold py-2.5 rounded-xl hover:bg-[#FF4500] hover:text-white transition shadow">
+                                <button onClick={() => handleOpenItemDetails(item)} className="w-full border border-[#FF4500] text-[#FF4500] font-bold py-2.5 rounded-xl hover:bg-[#FF4500] hover:text-white transition shadow">
                                   {t.details} 🛒
                               </button>
                             ) : (
-                              <div className="flex items-center justify-between bg-[#12080A] border border-[#FF4500] rounded-xl px-3 py-2">
+                              <div className="flex items-center justify-between bg-[#0D0708] border border-[#FF4500] rounded-xl px-3 py-2">
                                 <span className="text-xs text-[#FF4500] font-bold">الكمية:</span>
                                 <div className="flex items-center gap-3">
                                   <button onClick={() => {
                                     const idx = cart.findIndex(i => i.name === item.name);
                                     if (idx !== -1) { const nc = [...cart]; nc.splice(idx, 1); setCart(nc); }
-                                  }} className="w-7 h-7 bg-[#1C0D10] rounded-lg text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white">-</button>
+                                  }} className="w-7 h-7 bg-[#160B0D] rounded-lg text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white">-</button>
                                   <span className="font-black text-white">{quantity}</span>
-                                  <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="w-7 h-7 bg-[#1C0D10] rounded-lg text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white">+</button>
+                                  <button onClick={() => setCart([...cart, { ...item, price: finalPrice }])} className="w-7 h-7 bg-[#160B0D] rounded-lg text-[#FF4500] font-black hover:bg-[#FF4500] hover:text-white">+</button>
                                 </div>
                               </div>
                         )
@@ -655,7 +654,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       name,
       price: Number(price),
       discount: Number(discount) || 0,
-      image: image || "https://via.placeholder.com/400x300/222/FF4500?text=Bahbah+Burger",
+      image: image || "https://via.placeholder.com/400x300/160B0D/FF4500?text=Bahbah+Burger",
       description,
       category: category || categories[0]?.name || 'General',
       type,
@@ -725,30 +724,30 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   };
 
   return (
-    <section className="px-8 py-12 max-w-5xl mx-auto min-h-[80vh] bg-[#12080A] text-white">
-      <div className="flex justify-between items-center mb-8 border-b border-[#3A1218] pb-4">
-        <h2 className="text-3xl font-bold text-[#FF4500]">⚙️ لوحة الإدارة</h2>
+    <section className="px-8 py-12 max-w-5xl mx-auto min-h-[80vh] bg-[#0D0708] text-white">
+      <div className="flex justify-between items-center mb-8 border-b border-[#241014] pb-4">
+        <h2 className="text-3xl font-bold text-[#FFB800]">⚙️ لوحة الإدارة</h2>
         <Link className="text-zinc-400 hover:text-white underline" to="/menu">{t.menu}</Link>
       </div>
 
-      <div className="bg-[#1C0D10] p-6 rounded-2xl border border-[#FF4500]/60 mb-8 shadow-xl">
-        <h3 className="text-xl font-bold text-[#FF4500] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
+      <div className="bg-[#160B0D] p-6 rounded-2xl border border-[#FF4500]/40 mb-8 shadow-xl">
+        <h3 className="text-xl font-bold text-[#FFB800] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
         <form onSubmit={handleAddZone} className="flex flex-col md:flex-row gap-4 mb-6">
           <input 
             type="text" 
             placeholder="اسم المنطقة (مثل: الشروق)" 
             value={zoneName} 
             onChange={(e) => setZoneName(e.target.value)}
-            className="flex-1 bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm"
+            className="flex-1 bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm"
           />
           <input 
             type="number" 
             placeholder="سعر التوصيل (مثل: 30)" 
             value={zoneFee} 
             onChange={(e) => setZoneFee(e.target.value)}
-            className="w-full md:w-40 bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm"
+            className="w-full md:w-40 bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm"
           />
-          <button type="submit" className="bg-[#FF4500] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#E63900] transition shadow cursor-pointer">
+          <button type="submit" className="bg-[#FF4500] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#E03D00] transition shadow cursor-pointer">
             ➕ إضافة منطقة
           </button>
         </form>
@@ -758,8 +757,8 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
             <p className="text-zinc-500 text-sm">لم يتم إضافة مناطق توصيل بعد.</p>
           ) : (
             deliveryZones.map((zone) => (
-              <div key={zone._id} className="bg-[#12080A] border border-[#3A1218] px-4 py-3 rounded-xl flex items-center justify-between text-sm">
-                <span className="font-bold text-[#FF4500]">{zone.name} — <span className="text-white">{zone.fee} جنيه</span></span>
+              <div key={zone._id} className="bg-[#0D0708] border border-[#241014] px-4 py-3 rounded-xl flex items-center justify-between text-sm">
+                <span className="font-bold text-[#FFB800]">{zone.name} — <span className="text-white">{zone.fee} جنيه</span></span>
                 <button onClick={() => handleDeleteZone(zone._id)} className="text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg font-bold text-xs">✕ مسح</button>
               </div>
             ))
@@ -767,23 +766,23 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         </div>
       </div>
 
-      <form onSubmit={handleSaveSettings} className="bg-[#1C0D10] p-6 rounded-2xl border border-[#FF4500]/50 mb-8 shadow-xl">
-        <h3 className="text-xl font-bold text-[#FF4500] mb-4">{t.siteSettings}</h3>
+      <form onSubmit={handleSaveSettings} className="bg-[#160B0D] p-6 rounded-2xl border border-[#FF4500]/40 mb-8 shadow-xl">
+        <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.siteSettings}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div>
             <label className="block text-sm mb-2 text-zinc-300">شعار المطعم (اللوجو)</label>
-            <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
-            {logoImg && <img src={logoImg} alt="Logo Preview" className="w-20 h-20 object-contain rounded-xl border border-[#3A1218] bg-[#12080A]" />}
+            <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
+            {logoImg && <img src={logoImg} alt="Logo Preview" className="w-20 h-20 object-contain rounded-xl border border-[#241014] bg-[#0D0708]" />}
           </div>
           <div>
             <label className="block text-sm mb-2 text-zinc-300">خلفية الهيدر الثابتة فوق</label>
-            <input type="file" accept="image/*" onChange={handleHeroImageUpload} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
-            <img src={heroImg} alt="Hero" className="w-full h-20 object-cover rounded-xl border border-[#3A1218]" />
+            <input type="file" accept="image/*" onChange={handleHeroImageUpload} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
+            <img src={heroImg} alt="Hero" className="w-full h-20 object-cover rounded-xl border border-[#241014]" />
           </div>
 
-          <div className="md:col-span-2 bg-[#12080A] p-4 rounded-xl border border-[#FF4500]/30">
-            <label className="block text-sm mb-2 text-[#FF4500] font-bold">🖼️ صورة العرض الكبيرة (البوستر تحت زرار اطلب دلوقتي)</label>
-            <input type="file" accept="image/*" onChange={handleBannerImageUpload} className="w-full bg-[#1C0D10] border border-[#3A1218] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
+          <div className="md:col-span-2 bg-[#0D0708] p-4 rounded-xl border border-[#FF4500]/30">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">🖼️ صورة العرض الكبيرة (البوستر تحت زرار اطلب دلوقتي)</label>
+            <input type="file" accept="image/*" onChange={handleBannerImageUpload} className="w-full bg-[#160B0D] border border-[#241014] rounded-xl p-1 text-white text-sm cursor-pointer mb-2" />
             <div className="flex items-center gap-4 mt-2">
               {bannerImg ? (
                 <>
@@ -798,29 +797,29 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
           <div>
             <label className="block text-xs mb-1 text-zinc-300">العنوان بالعربي</label>
-            <input type="text" value={titleAr} onChange={(e) => setTitleAr(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-2 text-white text-sm" />
+            <input type="text" value={titleAr} onChange={(e) => setTitleAr(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-2 text-white text-sm" />
           </div>
           <div>
             <label className="block text-xs mb-1 text-zinc-300">العنوان بالإنجليزي</label>
-            <input type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-2 text-white text-sm" />
+            <input type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-2 text-white text-sm" />
           </div>
         </div>
-        <button type="submit" className="w-full bg-[#FF4500] text-white font-bold py-3 rounded-xl hover:bg-[#E63900] transition shadow">
+        <button type="submit" className="w-full bg-[#FF4500] text-white font-bold py-3 rounded-xl hover:bg-[#E03D00] transition shadow">
           💾 حفظ تعديلات اللوجو والواجهة وصورة العرض
         </button>
       </form>
 
-      <div className="bg-[#1C0D10] p-6 rounded-2xl border border-[#3A1218] mb-8 shadow-xl">
-        <h3 className="text-xl font-bold text-[#FF4500] mb-4">{t.catManage}</h3>
+      <div className="bg-[#160B0D] p-6 rounded-2xl border border-[#241014] mb-8 shadow-xl">
+        <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.catManage}</h3>
         <form onSubmit={handleSaveCategory} className="flex gap-4 mb-6">
           <input 
             type="text" 
             placeholder="Category Name..." 
             value={catName} 
             onChange={(e) => setCatName(e.target.value)}
-            className="flex-1 bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white"
+            className="flex-1 bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white"
           />
-          <button type="submit" className="bg-[#FF4500] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#E63900] transition shadow">
+          <button type="submit" className="bg-[#FF4500] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#E03D00] transition shadow">
             {editCatId ? t.save : t.addCat}
           </button>
           {editCatId && (
@@ -832,17 +831,17 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
         <div className="space-y-3">
           {categories.map((cat, index) => (
-            <div key={cat._id} className="bg-[#12080A] border border-[#3A1218] px-4 py-3 rounded-xl flex items-center justify-between">
+            <div key={cat._id} className="bg-[#0D0708] border border-[#241014] px-4 py-3 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-zinc-500 font-bold text-sm">#{index + 1}</span>
-                <span className="font-bold text-[#FF4500]">{cat.name}</span>
+                <span className="font-bold text-[#FFB800]">{cat.name}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   type="button" 
                   onClick={() => handleMoveCategory(index, 'up')}
                   disabled={index === 0}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${index === 0 ? 'bg-[#1C0D10] text-zinc-600 cursor-not-allowed' : 'bg-[#220E13] text-[#FF4500] hover:bg-[#2A080D]'}`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${index === 0 ? 'bg-[#160B0D] text-zinc-600 cursor-not-allowed' : 'bg-[#1A0D10] text-[#FF4500] hover:bg-[#241014]'}`}
                 >
                   ◀ تحريك للخارج
                 </button>
@@ -850,11 +849,11 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
                   type="button" 
                   onClick={() => handleMoveCategory(index, 'down')}
                   disabled={index === categories.length - 1}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${index === categories.length - 1 ? 'bg-[#1C0D10] text-zinc-600 cursor-not-allowed' : 'bg-[#220E13] text-[#FF4500] hover:bg-[#2A080D]'}`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${index === categories.length - 1 ? 'bg-[#160B0D] text-zinc-600 cursor-not-allowed' : 'bg-[#1A0D10] text-[#FF4500] hover:bg-[#241014]'}`}
                 >
                   تحريك للداخل ▶
                 </button>
-                <button onClick={() => handleEditCategoryClick(cat)} className="text-[#FF4500] bg-[#FF4500]/20 px-3 py-1.5 rounded-lg text-xs font-bold">✏️</button>
+                <button onClick={() => handleEditCategoryClick(cat)} className="text-[#FFB800] bg-[#FF4500]/20 px-3 py-1.5 rounded-lg text-xs font-bold">✏️</button>
                 <button onClick={() => handleDeleteCategory(cat._id)} className="text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg text-xs font-bold">✕</button>
             </div>
           </div>
@@ -862,23 +861,23 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       </div>
     </div>
   
-    <form onSubmit={handleSaveItem} className="bg-[#1C0D10] p-6 rounded-2xl border border-[#3A1218] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-xl">
-      <h3 className="md:col-span-2 text-xl font-bold text-[#FF4500] mb-2">{t.itemManage}</h3>
+    <form onSubmit={handleSaveItem} className="bg-[#160B0D] p-6 rounded-2xl border border-[#241014] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-xl">
+      <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
       <div>
         <label className="block text-sm mb-2 text-zinc-300">Item Name *</label>
-        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white" placeholder="Name" />
+        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white" placeholder="Name" />
       </div>
       <div>
         <label className="block text-sm mb-2 text-zinc-300">Price *</label>
-        <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white" placeholder="Price" />
+        <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white" placeholder="Price" />
       </div>
       <div>
-        <label className="block text-sm mb-2 text-[#FF4500]">نسبة الخصم % (اختياري)</label>
-        <input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#12080A] border border-[#FF4500] rounded-xl p-3 text-white" />
+        <label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم % (اختياري)</label>
+        <input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#0D0708] border border-[#FF4500]/50 rounded-xl p-3 text-white" />
       </div>
       <div>
         <label className="block text-sm mb-2 text-zinc-300">Category *</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white">
           {categories.map(cat => (
             <option key={cat._id} value={cat.name}>{cat.name}</option>
           ))}
@@ -886,10 +885,10 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       </div>
       <div>
         <label className="block text-sm mb-2 text-zinc-300">Image</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-1 text-white text-sm cursor-pointer" />
+        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-1 text-white text-sm cursor-pointer" />
       </div>
 
-      <div className="md:col-span-2 bg-[#12080A] p-4 rounded-xl border border-[#FF4500]/30 flex items-center gap-3">
+      <div className="md:col-span-2 bg-[#0D0708] p-4 rounded-xl border border-[#FF4500]/30 flex items-center gap-3">
         <input 
           type="checkbox" 
           id="isOfferCheck" 
@@ -897,14 +896,14 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           onChange={(e) => setIsOffer(e.target.checked)}
           className="w-5 h-5 accent-[#FF4500] cursor-pointer" 
         />
-        <label htmlFor="isOfferCheck" className="text-[#FF4500] font-bold cursor-pointer">
+        <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">
           🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)
         </label>
       </div>
 
       <div>
         <label className="block text-sm mb-2 text-zinc-300">Type</label>
-        <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white">
+        <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white">
           <option value="normal">Normal (سندوتش أو وجبة عادية)</option>
           <option value="box">Box (بوكس مخصص قابل للاختيار)</option>
         </select>
@@ -912,23 +911,23 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
       {type === 'box' && (
         <div>
-          <label className="block text-sm mb-2 text-[#FF4500]">Max Items in Box *</label>
-          <input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#12080A] border border-[#FF4500] rounded-xl p-3 text-white" placeholder="3" />
+          <label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label>
+          <input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#0D0708] border border-[#FF4500]/50 rounded-xl p-3 text-white" placeholder="3" />
         </div>
       )}
 
       {type === 'box' && (
-        <div className="md:col-span-2 bg-[#12080A] p-4 rounded-xl border border-[#FF4500]/50">
-          <label className="block text-sm mb-2 text-[#FF4500] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
+        <div className="md:col-span-2 bg-[#0D0708] p-4 rounded-xl border border-[#FF4500]/40">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
           <div className="flex gap-2 mb-3">
             <input 
               type="text" 
               placeholder="اسم المكون" 
               value={boxItemNameInput} 
               onChange={(e) => setBoxItemNameInput(e.target.value)}
-              className="flex-1 bg-[#1C0D10] border border-[#3A1218] rounded-xl p-2.5 text-white text-sm"
+              className="flex-1 bg-[#160B0D] border border-[#241014] rounded-xl p-2.5 text-white text-sm"
             />
-            <button type="button" onClick={handleAddBoxItemName} className="bg-[#FF4500] text-white px-5 rounded-xl font-bold text-sm hover:bg-[#E63900]">
+            <button type="button" onClick={handleAddBoxItemName} className="bg-[#FF4500] text-white px-5 rounded-xl font-bold text-sm hover:bg-[#E03D00]">
               ➕ إضافة
             </button>
           </div>
@@ -936,8 +935,8 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           {boxItemsList.length > 0 && (
             <div className="space-y-2 mt-2">
               {boxItemsList.map((bItem, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#12080A] px-3 py-2 rounded-xl border border-[#3A1218] text-sm">
-                  <span className="text-[#FF4500] font-bold">{bItem.name}</span>
+                <div key={index} className="flex justify-between items-center bg-[#0D0708] px-3 py-2 rounded-xl border border-[#241014] text-sm">
+                  <span className="text-[#FFB800] font-bold">{bItem.name}</span>
                   <button type="button" onClick={() => handleRemoveBoxItemName(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
                 </div>
               ))}
@@ -946,24 +945,24 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         </div>
       )}
 
-      <div className="md:col-span-2 bg-[#12080A] p-4 rounded-xl border border-[#FF4500]/50">
-          <label className="block text-sm mb-2 text-[#FF4500] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
+      <div className="md:col-span-2 bg-[#0D0708] p-4 rounded-xl border border-[#FF4500]/40">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
           <div className="flex gap-2 mb-3">
             <input 
               type="text" 
               placeholder="اسم الحجم (مثل: كبير)" 
               value={sizeNameInput} 
               onChange={(e) => setSizeNameInput(e.target.value)}
-              className="flex-1 bg-[#1C0D10] border border-[#3A1218] rounded-xl p-2.5 text-white text-sm"
+              className="flex-1 bg-[#160B0D] border border-[#241014] rounded-xl p-2.5 text-white text-sm"
             />
             <input 
               type="number" 
               placeholder="السعر (مثل: 400)" 
               value={sizePriceInput} 
               onChange={(e) => setSizePriceInput(e.target.value)}
-              className="w-32 bg-[#1C0D10] border border-[#3A1218] rounded-xl p-2.5 text-white text-sm"
+              className="w-32 bg-[#160B0D] border border-[#241014] rounded-xl p-2.5 text-white text-sm"
             />
-            <button type="button" onClick={handleAddSize} className="bg-[#FF4500] text-white px-4 rounded-xl font-bold text-sm hover:bg-[#E63900]">
+            <button type="button" onClick={handleAddSize} className="bg-[#FF4500] text-white px-4 rounded-xl font-bold text-sm hover:bg-[#E03D00]">
               ➕ إضافة حجم
             </button>
           </div>
@@ -971,8 +970,8 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           {sizesList.length > 0 && (
             <div className="space-y-2 mt-2">
               {sizesList.map((sz, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#12080A] px-3 py-2 rounded-xl border border-[#3A1218] text-sm">
-                  <span className="text-[#FF4500] font-bold">{sz.name} — {sz.price} ج</span>
+                <div key={index} className="flex justify-between items-center bg-[#0D0708] px-3 py-2 rounded-xl border border-[#241014] text-sm">
+                  <span className="text-[#FFB800] font-bold">{sz.name} — {sz.price} ج</span>
                   <button type="button" onClick={() => handleRemoveSize(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
                 </div>
               ))}
@@ -980,24 +979,24 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           )}
       </div>
 
-      <div className="md:col-span-2 bg-[#12080A] p-4 rounded-xl border border-[#3A1218]">
-          <label className="block text-sm mb-2 text-[#FF4500] font-bold">✨ الإضافات الاختيارية</label>
+      <div className="md:col-span-2 bg-[#0D0708] p-4 rounded-xl border border-[#241014]">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
           <div className="flex gap-2 mb-3">
             <input 
               type="text" 
               placeholder="اسم الإضافة (مثلاً: إضافة جبنة)" 
               value={addonName} 
               onChange={(e) => setAddonName(e.target.value)}
-              className="flex-1 bg-[#1C0D10] border border-[#3A1218] rounded-xl p-2.5 text-white text-sm"
+              className="flex-1 bg-[#160B0D] border border-[#241014] rounded-xl p-2.5 text-white text-sm"
             />
             <input 
               type="number" 
               placeholder="السعر (مثلاً: 10)" 
               value={addonPrice} 
               onChange={(e) => setAddonPrice(e.target.value)}
-              className="w-32 bg-[#1C0D10] border border-[#3A1218] rounded-xl p-2.5 text-white text-sm"
+              className="w-32 bg-[#160B0D] border border-[#241014] rounded-xl p-2.5 text-white text-sm"
             />
-            <button type="button" onClick={handleAddAddon} className="bg-[#FF4500] text-white px-4 rounded-xl font-bold text-sm hover:bg-[#E63900]">
+            <button type="button" onClick={handleAddAddon} className="bg-[#FF4500] text-white px-4 rounded-xl font-bold text-sm hover:bg-[#E03D00]">
               ➕ إضافة
             </button>
           </div>
@@ -1005,7 +1004,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           {addonsList.length > 0 && (
             <div className="space-y-2 mt-2">
               {addonsList.map((addon, index) => (
-                <div key={index} className="flex justify-between items-center bg-[#12080A] px-3 py-2 rounded-xl border border-[#3A1218] text-sm">
+                <div key={index} className="flex justify-between items-center bg-[#0D0708] px-3 py-2 rounded-xl border border-[#241014] text-sm">
                   <span>{addon.name} (+{addon.price} ج)</span>
                   <button type="button" onClick={() => handleRemoveAddon(index)} className="text-red-400 font-bold text-xs">✕ مسح</button>
                 </div>
@@ -1015,12 +1014,12 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       </div>
 
       <div className="md:col-span-2">
-          <label className="block text-sm mb-2 text-[#FF4500] font-bold">Description *</label>
-          <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white" placeholder="Description..." />
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
+          <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white" placeholder="Description..." />
       </div>
 
       <div className="md:col-span-2 mt-4 flex gap-4">
-          <button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-3.5 rounded-xl hover:bg-[#E63900] transition shadow">
+          <button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-3.5 rounded-xl hover:bg-[#E03D00] transition shadow">
             {editId ? t.save : t.addItem}
           </button>
           {editId && (
@@ -1032,14 +1031,14 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     </form>
 
     <div className="space-y-10 mt-10">
-      <h3 className="text-2xl font-bold text-[#FF4500] border-b border-[#3A1218] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
+      <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#241014] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
         
       {categories.map(cat => {
         const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
           
         return (
-          <div key={cat._id} className="bg-[#1C0D10] border border-[#3A1218] rounded-2xl p-6 shadow-xl">
-            <h4 className="text-xl font-black text-[#FF4500] mb-4 border-r-4 border-[#FF4500] pr-3">
+          <div key={cat._id} className="bg-[#160B0D] border border-[#241014] rounded-2xl p-6 shadow-xl">
+            <h4 className="text-xl font-black text-[#FFB800] mb-4 border-r-4 border-[#FF4500] pr-3">
               📁 قسم: {cat.name} ({catItems.length} صنف)
             </h4>
 
@@ -1048,16 +1047,16 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
             ) : (
               <div className="space-y-3">
                 {catItems.map((item, itemIndex) => (
-                  <div key={item._id} className="bg-[#12080A] border border-[#3A1218] p-3.5 rounded-xl flex items-center justify-between">
+                  <div key={item._id} className="bg-[#0D0708] border border-[#241014] p-3.5 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <span className="text-zinc-500 font-bold text-sm">#{itemIndex + 1}</span>
-                      <img src={item.image} alt="" className="w-14 h-10 object-cover rounded-lg bg-[#1C0D10]" />
+                      <img src={item.image} alt="" className="w-14 h-10 object-cover rounded-lg bg-[#160B0D]" />
                       <div>
                         <h4 className="font-bold text-white">
                           {item.name} 
                           {item.discount > 0 && <span className="bg-[#FF4500] text-white text-xs px-2 py-0.5 rounded-md font-black mr-2">خصم {item.discount}%</span>}
                         </h4>
-                        <span className="text-xs text-[#FF4500]">
+                        <span className="text-xs text-[#FFB800]">
                           {item.discount > 0 ? `${getDiscountedPrice(item.price, item.discount)} ج (بدل ${item.price})` : `${item.price} ج`}
                         </span>
                       </div>
@@ -1068,7 +1067,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
                         type="button" 
                         onClick={() => handleMoveItem(itemIndex, 'up', catItems)}
                         disabled={itemIndex === 0}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${itemIndex === 0 ? 'bg-[#1C0D10] text-zinc-600 cursor-not-allowed' : 'bg-[#220E13] text-[#FF4500] hover:bg-[#2A080D]'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${itemIndex === 0 ? 'bg-[#160B0D] text-zinc-600 cursor-not-allowed' : 'bg-[#1A0D10] text-[#FF4500] hover:bg-[#241014]'}`}
                       >
                         ▲
                       </button>
@@ -1076,11 +1075,11 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
                         type="button" 
                         onClick={() => handleMoveItem(itemIndex, 'down', catItems)}
                         disabled={itemIndex === catItems.length - 1}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${itemIndex === catItems.length - 1 ? 'bg-[#1C0D10] text-zinc-600 cursor-not-allowed' : 'bg-[#220E13] text-[#FF4500] hover:bg-[#2A080D]'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${itemIndex === catItems.length - 1 ? 'bg-[#160B0D] text-zinc-600 cursor-not-allowed' : 'bg-[#1A0D10] text-[#FF4500] hover:bg-[#241014]'}`}
                       >
                         ▼
                       </button>
-                      <button onClick={() => handleEditItemClick(item)} className="text-[#FF4500] bg-[#FF4500]/30 px-3.5 py-1.5 rounded-lg text-xs font-bold">✏️ تعديل</button>
+                      <button onClick={() => handleEditItemClick(item)} className="text-[#FFB800] bg-[#FF4500]/20 px-3.5 py-1.5 rounded-lg text-xs font-bold">✏️ تعديل</button>
                       <button onClick={() => handleDeleteItem(item._id)} className="text-red-400 bg-red-500/10 px-3.5 py-1.5 rounded-lg text-xs font-bold">✕ مسح</button>
                     </div>
                   </div>
@@ -1197,18 +1196,18 @@ const CartPage = ({ cart, setCart, lang }) => {
 
   if (placedOrderId) {
     return (
-      <section className="px-8 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#12080A] text-white flex flex-col items-center justify-center">
-        <div className="bg-[#1C0D10] border border-[#25D366] rounded-2xl p-10 text-center shadow-[0_0_20px_rgba(37,211,102,0.2)] w-full">
+      <section className="px-8 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#0D0708] text-white flex flex-col items-center justify-center">
+        <div className="bg-[#160B0D] border border-[#25D366] rounded-2xl p-10 text-center shadow-[0_0_20px_rgba(37,211,102,0.2)] w-full">
           <div className="text-7xl mb-4">✅</div>
           <h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
           <p className="text-xl mb-6 text-zinc-300">رقم الأوردر بتاعك هو:</p>
-          <div className="bg-[#12080A] border-2 border-[#FF4500] text-[#FF4500] text-4xl font-black py-4 px-8 rounded-xl inline-block mb-8 tracking-widest">
+          <div className="bg-[#0D0708] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-xl inline-block mb-8 tracking-widest">
             {placedOrderId}
           </div>
           <p className="text-sm text-zinc-400 mb-8">تم تحويلك للواتساب لإرسال الطلب للمطعم.</p>
           <button 
             onClick={() => setPlacedOrderId(null)} 
-            className="text-white bg-[#FF4500] hover:bg-[#E63900] px-8 py-3 rounded-xl font-bold transition shadow-lg"
+            className="text-white bg-[#FF4500] hover:bg-[#E03D00] px-8 py-3 rounded-xl font-bold transition shadow-lg"
           >
             رجوع للسلة
           </button>
@@ -1218,29 +1217,29 @@ const CartPage = ({ cart, setCart, lang }) => {
   }
 
   return (
-    <section className="px-8 py-12 max-w-4xl mx-auto min-h-screen bg-[#12080A] text-white">
-      <h2 className="text-3xl font-bold text-[#FF4500] mb-8 border-b border-[#3A1218] pb-4">{t.cart}</h2>
+    <section className="px-8 py-12 max-w-4xl mx-auto min-h-screen bg-[#0D0708] text-white">
+      <h2 className="text-3xl font-bold text-[#FFB800] mb-8 border-b border-[#241014] pb-4">{t.cart}</h2>
       
       {cart.length === 0 ? (
-        <div className="border border-[#3A1218] bg-[#1C0D10] rounded-2xl p-10 text-center shadow-xl">
+        <div className="border border-[#241014] bg-[#160B0D] rounded-2xl p-10 text-center shadow-xl">
           <div className="text-zinc-600 text-6xl mb-4">🛒</div>
           <h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2>
           <Link to="/menu" className="text-[#FF4500] underline hover:text-white">{t.backToMenu}</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-[#1C0D10] rounded-2xl p-6 border border-[#3A1218] shadow-xl">
-            <h3 className="text-xl font-bold text-[#FF4500] mb-4">محتويات السلة</h3>
+          <div className="bg-[#160B0D] rounded-2xl p-6 border border-[#241014] shadow-xl">
+            <h3 className="text-xl font-bold text-[#FFB800] mb-4">محتويات السلة</h3>
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
               {groupedCart.map((item, index) => (
-                <div key={index} className="flex justify-between items-center border-b border-[#3A1218] pb-3">
+                <div key={index} className="flex justify-between items-center border-b border-[#241014] pb-3">
                   <div>
                     <h4 className="text-base font-bold text-white">{item.name}</h4>
-                    <p className="text-[#FF4500] font-bold text-sm">{item.price * item.quantity} ج</p>
+                    <p className="text-[#FFB800] font-bold text-sm">{item.price * item.quantity} ج</p>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-[#12080A] border border-[#3A1218] rounded-xl px-2 py-1 gap-3">
+                    <div className="flex items-center bg-[#0D0708] border border-[#241014] rounded-xl px-2 py-1 gap-3">
                       <button onClick={() => handleDecrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">-</button>
                       <span className="font-black text-white">{item.quantity}</span>
                       <button onClick={() => handleIncrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">+</button>
@@ -1252,35 +1251,35 @@ const CartPage = ({ cart, setCart, lang }) => {
               ))}
             </div>
             
-            <div className="mt-6 pt-4 border-t border-[#3A1218] space-y-2 text-sm text-zinc-300">
+            <div className="mt-6 pt-4 border-t border-[#241014] space-y-2 text-sm text-zinc-300">
               <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
               {orderType === 'delivery' && (
-                <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FF4500]">{deliveryFee} ج</span></div>
+                <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>
               )}
           </div>
 
           <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center">
             <span className="text-lg font-bold">{t.total}</span>
-            <span className="text-2xl font-black text-[#FF4500]">{grandTotal} جنيه</span>
+            <span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span>
           </div>
         </div>
 
-        <div className="bg-[#1C0D10] rounded-2xl p-6 border border-[#3A1218] flex flex-col justify-between shadow-xl">
+        <div className="bg-[#160B0D] rounded-2xl p-6 border border-[#241014] flex flex-col justify-between shadow-xl">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-[#FF4500] mb-2">بيانات التوصيل والاستلام</h3>
+            <h3 className="text-xl font-bold text-[#FFB800] mb-2">بيانات التوصيل والاستلام</h3>
             
             <div className="grid grid-cols-2 gap-3 mb-2">
               <button 
                 type="button"
                 onClick={() => setOrderType('delivery')}
-                className={`py-3 rounded-xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#12080A] text-zinc-400 border border-[#3A1218]'}`}
+                className={`py-3 rounded-xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#0D0708] text-zinc-400 border border-[#241014]'}`}
               >
                 🛵 توصيل دليفري
               </button>
               <button 
                 type="button"
                 onClick={() => setOrderType('pickup')}
-                className={`py-3 rounded-xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#12080A] text-zinc-400 border border-[#3A1218]'}`}
+                className={`py-3 rounded-xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#0D0708] text-zinc-400 border border-[#241014]'}`}
               >
                 🏪 استلام من الفرع
               </button>
@@ -1288,11 +1287,11 @@ const CartPage = ({ cart, setCart, lang }) => {
 
           <div>
             <label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label>
-            <input type="text" placeholder="اكتب اسمك..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm" />
+            <input type="text" placeholder="اكتب اسمك..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm" />
           </div>
           <div>
             <label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label>
-            <input type="text" maxLength="11" placeholder="010xxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm tracking-wider" />
+            <input type="text" maxLength="11" placeholder="010xxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm tracking-wider" />
           </div>
 
           {orderType === 'delivery' && (
@@ -1305,7 +1304,7 @@ const CartPage = ({ cart, setCart, lang }) => {
                     const zone = deliveryZones.find(z => z._id === e.target.value);
                     setSelectedZone(zone);
                   }}
-                  className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm cursor-pointer"
+                  className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm cursor-pointer"
                 >
                   {deliveryZones.map(zone => (
                     <option key={zone._id} value={zone._id}>
@@ -1317,7 +1316,7 @@ const CartPage = ({ cart, setCart, lang }) => {
 
               <div>
                 <label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label>
-                <textarea rows="2" placeholder="الشارع، رقم العمارة، الدور..." value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#12080A] border border-[#3A1218] rounded-xl p-3 text-white text-sm" />
+                <textarea rows="2" placeholder="الشارع، رقم العمارة، الدور..." value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#0D0708] border border-[#241014] rounded-xl p-3 text-white text-sm" />
               </div>
             </>
           )}
@@ -1466,8 +1465,8 @@ function App() {
   };
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#12080A] text-white font-sans flex flex-col justify-between relative">
-      <nav className="bg-[#1C0D10] border-b border-[#FF4500]/60 sticky top-0 z-50 shadow-2xl">
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#0D0708] text-white font-sans flex flex-col justify-between relative">
+      <nav className="bg-[#160B0D] border-b border-[#FF4500]/30 sticky top-0 z-50 shadow-2xl">
         <div className="flex items-center justify-between px-8 py-3">
           <Link to="/" className="flex items-center cursor-pointer select-none">
             {siteSettings.logoImage ? (
@@ -1478,26 +1477,26 @@ function App() {
           </Link>
           
           <ul className="hidden md:flex gap-4 text-base font-bold">
-            <li><Link to="/" className="bg-[#12080A] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#3A1218] px-6 py-2 rounded-xl transition shadow">{t.home}</Link></li>
-            <li><Link to="/menu" className="bg-[#12080A] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#3A1218] px-6 py-2 rounded-xl transition shadow">{t.menu}</Link></li>
+            <li><Link to="/" className="bg-[#0D0708] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#241014] px-6 py-2 rounded-xl transition shadow">{t.home}</Link></li>
+            <li><Link to="/menu" className="bg-[#0D0708] hover:bg-[#FF4500] text-zinc-300 hover:text-white border border-[#241014] px-6 py-2 rounded-xl transition shadow">{t.menu}</Link></li>
           </ul>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col text-center border-l border-[#3A1218] pl-4 ml-2">
+            <div className="hidden md:flex flex-col text-center border-l border-[#241014] pl-4 ml-2">
               <span className="text-[#FF4500] text-[10px] font-black tracking-widest">{t.hotlineText}</span>
               <span className="text-white font-bold text-sm tracking-wider">01042281510</span>
             </div>
             
             <button 
               onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} 
-              className="bg-[#12080A] text-zinc-300 border border-[#3A1218] px-3 py-2 rounded-xl text-sm font-bold hover:text-white hover:border-[#FF4500] transition"
+              className="bg-[#0D0708] text-zinc-300 border border-[#241014] px-3 py-2 rounded-xl text-sm font-bold hover:text-white hover:border-[#FF4500] transition"
             >
               {lang === 'ar' ? 'EN' : 'عربي'}
             </button>
 
-            <Link to="/cart" className="flex items-center gap-2 bg-[#FF4500] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#E63900] transition shadow-lg">
+            <Link to="/cart" className="flex items-center gap-2 bg-[#FF4500] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#E03D00] transition shadow-lg">
               <span>🛒 {t.cart}</span>
-              <span className="bg-[#12080A] text-[#FF4500] px-2 py-0.5 rounded-full text-xs font-black">{cart.length}</span>
+              <span className="bg-[#0D0708] text-[#FFB800] px-2 py-0.5 rounded-full text-xs font-black">{cart.length}</span>
             </Link>
           </div>
         </div>
@@ -1514,26 +1513,26 @@ function App() {
 
       {selectedItemDetail && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1C0D10] border border-[#FF4500] rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
+          <div className="bg-[#160B0D] border border-[#FF4500]/50 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
             <button onClick={() => setSelectedItemDetail(null)} className="absolute top-4 left-4 text-red-400 text-xl font-bold">✕</button>
             <h3 className="text-3xl font-black text-white mb-4">{selectedItemDetail.name}</h3>
               
             {selectedItemDetail.sizes && selectedItemDetail.sizes.length > 0 && (
               <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-bold text-[#FF4500]">اختر الحجم:</h4>
+                <h4 className="text-sm font-bold text-[#FFB800]">اختر الحجم:</h4>
                 <div className="grid grid-cols-2 gap-3">
                   {selectedItemDetail.sizes.map((sz, idx) => {
                     const finalSzPrice = getDiscountedPrice(sz.price, selectedItemDetail.discount);
                     return (
-                      <div key={idx} onClick={() => setSelectedSize(sz)} className={`p-3 rounded-xl border cursor-pointer flex flex-col items-center justify-center transition ${selectedSize === sz ? 'bg-[#FF4500]/30 border-[#FF4500] text-[#FF4500]' : 'bg-[#12080A] border-[#3A1218] text-zinc-300'}`}>
+                      <div key={idx} onClick={() => setSelectedSize(sz)} className={`p-3 rounded-xl border cursor-pointer flex flex-col items-center justify-center transition ${selectedSize === sz ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#0D0708] border-[#241014] text-zinc-300'}`}>
                         <span className="font-bold">{sz.name}</span>
                         {selectedItemDetail.discount > 0 ? (
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-zinc-400 line-through font-bold">{sz.price} ج</span>
-                            <span className="text-sm font-black text-[#FF4500]">{finalSzPrice} ج</span>
+                            <span className="text-xs text-zinc-500 line-through font-bold">{sz.price} ج</span>
+                            <span className="text-sm font-black text-[#FFB800]">{finalSzPrice} ج</span>
                           </div>
                         ) : (
-                          <span className="text-sm font-black text-[#FF4500]">{sz.price} ج</span>
+                          <span className="text-sm font-black text-[#FFB800]">{sz.price} ج</span>
                         )}
                       </div>
                     );
@@ -1544,13 +1543,13 @@ function App() {
 
             {selectedItemDetail.addons && selectedItemDetail.addons.length > 0 && (
               <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-bold text-[#FF4500]">✨ الإضافات الاختيارية:</h4>
+                <h4 className="text-sm font-bold text-[#FFB800]">✨ الإضافات الاختيارية:</h4>
                 <div className="flex flex-col gap-3">
                     
-                  <label className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${!selectedAddon ? 'bg-[#FF4500]/30 border-[#FF4500] text-[#FF4500]' : 'bg-[#12080A] border-[#3A1218] text-zinc-300'}`}>
+                  <label className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${!selectedAddon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#0D0708] border-[#241014] text-zinc-300'}`}>
                     <div className="flex items-center gap-3">
                       <input type="radio" name="addon" checked={!selectedAddon} onChange={() => setSelectedAddon(null)} className="hidden" />
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!selectedAddon ? 'border-[#FF4500]' : 'border-[#3A1218]'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!selectedAddon ? 'border-[#FF4500]' : 'border-[#241014]'}`}>
                         {!selectedAddon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
                       </div>
                       <span className="font-bold text-sm">بدون إضافات</span>
@@ -1559,22 +1558,22 @@ function App() {
                   </label>
 
                   {selectedItemDetail.addons.map((addon, idx) => (
-                    <label key={idx} className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${selectedAddon === addon ? 'bg-[#FF4500]/30 border-[#FF4500] text-[#FF4500]' : 'bg-[#12080A] border-[#3A1218] text-zinc-300'}`}>
+                    <label key={idx} className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${selectedAddon === addon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#0D0708] border-[#241014] text-zinc-300'}`}>
                       <div className="flex items-center gap-3">
                         <input type="radio" name="addon" checked={selectedAddon === addon} onChange={() => setSelectedAddon(addon)} className="hidden" />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedAddon === addon ? 'border-[#FF4500]' : 'border-[#3A1218]'}`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedAddon === addon ? 'border-[#FF4500]' : 'border-[#241014]'}`}>
                           {selectedAddon === addon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
                         </div>
                         <span className="font-bold text-sm">{addon.name}</span>
                       </div>
-                      <span className="text-sm font-black text-[#FF4500]">+{addon.price} ج</span>
+                      <span className="text-sm font-black text-[#FFB800]">+{addon.price} ج</span>
                     </label>
                   ))}
 
                 </div>
               </div>
             )}
-            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#FF4500] text-white font-black py-4 rounded-xl hover:bg-[#E63900] transition text-lg shadow-lg">
+            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#FF4500] text-white font-black py-4 rounded-xl hover:bg-[#E03D00] transition text-lg shadow-lg">
               أضف للسلة • {currentItemTotalPrice} ج
             </button>
           </div>
@@ -1583,38 +1582,38 @@ function App() {
 
       {isBoxModalOpen && activeBox && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1C0D10] border border-[#FF4500] rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
+          <div className="bg-[#160B0D] border border-[#FF4500]/50 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl">
             <button onClick={() => setIsBoxModalOpen(false)} className="absolute top-4 left-4 text-red-400 text-xl font-bold">✕</button>
               
-            <h3 className="text-3xl font-black text-[#FF4500] mb-1">{activeBox.name}</h3>
-            <p className="text-zinc-300 mb-6 border-b border-[#3A1218] pb-4 text-sm">
+            <h3 className="text-3xl font-black text-[#FFB800] mb-1">{activeBox.name}</h3>
+            <p className="text-zinc-300 mb-6 border-b border-[#241014] pb-4 text-sm">
               اختر {activeBox.maxItems} أصناف. 
-              <span className={`block mt-1 font-bold text-base ${totalSelected === activeBox.maxItems ? 'text-green-400' : 'text-[#FF4500]'}`}>
+              <span className={`block mt-1 font-bold text-base ${totalSelected === activeBox.maxItems ? 'text-green-400' : 'text-[#FFB800]'}`}>
                 تم اختيار: ({totalSelected} / {activeBox.maxItems})
               </span>
             </p>
 
             <div className="space-y-4 mb-8 max-h-[50vh] overflow-y-auto pr-1">
               {activeBox.boxItems && activeBox.boxItems.map((bItem, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-[#12080A] p-3.5 rounded-xl border border-[#3A1218]">
+                <div key={idx} className="flex justify-between items-center bg-[#0D0708] p-3.5 rounded-xl border border-[#241014]">
                   <span className="font-bold text-base text-white">{bItem.name}</span>
                   <div className="flex items-center gap-4">
-                    <button onClick={() => handleUpdateSelection(bItem.name, 'remove')} className="w-8 h-8 bg-[#1C0D10] rounded-lg text-[#FF4500] font-bold">-</button>
+                    <button onClick={() => handleUpdateSelection(bItem.name, 'remove')} className="w-8 h-8 bg-[#160B0D] rounded-lg text-[#FF4500] font-bold">-</button>
                     <span className="text-xl w-4 text-center font-black text-white">{boxSelections[bItem.name] || 0}</span>
-                    <button onClick={() => handleUpdateSelection(bItem.name, 'add')} className="w-8 h-8 bg-[#1C0D10] rounded-lg text-[#FF4500] font-bold">+</button>
+                    <button onClick={() => handleUpdateSelection(bItem.name, 'add')} className="w-8 h-8 bg-[#160B0D] rounded-lg text-[#FF4500] font-bold">+</button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <button onClick={handleAddBoxToCart} disabled={totalSelected !== activeBox.maxItems} className={`w-full py-4 rounded-xl font-black text-lg transition ${totalSelected === activeBox.maxItems ? 'bg-[#FF4500] text-white hover:bg-[#E63900] cursor-pointer shadow-lg' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}>
+            <button onClick={handleAddBoxToCart} disabled={totalSelected !== activeBox.maxItems} className={`w-full py-4 rounded-xl font-black text-lg transition ${totalSelected === activeBox.maxItems ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] cursor-pointer shadow-lg' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}>
               Add to Cart
             </button>
           </div>
         </div>
       )}
 
-      <footer onClick={handleSecretLogoClick} className="bg-[#1C0D10] border-t border-[#3A1218] mt-20 text-zinc-400 py-6 text-center text-xs cursor-default select-none">
+      <footer onClick={handleSecretLogoClick} className="bg-[#160B0D] border-t border-[#241014] mt-20 text-zinc-400 py-6 text-center text-xs cursor-default select-none">
         جميع الحقوق محفوظة © 2026 بحبح برجر
       </footer>
     </div>
