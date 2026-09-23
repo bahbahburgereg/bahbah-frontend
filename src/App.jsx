@@ -227,7 +227,6 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                </Link>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -243,7 +242,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
 
 
 // ================= 2. صفحة المنيو =================
-const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDetails }) => {
+const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
   const t = translations[lang];
   const [selectedCategory, setSelectedCategory] = useState('الكل');
   const categoriesToShow = selectedCategory === 'الكل' || selectedCategory === 'All'
@@ -293,7 +292,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenBox, handleOpenItemDe
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {catItems.map(item => {
                       const price = getDiscountedPrice(item.price, item.discount);
-                      const open = () => item.type === 'box' ? handleOpenBox(item) : handleOpenItemDetails(item);
+                      const open = () => handleOpenItemDetails(item);
                       return (
                         <article key={item._id} className="bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition overflow-hidden group">
                           <button onClick={open} className="w-full text-left" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -453,6 +452,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     } catch (err) {}
   };
 
+  // State الخاصة ببيانات الصنف (تم استرجاع جميع الحقول)
   const [editId, setEditId] = useState(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -466,6 +466,13 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [addonsList, setAddonsList] = useState([]);
   const [boxItemsList, setBoxItemsList] = useState([]);
   const [sizesList, setSizesList] = useState([]);
+  
+  // حقول الإدخال للإضافات والأحجام
+  const [addonName, setAddonName] = useState('');
+  const [addonPrice, setAddonPrice] = useState('');
+  const [boxItemNameInput, setBoxItemNameInput] = useState('');
+  const [sizeNameInput, setSizeNameInput] = useState('');
+  const [sizePriceInput, setSizePriceInput] = useState('');
 
   useEffect(() => {
     if (categories.length > 0 && !category) {
@@ -612,11 +619,65 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
       <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
         <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
+        
         <div><label className="block text-sm mb-2 text-zinc-300">Item Name *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Name" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">Price *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Price" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">Category *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
         <div><label className="block text-sm mb-2 text-zinc-300">Image</label><input type="file" accept="image/*" onChange={(e) => { if(e.target.files[0]) compressImage(e.target.files[0], 800, 800, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
+        
+        {/* زرار العرض في الرئيسية (تم استرجاعه) */}
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
+          <input type="checkbox" id="isOfferCheck" checked={isOffer} onChange={(e) => setIsOffer(e.target.checked)} className="w-5 h-5 accent-[#FF4500] cursor-pointer" />
+          <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)</label>
+        </div>
+
+        {/* تحديد نوع الصنف (تم استرجاعه) */}
+        <div className="md:col-span-2"><label className="block text-sm mb-2 text-zinc-300">Type</label><select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white"><option value="normal">Normal (سندوتش أو وجبة عادية)</option><option value="box">Box (بوكس مخصص قابل للاختيار)</option></select></div>
+
+        {/* اختيارات البوكس (تم استرجاعها) */}
+        {type === 'box' && (
+          <div className="md:col-span-2"><label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label><input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" placeholder="3" /></div>
+        )}
+        {type === 'box' && (
+          <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
+            <div className="flex gap-2 mb-3">
+              <input type="text" placeholder="اسم المكون" value={boxItemNameInput} onChange={(e) => setBoxItemNameInput(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
+              <button type="button" onClick={() => { if(!boxItemNameInput)return; setBoxItemsList([...boxItemsList, {name: boxItemNameInput}]); setBoxItemNameInput(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
+            </div>
+            {boxItemsList.length > 0 && <div className="space-y-2">{boxItemsList.map((b, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{b.name}</span><button type="button" onClick={()=>setBoxItemsList(boxItemsList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
+          </div>
+        )}
+
+        {/* الأحجام (تم استرجاعها) */}
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
+          <div className="flex gap-2 mb-3">
+            <input type="text" placeholder="اسم الحجم" value={sizeNameInput} onChange={(e) => setSizeNameInput(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
+            <input type="number" placeholder="السعر" value={sizePriceInput} onChange={(e) => setSizePriceInput(e.target.value)} className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
+            <button type="button" onClick={() => { if(!sizeNameInput || !sizePriceInput)return; setSizesList([...sizesList, {name: sizeNameInput, price: Number(sizePriceInput)}]); setSizeNameInput(''); setSizePriceInput(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
+          </div>
+          {sizesList.length > 0 && <div className="space-y-2">{sizesList.map((s, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{s.name} - {s.price} ج</span><button type="button" onClick={()=>setSizesList(sizesList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
+        </div>
+
+        {/* الإضافات (تم استرجاعها) */}
+        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
+          <div className="flex gap-2 mb-3">
+            <input type="text" placeholder="اسم الإضافة" value={addonName} onChange={(e) => setAddonName(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
+            <input type="number" placeholder="السعر" value={addonPrice} onChange={(e) => setAddonPrice(e.target.value)} className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
+            <button type="button" onClick={() => { if(!addonName || !addonPrice)return; setAddonsList([...addonsList, {name: addonName, price: Number(addonPrice)}]); setAddonName(''); setAddonPrice(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
+          </div>
+          {addonsList.length > 0 && <div className="space-y-2">{addonsList.map((a, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{a.name} (+{a.price} ج)</span><button type="button" onClick={()=>setAddonsList(addonsList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
+        </div>
+
+        {/* الوصف (تم استرجاعه) */}
+        <div className="md:col-span-2">
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
+            <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Description..." />
+        </div>
+
         <div className="md:col-span-2 mt-4 flex gap-4"><button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">{editId ? t.save : t.addItem}</button>{editId && <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">{t.cancel}</button>}</div>
       </form>
 
