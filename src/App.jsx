@@ -443,6 +443,10 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [newOptionNames, setNewOptionNames] = useState({});
   const [newOptionPrices, setNewOptionPrices] = useState({});
 
+  // 🔥 States للتعديل السريع (Inline Edit)
+  const [editingGrp, setEditingGrp] = useState({ gIndex: -1, name: '', min: 0, max: 0 });
+  const [editingOpt, setEditingOpt] = useState({ gIndex: -1, oIndex: -1, name: '', price: 0 });
+
   const [importFromId, setImportFromId] = useState('');
 
   useEffect(() => {
@@ -482,6 +486,23 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     const updatedGroups = [...modifierGroups];
     updatedGroups[gIndex].options = updatedGroups[gIndex].options.filter((_, idx) => idx !== oIndex);
     setModifierGroups(updatedGroups);
+  };
+
+  // 🔥 دوال الحفظ للتعديل السريع
+  const saveEditedGroup = () => {
+    if (!editingGrp.name.trim()) return;
+    const updated = [...modifierGroups];
+    updated[editingGrp.gIndex] = { ...updated[editingGrp.gIndex], name: editingGrp.name, min: Number(editingGrp.min), max: Number(editingGrp.max) };
+    setModifierGroups(updated);
+    setEditingGrp({ gIndex: -1, name: '', min: 0, max: 0 });
+  };
+
+  const saveEditedOption = () => {
+    if (!editingOpt.name.trim()) return;
+    const updated = [...modifierGroups];
+    updated[editingOpt.gIndex].options[editingOpt.oIndex] = { name: editingOpt.name, price: Number(editingOpt.price) };
+    setModifierGroups(updated);
+    setEditingOpt({ gIndex: -1, oIndex: -1, name: '', price: 0 });
   };
 
   const handleImportModifiers = () => {
@@ -542,10 +563,38 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     try { const res = await fetch(`${API_BASE}/api/items/${id}`, { method: 'DELETE' }); if (res.ok) fetchItems(); } catch (err) {}
   };
 
+  // 🔥 دالة تغيير ترتيب الصنف
+  const handleMoveItem = async (catName, index, direction) => {
+    const catItems = menuItems.filter(item => item.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex < 0 || targetIndex >= catItems.length) return;
+
+    const item1 = catItems[index];
+    const item2 = catItems[targetIndex];
+
+    const order1 = item2.order !== undefined ? item2.order : targetIndex;
+    const order2 = item1.order !== undefined ? item1.order : index;
+
+    try {
+      await Promise.all([
+        fetch(`${API_BASE}/api/items/${item1._id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: order1 }) }),
+        fetch(`${API_BASE}/api/items/${item2._id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: order2 }) })
+      ]);
+      fetchItems();
+    } catch (err) {}
+  };
+
   const renderItemCard = (item, itemIndex, list) => (
     <div key={item._id} className="bg-[#050304] border border-[#1F0A0E] p-4.5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <span className="text-zinc-500 font-bold text-sm">#{itemIndex + 1}</span>
+        {/* 🔥 أسهم ترتيب الأصناف الجديدة */}
+        <div className="flex flex-col items-center gap-1 bg-[#100609] px-2 py-1.5 rounded-lg border border-[#1F0A0E]">
+          <button type="button" onClick={() => handleMoveItem(item.category, itemIndex, 'up')} disabled={itemIndex === 0} className={`text-xs ${itemIndex === 0 ? 'text-zinc-700' : 'text-[#FFB800] hover:text-white transition'}`}>▲</button>
+          <span className="text-zinc-500 font-black text-xs leading-none">{itemIndex + 1}</span>
+          <button type="button" onClick={() => handleMoveItem(item.category, itemIndex, 'down')} disabled={itemIndex === list.length - 1} className={`text-xs ${itemIndex === list.length - 1 ? 'text-zinc-700' : 'text-[#FFB800] hover:text-white transition'}`}>▼</button>
+        </div>
+        
         <img src={item.image} alt="" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
         <div>
           <h4 className="font-bold text-white">
@@ -557,9 +606,9 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button onClick={() => handleEditItemClick(item)} className="text-[#FFB800] bg-[#FF4500]/20 px-4 py-2 rounded-xl text-xs font-bold">✏️ تعديل</button>
-        <button onClick={() => handleDeleteItem(item._id)} className="text-red-400 bg-red-500/10 px-4 py-2 rounded-xl text-xs font-bold">✕ مسح</button>
+      <div className="flex items-center gap-2 mt-3 md:mt-0 w-full md:w-auto">
+        <button onClick={() => handleEditItemClick(item)} className="flex-1 md:flex-none text-[#FFB800] bg-[#FF4500]/20 px-4 py-2 rounded-xl text-xs font-bold text-center">✏️ تعديل</button>
+        <button onClick={() => handleDeleteItem(item._id)} className="flex-1 md:flex-none text-red-400 bg-red-500/10 px-4 py-2 rounded-xl text-xs font-bold text-center">✕ مسح</button>
       </div>
     </div>
   );
@@ -656,35 +705,79 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
               <label className="block text-xs text-[#FFB800] font-bold mb-1">الحد الأقصى (Max)</label>
               <input type="number" min="1" value={newGroupMax} onChange={(e)=>setNewGroupMax(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-xl p-3 text-white text-sm font-bold" />
             </div>
-            <button type="button" onClick={handleAddGroup} className="bg-zinc-800 text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-zinc-700 shadow-lg">➕ إنشاء مجموعة</button>
+            <button type="button" onClick={handleAddGroup} className="bg-zinc-800 text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-zinc-700 shadow-lg">➕ إضافة مجموعة</button>
           </div>
 
           <div className="space-y-6">
             {modifierGroups.map((group, gIndex) => (
-              <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative">
-                <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="absolute top-4 left-4 text-red-400 bg-red-500/10 px-3 py-1 rounded-lg text-xs font-bold">🗑️ حذف المجموعة</button>
-                <div className="flex items-center gap-3 mb-1">
-                  <h5 className="font-bold text-[#FFB800] text-lg">{group.name}</h5>
-                  {group.min > 0 ? (
-                    <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded border border-red-500/30">إجباري</span>
-                  ) : (
-                    <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-0.5 rounded border border-zinc-700">اختياري</span>
-                  )}
-                </div>
-                <p className="text-zinc-500 text-xs mb-4">الحد الأدنى: {group.min} | الحد الأقصى: {group.max}</p>
+              <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative mt-8">
                 
-                <div className="flex gap-2 mb-4 items-end">
-                  <input type="text" placeholder="اسم الخيار (مثال: بدون جبنة)" value={newOptionNames[gIndex] || ''} onChange={(e) => setNewOptionNames({...newOptionNames, [gIndex]: e.target.value})} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
+                {/* أزرار الحذف والتعديل للمجموعة كاملة */}
+                <div className="absolute -top-3 left-4 flex gap-2">
+                  <button type="button" onClick={() => setEditingGrp({ gIndex, name: group.name, min: group.min, max: group.max })} className="bg-[#FFB800] text-black px-3 py-1 rounded-lg text-xs font-bold shadow-lg">✏️ تعديل المجموعة</button>
+                  <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-lg">🗑️ حذف المجموعة</button>
+                </div>
+
+                {/* وضع تعديل المجموعة */}
+                {editingGrp.gIndex === gIndex ? (
+                  <div className="flex flex-wrap gap-2 mb-4 items-end bg-[#050304] p-3 rounded-xl border border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.2)]">
+                    <div className="flex-1 min-w-[150px]">
+                      <label className="text-xs text-zinc-400 block mb-1">تعديل الاسم</label>
+                      <input value={editingGrp.name} onChange={e=>setEditingGrp({...editingGrp, name: e.target.value})} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm focus:border-[#FFB800] outline-none" />
+                    </div>
+                    <div className="w-16">
+                      <label className="text-xs text-zinc-400 block mb-1">أدنى</label>
+                      <input type="number" value={editingGrp.min} onChange={e=>setEditingGrp({...editingGrp, min: e.target.value})} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm text-center" />
+                    </div>
+                    <div className="w-16">
+                      <label className="text-xs text-zinc-400 block mb-1">أقصى</label>
+                      <input type="number" value={editingGrp.max} onChange={e=>setEditingGrp({...editingGrp, max: e.target.value})} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm text-center" />
+                    </div>
+                    <button type="button" onClick={saveEditedGroup} className="bg-[#25D366] text-black px-4 py-2 rounded font-bold text-sm h-[38px]">حفظ</button>
+                    <button type="button" onClick={()=>setEditingGrp({gIndex: -1, name: '', min: 0, max: 0})} className="bg-zinc-700 text-white px-4 py-2 rounded font-bold text-sm h-[38px]">إلغاء</button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 mb-1 mt-2">
+                      <h5 className="font-bold text-[#FFB800] text-lg">{group.name}</h5>
+                      {group.min > 0 ? (
+                        <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded border border-red-500/30">إجباري</span>
+                      ) : (
+                        <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-0.5 rounded border border-zinc-700">اختياري</span>
+                      )}
+                    </div>
+                    <p className="text-zinc-500 text-xs mb-4">الحد الأدنى: {group.min} | الحد الأقصى: {group.max}</p>
+                  </>
+                )}
+                
+                <div className="flex gap-2 mb-4 items-end border-b border-[#1F0A0E] pb-4">
+                  <input type="text" placeholder="اسم الخيار الجديد (مثال: بدون جبنة)" value={newOptionNames[gIndex] || ''} onChange={(e) => setNewOptionNames({...newOptionNames, [gIndex]: e.target.value})} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
                   <input type="number" placeholder="السعر الإضافي (0 لو مجاني)" value={newOptionPrices[gIndex] || ''} onChange={(e) => setNewOptionPrices({...newOptionPrices, [gIndex]: e.target.value})} className="w-32 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
-                  <button type="button" onClick={() => handleAddOption(gIndex)} className="bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-700">إضافة خيار</button>
+                  <button type="button" onClick={() => handleAddOption(gIndex)} className="bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-700">➕ خيار</button>
                 </div>
 
                 {group.options.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {group.options.map((opt, oIndex) => (
-                      <div key={oIndex} className="flex justify-between items-center bg-[#050304] border border-[#1F0A0E] px-4 py-2 rounded-xl text-sm">
-                        <span>{opt.name} {opt.price > 0 && <span className="text-[#FFB800]">(+{opt.price} ج)</span>}</span>
-                        <button type="button" onClick={() => handleRemoveOption(gIndex, oIndex)} className="text-red-400 font-bold">✕</button>
+                      <div key={oIndex} className={`px-4 py-2 rounded-xl text-sm transition-all ${editingOpt.gIndex === gIndex && editingOpt.oIndex === oIndex ? 'bg-[#100609] border border-[#FFB800] shadow-[0_0_10px_rgba(255,184,0,0.1)]' : 'bg-[#050304] border border-[#1F0A0E] hover:border-zinc-700'}`}>
+                        
+                        {/* وضع تعديل الخيار */}
+                        {editingOpt.gIndex === gIndex && editingOpt.oIndex === oIndex ? (
+                          <div className="flex gap-2 items-center w-full">
+                            <input value={editingOpt.name} onChange={e=>setEditingOpt({...editingOpt, name:e.target.value})} className="flex-1 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800]" placeholder="الاسم" />
+                            <input type="number" value={editingOpt.price} onChange={e=>setEditingOpt({...editingOpt, price:e.target.value})} className="w-16 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800] text-center" placeholder="السعر" />
+                            <button type="button" onClick={saveEditedOption} className="text-[#25D366] font-bold text-xs bg-[#25D366]/10 px-2 py-1 rounded">حفظ</button>
+                            <button type="button" onClick={()=>setEditingOpt({gIndex: -1, oIndex: -1, name: '', price: 0})} className="text-zinc-500 font-bold text-xs bg-zinc-800 px-2 py-1 rounded">✕</button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center w-full">
+                            <span className="font-medium">{opt.name} {opt.price > 0 && <span className="text-[#FFB800]">(+{opt.price} ج)</span>}</span>
+                            <div className="flex gap-1.5">
+                              <button type="button" onClick={() => setEditingOpt({gIndex, oIndex, name: opt.name, price: opt.price})} className="text-[#FFB800] bg-[#FFB800]/10 hover:bg-[#FFB800]/20 w-7 h-7 rounded flex items-center justify-center transition">✏️</button>
+                              <button type="button" onClick={() => handleRemoveOption(gIndex, oIndex)} className="text-red-400 bg-red-500/10 hover:bg-red-500/20 w-7 h-7 rounded flex items-center justify-center transition">✕</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -845,7 +938,6 @@ function App() {
   const [lang, setLang] = useState('ar');
   const [logoClicks, setLogoClicks] = useState(0);
 
-  // States لـ Modal الصنف الجديد
   const [selectedItemDetail, setSelectedItemDetail] = useState(null);
   const [selectedModifiers, setSelectedModifiers] = useState({}); 
   const [itemNotes, setItemNotes] = useState('');
@@ -877,9 +969,6 @@ function App() {
 
     if (migratedGroups.length > 0) {
       setSelectedItemDetail({...item, modifierGroups: migratedGroups});
-      
-      // 🔥 شلت الكود اللي كان بيختار أول أوبشن أوتوماتيك
-      // كده المودال هيفتح دايماً فاضي والعميل يختار براحته
       setSelectedModifiers({});
       setItemNotes('');
     } else {
@@ -1007,7 +1096,6 @@ function App() {
                     <div className="flex flex-col">
                       {group.options.map((opt, oIndex) => {
                         const isSelected = (selectedModifiers[gIndex] || []).includes(oIndex);
-                        
                         const isDisabled = group.max > 1 ? (!isSelected && selectedCount >= group.max) : false;
 
                         return (
@@ -1034,14 +1122,12 @@ function App() {
                 );
               })}
 
-              {/* الملاحظات */}
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-4">
                 <h4 className="font-bold text-gray-800 text-[15px] mb-3">الملاحظات</h4>
                 <textarea rows="2" placeholder="أي ملاحظات خاصة بالطلب..." value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-sm focus:outline-none focus:border-[#FF4500]" />
               </div>
             </div>
 
-            {/* زرار الإضافة للسلة */}
             <div className="bg-white p-4 border-t border-gray-200 shrink-0">
               <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3.5 px-6 rounded-2xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                 <span>{modalFinalPrice} ج.م</span>
