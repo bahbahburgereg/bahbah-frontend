@@ -1000,6 +1000,9 @@ function App() {
 
   let modalFinalPrice = 0;
   if (selectedItemDetail) {
+    if (selectedItemDetail.price > 0) {
+      modalFinalPrice += getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount);
+    }
     if (selectedItemDetail.modifierGroups) {
       selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
         const selectedOptIndices = selectedModifiers[gIndex] || [];
@@ -1008,9 +1011,6 @@ function App() {
           modalFinalPrice += getDiscountedPrice(opt.price, selectedItemDetail.discount);
         });
       });
-    }
-    if (modalFinalPrice === 0 && selectedItemDetail.price > 0) {
-      modalFinalPrice = getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount);
     }
   }
 
