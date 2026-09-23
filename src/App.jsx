@@ -180,7 +180,8 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
-                const price = getDiscountedPrice(item.price, item.discount);
+                const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+                const price = getDiscountedPrice(basePrice, item.discount);
                 return (
                   <article key={item._id} className="bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group overflow-hidden">
                     <button onClick={() => handleOpenItemDetails(item)} className="w-full text-left" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -192,7 +193,16 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                         <h3 className="text-2xl font-black italic uppercase truncate">{item.name}</h3>
                         <p className="text-white/45 text-sm mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
                         <div className="flex items-end justify-between mt-6">
-                          <div className="text-[#ef321b] text-2xl font-black">EGP {price}</div>
+                          <div className="text-[#ef321b] text-2xl font-black">
+                            {item.discount > 0 && basePrice > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <span>EGP {price}</span>
+                                <span className="text-xs text-zinc-500 line-through">EGP {basePrice}</span>
+                              </div>
+                            ) : (
+                              `EGP ${basePrice}`
+                            )}
+                          </div>
                           <span className="w-9 h-9 border border-white/15 flex items-center justify-center text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition">+</span>
                         </div>
                       </div>
@@ -276,7 +286,8 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {catItems.map(item => {
-                      const price = getDiscountedPrice(item.price, item.discount);
+                      const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+                      const price = getDiscountedPrice(basePrice, item.discount);
                       const open = () => handleOpenItemDetails(item);
                       return (
                         <article key={item._id} className="bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition overflow-hidden group">
@@ -289,7 +300,9 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                               <h3 className="text-2xl font-black italic uppercase truncate">{item.name}</h3>
                               <p className="text-sm text-white/45 mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
                               <div className="flex items-center justify-between mt-6">
-                                <span className="text-[#ef321b] text-2xl font-black" dir="ltr">EGP {price}</span>
+                                <span className="text-[#ef321b] text-2xl font-black" dir="ltr">
+                                  {item.discount > 0 && basePrice > 0 ? `EGP ${price} (بدل ${basePrice})` : `EGP ${basePrice}`}
+                                </span>
                                 <span className="w-9 h-9 border border-white/15 flex items-center justify-center text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition">+</span>
                               </div>
                             </div>
@@ -432,21 +445,15 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [category, setCategory] = useState('');
   const [isOffer, setIsOffer] = useState(false);
   
-  // نظام الاختيارات الجديد (Modifier Groups)
   const [modifierGroups, setModifierGroups] = useState([]);
-  
-  // States لإنشاء مجموعة جديدة
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupMin, setNewGroupMin] = useState(1);
   const [newGroupMax, setNewGroupMax] = useState(1);
-  
   const [newOptionNames, setNewOptionNames] = useState({});
   const [newOptionPrices, setNewOptionPrices] = useState({});
 
-  // 🔥 States للتعديل السريع (Inline Edit)
   const [editingGrp, setEditingGrp] = useState({ gIndex: -1, name: '', min: 0, max: 0 });
   const [editingOpt, setEditingOpt] = useState({ gIndex: -1, oIndex: -1, name: '', price: 0 });
-
   const [importFromId, setImportFromId] = useState('');
 
   useEffect(() => {
@@ -488,7 +495,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     setModifierGroups(updatedGroups);
   };
 
-  // 🔥 دوال الحفظ للتعديل السريع
   const saveEditedGroup = () => {
     if (!editingGrp.name.trim()) return;
     const updated = [...modifierGroups];
@@ -563,7 +569,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     try { const res = await fetch(`${API_BASE}/api/items/${id}`, { method: 'DELETE' }); if (res.ok) fetchItems(); } catch (err) {}
   };
 
-  // 🔥 دالة تغيير ترتيب الصنف
   const handleMoveItem = async (catName, index, direction) => {
     const catItems = menuItems.filter(item => item.category === catName).sort((a, b) => (a.order || 0) - (b.order || 0));
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -588,7 +593,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const renderItemCard = (item, itemIndex, list) => (
     <div key={item._id} className="bg-[#050304] border border-[#1F0A0E] p-4.5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        {/* 🔥 أسهم ترتيب الأصناف الجديدة */}
         <div className="flex flex-col items-center gap-1 bg-[#100609] px-2 py-1.5 rounded-lg border border-[#1F0A0E]">
           <button type="button" onClick={() => handleMoveItem(item.category, itemIndex, 'up')} disabled={itemIndex === 0} className={`text-xs ${itemIndex === 0 ? 'text-zinc-700' : 'text-[#FFB800] hover:text-white transition'}`}>▲</button>
           <span className="text-zinc-500 font-black text-xs leading-none">{itemIndex + 1}</span>
@@ -673,7 +677,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)</label>
         </div>
 
-        {/* قسم مجموعات التعديلات (Modifier Groups) */}
         <div className="md:col-span-2 bg-[#050304] p-6 rounded-[2rem] border border-[#1F0A0E] mt-4">
           <h4 className="text-xl font-bold text-white mb-4">🛠️ مجموعات الاختيارات والتعديلات (Modifier Groups)</h4>
           
@@ -712,13 +715,11 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
             {modifierGroups.map((group, gIndex) => (
               <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative mt-8">
                 
-                {/* أزرار الحذف والتعديل للمجموعة كاملة */}
                 <div className="absolute -top-3 left-4 flex gap-2">
                   <button type="button" onClick={() => setEditingGrp({ gIndex, name: group.name, min: group.min, max: group.max })} className="bg-[#FFB800] text-black px-3 py-1 rounded-lg text-xs font-bold shadow-lg">✏️ تعديل المجموعة</button>
                   <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-lg">🗑️ حذف المجموعة</button>
                 </div>
 
-                {/* وضع تعديل المجموعة */}
                 {editingGrp.gIndex === gIndex ? (
                   <div className="flex flex-wrap gap-2 mb-4 items-end bg-[#050304] p-3 rounded-xl border border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.2)]">
                     <div className="flex-1 min-w-[150px]">
@@ -760,8 +761,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {group.options.map((opt, oIndex) => (
                       <div key={oIndex} className={`px-4 py-2 rounded-xl text-sm transition-all ${editingOpt.gIndex === gIndex && editingOpt.oIndex === oIndex ? 'bg-[#100609] border border-[#FFB800] shadow-[0_0_10px_rgba(255,184,0,0.1)]' : 'bg-[#050304] border border-[#1F0A0E] hover:border-zinc-700'}`}>
-                        
-                        {/* وضع تعديل الخيار */}
                         {editingOpt.gIndex === gIndex && editingOpt.oIndex === oIndex ? (
                           <div className="flex gap-2 items-center w-full">
                             <input value={editingOpt.name} onChange={e=>setEditingOpt({...editingOpt, name:e.target.value})} className="flex-1 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800]" placeholder="الاسم" />
@@ -999,9 +998,12 @@ function App() {
     });
   };
 
-  let modalFinalPrice = 0;
+  // حساب السعر جوه المودال مع مراعاة الخصم
+  let modalBasePrice = selectedItemDetail ? (selectedItemDetail.price > 0 ? selectedItemDetail.price : (selectedItemDetail.modifierGroups?.[1]?.options?.[0]?.price || 0)) : 0;
+  let discountedBasePrice = selectedItemDetail ? getDiscountedPrice(modalBasePrice, selectedItemDetail.discount) : 0;
+  let modalFinalPrice = discountedBasePrice;
+
   if (selectedItemDetail) {
-    modalFinalPrice = getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount);
     if (selectedItemDetail.modifierGroups) {
       selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
         const selectedOptIndices = selectedModifiers[gIndex] || [];
@@ -1061,13 +1063,11 @@ function App() {
         <div className="fixed inset-0 bg-black/95 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-xl">
           <div className="bg-[#f2f2f2] w-full max-w-lg md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
             
-            {/* الهيدر بتاع المودال */}
             <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0 shadow-sm z-10">
               <h3 className="text-xl font-bold text-gray-900">{selectedItemDetail.name}</h3>
               <button onClick={() => setSelectedItemDetail(null)} className="text-gray-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 font-bold">✕</button>
             </div>
 
-            {/* محتوى الاختيارات سكرول */}
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
               {selectedItemDetail.modifierGroups && selectedItemDetail.modifierGroups.map((group, gIndex) => {
                 const selectedCount = (selectedModifiers[gIndex] || []).length;
