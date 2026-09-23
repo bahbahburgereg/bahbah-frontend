@@ -328,8 +328,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [zoneName, setZoneName] = useState('');
   const [zoneFee, setZoneFee] = useState('');
 
-  const orphanItems = menuItems.filter(item => !categories.some(c => c.name === item.category));
-
   const fetchZones = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/zones`);
@@ -376,10 +374,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     };
     reader.readAsDataURL(file);
   };
-
-  const handleHeroImageUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 1200, 800, setHeroImg); };
-  const handleBannerImageUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 1000, 600, setBannerImg); };
-  const handleLogoUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 300, 300, setLogoImg); };
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -439,12 +433,14 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   
   // States لإنشاء مجموعة جديدة
   const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupMin, setNewGroupMin] = useState(0);
+  const [newGroupMin, setNewGroupMin] = useState(1);
   const [newGroupMax, setNewGroupMax] = useState(1);
   
-  // States لإنشاء خيار داخل المجموعة
   const [newOptionNames, setNewOptionNames] = useState({});
   const [newOptionPrices, setNewOptionPrices] = useState({});
+
+  // 🔥 State جديد عشان نختار منه الصنف اللي هننسخ منه التعديلات
+  const [importFromId, setImportFromId] = useState('');
 
   useEffect(() => {
     if (categories.length > 0 && !category) {
@@ -460,7 +456,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       max: Number(newGroupMax), 
       options: [] 
     }]);
-    setNewGroupName(''); setNewGroupMin(0); setNewGroupMax(1);
+    setNewGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
   };
 
   const handleAddOption = (gIndex) => {
@@ -485,6 +481,18 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     setModifierGroups(updatedGroups);
   };
 
+  // 🔥 دالة النسخ من صنف تاني
+  const handleImportModifiers = () => {
+    if (!importFromId) return alert("اختار الصنف الأول من القائمة!");
+    const sourceItem = menuItems.find(i => i._id === importFromId);
+    if (sourceItem && sourceItem.modifierGroups && sourceItem.modifierGroups.length > 0) {
+      setModifierGroups(sourceItem.modifierGroups);
+      alert("تم استيراد الاختيارات بنجاح! 🎉");
+    } else {
+      alert("الصنف ده مفيهوش اختيارات متسجلة عشان تنسخها!");
+    }
+  };
+
   const handleSaveItem = async (e) => {
     e.preventDefault();
     const itemData = {
@@ -492,7 +500,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       image: image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger",
       description, category: category || (categories.length > 0 ? categories[0].name : 'General'),
       isOffer, 
-      modifierGroups // بنبعت النظام الجديد للباك إند
+      modifierGroups 
     };
     try {
       let res;
@@ -507,7 +515,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     setImage(item.image); setDescription(item.description || ''); setCategory(item.category);
     setIsOffer(item.isOffer || false);
     
-    // لو الصنف القديم متسجل بـ sizes أو addons هنحاول نحولهم أو نعتمد على modifierGroups لو موجودة
     if (item.modifierGroups && item.modifierGroups.length > 0) {
       setModifierGroups(item.modifierGroups);
     } else {
@@ -524,7 +531,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   };
 
   const resetForm = () => {
-    setEditId(null); setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setIsOffer(false); setModifierGroups([]);
+    setEditId(null); setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setIsOffer(false); setModifierGroups([]); setImportFromId('');
     if(categories.length > 0) setCategory(categories[0].name);
   };
 
@@ -618,29 +625,51 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         {/* قسم مجموعات التعديلات (Modifier Groups) */}
         <div className="md:col-span-2 bg-[#050304] p-6 rounded-[2rem] border border-[#1F0A0E] mt-4">
           <h4 className="text-xl font-bold text-white mb-4">🛠️ مجموعات الاختيارات والتعديلات (Modifier Groups)</h4>
-          <p className="text-zinc-400 text-sm mb-6">أنشئ مجموعات مثل "نوع العيش"، "بدون"، أو "المشروبات" وحدد الحد الأدنى والأقصى للاختيار.</p>
+          
+          {/* 🔥 ميزة استيراد الاختيارات من صنف تاني */}
+          <div className="bg-[#180A0E] p-4 rounded-2xl border border-[#FF4500]/30 mb-6 flex flex-col md:flex-row items-end gap-3">
+            <div className="flex-1 w-full">
+              <label className="block text-sm text-[#FFB800] font-bold mb-2">🔄 توفير للوقت: استيراد الاختيارات من صنف تاني</label>
+              <select value={importFromId} onChange={(e) => setImportFromId(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm cursor-pointer">
+                <option value="">-- اختار صنف عشان تنسخ كل الاختيارات بتاعته --</option>
+                {menuItems.filter(i => i.modifierGroups && i.modifierGroups.length > 0).map(item => (
+                  <option key={item._id} value={item._id}>{item.name}</option>
+                ))}
+              </select>
+            </div>
+            <button type="button" onClick={handleImportModifiers} className="bg-[#FF4500] text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-[#E03D00] shadow-lg w-full md:w-auto">استيراد الأن</button>
+          </div>
+
+          <p className="text-zinc-400 text-sm mb-6 border-t border-[#1F0A0E] pt-4">لو الحد الأدنى (Min) = 1، المجموعة دي هتبقى إجباري على العميل. ولو (Min) = 0 هتبقى اختياري.</p>
           
           <div className="flex flex-wrap gap-2 mb-6 items-end bg-[#100609] p-4 rounded-2xl border border-[#1F0A0E]">
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-xs text-zinc-400 mb-1">اسم المجموعة (مثال: Sandwich)</label>
+              <label className="block text-xs text-zinc-400 mb-1">اسم المجموعة (مثال: Sandwich أو بدون)</label>
               <input type="text" value={newGroupName} onChange={(e)=>setNewGroupName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
             </div>
             <div className="w-24">
-              <label className="block text-xs text-zinc-400 mb-1">الحد الأدنى (Min)</label>
-              <input type="number" min="0" value={newGroupMin} onChange={(e)=>setNewGroupMin(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
+              <label className="block text-xs text-[#FFB800] font-bold mb-1">الحد الأدنى (Min)</label>
+              <input type="number" min="0" value={newGroupMin} onChange={(e)=>setNewGroupMin(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-xl p-3 text-white text-sm font-bold" />
             </div>
             <div className="w-24">
-              <label className="block text-xs text-zinc-400 mb-1">الحد الأقصى (Max)</label>
-              <input type="number" min="1" value={newGroupMax} onChange={(e)=>setNewGroupMax(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
+              <label className="block text-xs text-[#FFB800] font-bold mb-1">الحد الأقصى (Max)</label>
+              <input type="number" min="1" value={newGroupMax} onChange={(e)=>setNewGroupMax(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-xl p-3 text-white text-sm font-bold" />
             </div>
-            <button type="button" onClick={handleAddGroup} className="bg-[#FF4500] text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-[#E03D00] shadow-lg">➕ إنشاء مجموعة</button>
+            <button type="button" onClick={handleAddGroup} className="bg-zinc-800 text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-zinc-700 shadow-lg">➕ إنشاء مجموعة</button>
           </div>
 
           <div className="space-y-6">
             {modifierGroups.map((group, gIndex) => (
               <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative">
                 <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="absolute top-4 left-4 text-red-400 bg-red-500/10 px-3 py-1 rounded-lg text-xs font-bold">🗑️ حذف المجموعة</button>
-                <h5 className="font-bold text-[#FFB800] text-lg mb-1">{group.name}</h5>
+                <div className="flex items-center gap-3 mb-1">
+                  <h5 className="font-bold text-[#FFB800] text-lg">{group.name}</h5>
+                  {group.min > 0 ? (
+                    <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded border border-red-500/30">إجباري</span>
+                  ) : (
+                    <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-0.5 rounded border border-zinc-700">اختياري</span>
+                  )}
+                </div>
                 <p className="text-zinc-500 text-xs mb-4">الحد الأدنى: {group.min} | الحد الأقصى: {group.max}</p>
                 
                 <div className="flex gap-2 mb-4 items-end">
@@ -817,7 +846,7 @@ function App() {
 
   // States لـ Modal الصنف الجديد
   const [selectedItemDetail, setSelectedItemDetail] = useState(null);
-  const [selectedModifiers, setSelectedModifiers] = useState({}); // { groupIndex: [optionIndex1, optionIndex2] }
+  const [selectedModifiers, setSelectedModifiers] = useState({}); 
   const [itemNotes, setItemNotes] = useState('');
 
   const fetchItems = async () => { try { const res = await fetch(`${API_BASE}/api/items`); let data = await res.json(); setMenuItems(data.map(item => ({ ...item, discount: Number(item.discount) || 0 }))); } catch (err) {} };
@@ -847,7 +876,14 @@ function App() {
 
     if (migratedGroups.length > 0) {
       setSelectedItemDetail({...item, modifierGroups: migratedGroups});
-      setSelectedModifiers({});
+      
+      const initialSelections = {};
+      migratedGroups.forEach((g, idx) => {
+        if (g.min === 1 && g.max === 1 && g.options.length > 0) {
+          initialSelections[idx] = [0]; 
+        }
+      });
+      setSelectedModifiers(initialSelections);
       setItemNotes('');
     } else {
       setCart([...cart, { ...item, cartId: Date.now(), price: getDiscountedPrice(item.price, item.discount) }]);
@@ -955,9 +991,18 @@ function App() {
                   <div key={gIndex} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                     <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                       <div>
-                        <h4 className="font-bold text-gray-800 text-[15px]">{group.name}</h4>
-                        {group.min > 0 && !isSatisfied && <p className="text-[11px] text-red-500 font-bold mt-1">يجب اختيار على الأقل {group.min} من {group.name}</p>}
-                        {group.min === 0 && <p className="text-[11px] text-gray-400 mt-1">اختياري</p>}
+                        <h4 className="font-bold text-gray-800 text-[15px] flex items-center gap-1">
+                          {group.name} 
+                          {group.min > 0 && <span className="text-red-500 text-lg leading-none">*</span>}
+                        </h4>
+                        
+                        {group.min > 0 ? (
+                          <p className={`text-[11px] font-bold mt-1 ${isSatisfied ? 'text-green-600' : 'text-red-500'}`}>
+                            {isSatisfied ? '✓ تم الاختيار' : `إجباري - يجب اختيار ${group.min} على الأقل`}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] font-bold text-gray-400 mt-1">اختياري</p>
+                        )}
                       </div>
                       <span className="text-sm font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-md">{selectedCount}/{group.max}</span>
                     </div>
