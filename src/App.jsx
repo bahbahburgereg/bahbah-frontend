@@ -333,8 +333,8 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
   const [heroImg, setHeroImg] = useState(siteSettings.heroImage);
   const [bannerImg, setBannerImg] = useState(siteSettings.promoBannerImage || '');
-  const [titleAr, setTitleAr] = useState(siteSettings.heroTitleAr);
-  const [titleEn, setTitleEn] = useState(siteSettings.heroTitleEn);
+  const [titleAr, setTitleAr] = useState(siteSettings.heroTitleAr || '');
+  const [titleEn, setTitleEn] = useState(siteSettings.heroTitleEn || '');
   const [logoImg, setLogoImg] = useState(siteSettings.logoImage || '');
 
   const [deliveryZones, setDeliveryZones] = useState([]);
@@ -639,6 +639,49 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
               </div>
           ))}
         </div>
+      </div>
+
+      <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
+        <h3 className="text-xl font-bold text-[#FFB800] mb-4">🖼️ تحكم في لوجو الموقع وواجهة الرئيسية</h3>
+        <form onSubmit={handleSaveSettings} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#050304] p-5 rounded-2xl border border-[#1F0A0E]">
+              <label className="block text-sm text-[#FFB800] font-bold mb-2">شعار المطعم (اللوجو)</label>
+              <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full bg-black border border-[#1F0A0E] rounded-xl p-2 text-white text-xs cursor-pointer mb-3" />
+              {logoImg && <img src={logoImg} alt="Logo Preview" className="h-16 object-contain bg-black/50 p-2 rounded-lg border border-white/10" />}
+            </div>
+            
+            <div className="bg-[#050304] p-5 rounded-2xl border border-[#1F0A0E]">
+              <label className="block text-sm text-[#FFB800] font-bold mb-2">خلفية الهيدر الثابتة فوق</label>
+              <input type="file" accept="image/*" onChange={handleHeroImageUpload} className="w-full bg-black border border-[#1F0A0E] rounded-xl p-2 text-white text-xs cursor-pointer mb-3" />
+              {heroImg && <img src={heroImg} alt="Hero Preview" className="h-16 w-full object-cover rounded-lg border border-white/10" />}
+            </div>
+          </div>
+
+          <div className="bg-[#050304] p-5 rounded-2xl border border-[#FF4500]/30">
+            <label className="block text-sm text-[#FFB800] font-bold mb-2">🖼️ صورة العرض الكبيرة (البوستر تحت زرار اطلب دلوقتي)</label>
+            <input type="file" accept="image/*" onChange={handleBannerImageUpload} className="w-full bg-black border border-[#1F0A0E] rounded-xl p-2 text-white text-xs cursor-pointer mb-3" />
+            <div className="flex items-center gap-4">
+              {bannerImg && <img src={bannerImg} alt="Banner Preview" className="h-20 w-32 object-cover rounded-xl border border-[#FF4500]" />}
+              {bannerImg && (
+                <button type="button" onClick={() => setBannerImg('')} className="bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold border border-red-500/30">🗑️ إزالة البوستر</button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-zinc-300 mb-1">العنوان بالعربي 🔥</label>
+              <input type="text" value={titleAr} onChange={(e)=>setTitleAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" placeholder="أقوى العروض 🔥" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-300 mb-1">العنوان بالإنجليزي ⚡</label>
+              <input type="text" value={titleEn} onChange={(e)=>setTitleEn(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" placeholder="Strongest Offers ⚡" />
+            </div>
+          </div>
+
+          <button type="submit" className="w-full bg-[#FF4500] text-white font-black py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg cursor-pointer">💾 حفظ تعديلات اللوجو والواجهة وصورة العرض</button>
+        </form>
       </div>
 
       <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
