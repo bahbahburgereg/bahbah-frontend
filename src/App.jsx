@@ -144,16 +144,12 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
       <div ref={menuRef} className="scroll-mt-[78px]"></div>
       <section className="relative max-w-[1500px] mx-auto px-5 md:px-10 py-16 md:py-20">
         <div className="absolute left-0 top-10 w-40 h-80 bg-[#ef321b]/10 blur-3xl pointer-events-none" />
-
         <div className="flex flex-col lg:grid lg:grid-cols-[250px_1fr_240px] gap-8 lg:gap-10 items-start">
-          
           <div className="pt-3 order-1 lg:order-none w-full">
             <div className="text-[#ef321b] italic font-black text-3xl md:text-4xl">OUR</div>
             <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">MENU</div>
             <div className="mt-5 text-xl font-black">قائمة العظمة</div>
-            <p className="mt-4 text-white/55 text-sm leading-7">
-              من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.
-            </p>
+            <p className="mt-4 text-white/55 text-sm leading-7">من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.</p>
           </div>
 
           <div className="relative min-h-[300px] lg:min-h-[360px] bg-[#120807] border border-[#ef321b]/35 overflow-hidden flex items-end order-2 lg:order-3 w-full rounded-2xl lg:rounded-none">
@@ -172,20 +168,11 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
 
           <div className="order-3 lg:order-2 w-full">
             <div className="flex gap-2 overflow-x-auto pb-5 mb-2 scrollbar-none">
-              <button 
-                onClick={() => setSelectedHomeCat('الكل')}
-                className={`shrink-0 px-8 py-3 font-black transition-all ${selectedHomeCat === 'الكل' ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/60 border border-white/5'}`}
-                style={selectedHomeCat === 'الكل' ? {clipPath:'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)'} : {}}
-              >
+              <button onClick={() => setSelectedHomeCat('الكل')} className={`shrink-0 px-8 py-3 font-black transition-all ${selectedHomeCat === 'الكل' ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/60 border border-white/5'}`} style={selectedHomeCat === 'الكل' ? {clipPath:'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)'} : {}}>
                 {t.all}
               </button>
               {categories.map((cat) => (
-                <button 
-                  key={cat._id} 
-                  onClick={() => setSelectedHomeCat(cat.name)}
-                  className={`shrink-0 px-7 py-3 font-bold border transition-all ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`}
-                  style={selectedHomeCat === cat.name ? {clipPath:'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)'} : {}}
-                >
+                <button key={cat._id} onClick={() => setSelectedHomeCat(cat.name)} className={`shrink-0 px-7 py-3 font-bold border transition-all ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`} style={selectedHomeCat === cat.name ? {clipPath:'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)'} : {}}>
                   {cat.name}
                 </button>
               ))}
@@ -198,9 +185,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                   <article key={item._id} className="bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group overflow-hidden">
                     <button onClick={() => handleOpenItemDetails(item)} className="w-full text-left" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                       <div className="relative h-52 overflow-hidden bg-black">
-                        {item.discount > 0 && (
-                          <span className="absolute top-3 left-3 z-10 bg-[#ef321b] px-3 py-1 text-xs font-black">خصم {item.discount}%</span>
-                        )}
+                        {item.discount > 0 && <span className="absolute top-3 left-3 z-10 bg-[#ef321b] px-3 py-1 text-xs font-black">خصم {item.discount}%</span>}
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                       </div>
                       <div className="p-5">
@@ -353,9 +338,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     } catch (err) {}
   };
 
-  useEffect(() => {
-    fetchZones();
-  }, []);
+  useEffect(() => { fetchZones(); }, []);
 
   const handleAddZone = async (e) => {
     e.preventDefault();
@@ -366,18 +349,13 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: zoneName.trim(), fee: Number(zoneFee) })
       });
-      if (res.ok) {
-        setZoneName(''); setZoneFee(''); fetchZones();
-      }
+      if (res.ok) { setZoneName(''); setZoneFee(''); fetchZones(); }
     } catch (err) {}
   };
 
   const handleDeleteZone = async (id) => {
     if (!window.confirm("حذف هذه المنطقة؟")) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/zones/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchZones();
-    } catch (err) {}
+    try { const res = await fetch(`${API_BASE}/api/zones/${id}`, { method: 'DELETE' }); if (res.ok) fetchZones(); } catch (err) {}
   };
 
   const compressImage = (file, maxWidth, maxHeight, callback) => {
@@ -411,10 +389,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heroImage: heroImg, heroTitleAr: titleAr, heroTitleEn: titleEn, logoImage: logoImg, promoBannerImage: bannerImg })
       });
-      if (res.ok) {
-        alert("تم تحديث الواجهة واللوجو وصورة العرض بنجاح! 🚀🔥");
-        fetchSettings();
-      }
+      if (res.ok) { alert("تم تحديث الواجهة واللوجو بنجاح! 🚀🔥"); fetchSettings(); }
     } catch (err) { alert("خطأ أثناء الحفظ"); }
   };
 
@@ -431,9 +406,7 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       } else {
         res = await fetch(`${API_BASE}/api/categories`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: catName.trim() }) });
       }
-      if (res.ok) {
-        setCatName(''); setEditCatId(null); fetchCategories();
-      }
+      if (res.ok) { setCatName(''); setEditCatId(null); fetchCategories(); }
     } catch (err) {}
   };
   const handleEditCategoryClick = (cat) => { setEditCatId(cat._id); setCatName(cat.name); };
@@ -452,7 +425,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     } catch (err) {}
   };
 
-  // State الخاصة ببيانات الصنف (تم استرجاع جميع الحقول)
   const [editId, setEditId] = useState(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -460,19 +432,19 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [type, setType] = useState('normal');
-  const [maxItems, setMaxItems] = useState('');
   const [isOffer, setIsOffer] = useState(false);
-  const [addonsList, setAddonsList] = useState([]);
-  const [boxItemsList, setBoxItemsList] = useState([]);
-  const [sizesList, setSizesList] = useState([]);
   
-  // حقول الإدخال للإضافات والأحجام
-  const [addonName, setAddonName] = useState('');
-  const [addonPrice, setAddonPrice] = useState('');
-  const [boxItemNameInput, setBoxItemNameInput] = useState('');
-  const [sizeNameInput, setSizeNameInput] = useState('');
-  const [sizePriceInput, setSizePriceInput] = useState('');
+  // نظام الاختيارات الجديد (Modifier Groups)
+  const [modifierGroups, setModifierGroups] = useState([]);
+  
+  // States لإنشاء مجموعة جديدة
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupMin, setNewGroupMin] = useState(0);
+  const [newGroupMax, setNewGroupMax] = useState(1);
+  
+  // States لإنشاء خيار داخل المجموعة
+  const [newOptionNames, setNewOptionNames] = useState({});
+  const [newOptionPrices, setNewOptionPrices] = useState({});
 
   useEffect(() => {
     if (categories.length > 0 && !category) {
@@ -480,14 +452,47 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     }
   }, [categories, category]);
 
+  const handleAddGroup = () => {
+    if (!newGroupName.trim()) return;
+    setModifierGroups([...modifierGroups, { 
+      name: newGroupName, 
+      min: Number(newGroupMin), 
+      max: Number(newGroupMax), 
+      options: [] 
+    }]);
+    setNewGroupName(''); setNewGroupMin(0); setNewGroupMax(1);
+  };
+
+  const handleAddOption = (gIndex) => {
+    const optName = newOptionNames[gIndex];
+    const optPrice = newOptionPrices[gIndex] || 0;
+    if (!optName?.trim()) return;
+    
+    const updatedGroups = [...modifierGroups];
+    updatedGroups[gIndex].options.push({ name: optName, price: Number(optPrice) });
+    setModifierGroups(updatedGroups);
+    setNewOptionNames({...newOptionNames, [gIndex]: ''});
+    setNewOptionPrices({...newOptionPrices, [gIndex]: ''});
+  };
+
+  const handleRemoveGroup = (gIndex) => {
+    setModifierGroups(modifierGroups.filter((_, idx) => idx !== gIndex));
+  };
+
+  const handleRemoveOption = (gIndex, oIndex) => {
+    const updatedGroups = [...modifierGroups];
+    updatedGroups[gIndex].options = updatedGroups[gIndex].options.filter((_, idx) => idx !== oIndex);
+    setModifierGroups(updatedGroups);
+  };
+
   const handleSaveItem = async (e) => {
     e.preventDefault();
     const itemData = {
       name, price: Number(price), discount: Number(discount) || 0,
       image: image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger",
       description, category: category || (categories.length > 0 ? categories[0].name : 'General'),
-      type, maxItems: type === 'box' ? Number(maxItems) : undefined,
-      isOffer, addons: addonsList, boxItems: type === 'box' ? boxItemsList : [], sizes: sizesList
+      isOffer, 
+      modifierGroups // بنبعت النظام الجديد للباك إند
     };
     try {
       let res;
@@ -500,13 +505,26 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const handleEditItemClick = (item) => {
     setEditId(item._id); setName(item.name); setPrice(item.price); setDiscount(item.discount || '');
     setImage(item.image); setDescription(item.description || ''); setCategory(item.category);
-    setType(item.type || 'normal'); setMaxItems(item.maxItems || ''); setIsOffer(item.isOffer || false);
-    setAddonsList(item.addons || []); setBoxItemsList(item.boxItems || []); setSizesList(item.sizes || []);
+    setIsOffer(item.isOffer || false);
+    
+    // لو الصنف القديم متسجل بـ sizes أو addons هنحاول نحولهم أو نعتمد على modifierGroups لو موجودة
+    if (item.modifierGroups && item.modifierGroups.length > 0) {
+      setModifierGroups(item.modifierGroups);
+    } else {
+      let migratedGroups = [];
+      if (item.sizes && item.sizes.length > 0) {
+        migratedGroups.push({ name: "اختر الحجم", min: 1, max: 1, options: item.sizes });
+      }
+      if (item.addons && item.addons.length > 0) {
+        migratedGroups.push({ name: "الإضافات الاختيارية", min: 0, max: item.addons.length, options: item.addons });
+      }
+      setModifierGroups(migratedGroups);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
-    setEditId(null); setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setMaxItems(''); setType('normal'); setIsOffer(false); setAddonsList([]); setBoxItemsList([]); setSizesList([]);
+    setEditId(null); setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setIsOffer(false); setModifierGroups([]);
     if(categories.length > 0) setCategory(categories[0].name);
   };
 
@@ -528,9 +546,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
           <span className="text-xs text-[#FFB800]">
             {item.discount > 0 ? `${getDiscountedPrice(item.price, item.discount)} ج (بدل ${item.price})` : `${item.price} ج`}
           </span>
-          {orphanItems.includes(item) && (
-            <span className="text-red-400 text-xs block mt-1">القسم المسجل: {item.category} (غير موجود)</span>
-          )}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -564,37 +579,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         </div>
       </div>
 
-      <form onSubmit={handleSaveSettings} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
-        <h3 className="text-xl font-bold text-[#FFB800] mb-4">🖼️ تخصيص الواجهة والبوستر</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-          <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30">
-            <label className="block text-sm mb-2 text-[#FFB800] font-bold">🖼️ صورة العرض الكبيرة (البوستر تحت زرار اطلب دلوقتي)</label>
-            <input type="file" accept="image/*" onChange={handleBannerImageUpload} className="w-full bg-[#100609] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            <div className="flex items-center gap-4 mt-2">
-              {bannerImg ? (
-                <>
-                  <img src={bannerImg} alt="Banner Preview" className="w-40 h-24 object-cover rounded-2xl border border-[#FF4500]" />
-                  <button type="button" onClick={() => { setBannerImg(''); }} className="bg-red-600/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold border border-red-500/30">🗑️ إزالة البوستر</button>
-                </>
-              ) : <span className="text-zinc-500 text-xs">لا توجد صورة بوستر مفعلة حالياً.</span>}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm mb-2 text-zinc-300">خلفية الهيدر الثابتة فوق</label>
-            <input type="file" accept="image/*" onChange={handleHeroImageUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            <img src={heroImg} alt="Hero" className="w-full h-20 object-cover rounded-2xl border border-[#1F0A0E]" />
-          </div>
-          <div>
-            <label className="block text-sm mb-2 text-zinc-300">شعار المطعم (اللوجو)</label>
-            <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer mb-2" />
-            {logoImg && <img src={logoImg} alt="Logo" className="w-20 h-20 object-contain rounded-2xl bg-[#050304] border border-[#1F0A0E]" />}
-          </div>
-        </div>
-        <button type="submit" className="w-full bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">
-          💾 حفظ تعديلات اللوجو والواجهة وصورة العرض
-        </button>
-      </form>
-
       <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
         <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.catManage}</h3>
         <form onSubmit={handleSaveCategory} className="flex gap-4 mb-6">
@@ -618,64 +602,71 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
       </div>
 
       <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
-        <h3 className="md:col-span-2 text-xl font-bold text-[#FFB800] mb-2">{t.itemManage}</h3>
+        <h3 className="md:col-span-2 text-2xl font-black text-[#FFB800] mb-2 border-b border-[#1F0A0E] pb-4">{t.itemManage}</h3>
         
-        <div><label className="block text-sm mb-2 text-zinc-300">Item Name *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Name" /></div>
-        <div><label className="block text-sm mb-2 text-zinc-300">Price *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Price" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: برجر دبل" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">السعر الأساسي *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 150" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
-        <div><label className="block text-sm mb-2 text-zinc-300">Category *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
-        <div><label className="block text-sm mb-2 text-zinc-300">Image</label><input type="file" accept="image/*" onChange={(e) => { if(e.target.files[0]) compressImage(e.target.files[0], 800, 800, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">القسم *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">صورة الصنف</label><input type="file" accept="image/*" onChange={(e) => { if(e.target.files[0]) compressImage(e.target.files[0], 800, 800, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
         
-        {/* زرار العرض في الرئيسية (تم استرجاعه) */}
         <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
           <input type="checkbox" id="isOfferCheck" checked={isOffer} onChange={(e) => setIsOffer(e.target.checked)} className="w-5 h-5 accent-[#FF4500] cursor-pointer" />
           <label htmlFor="isOfferCheck" className="text-[#FFB800] font-bold cursor-pointer">🔥 عرض في الصفحة الرئيسية (اجعل هذا الصنف يظهر كعرض متحرك في الواجهة)</label>
         </div>
 
-        {/* تحديد نوع الصنف (تم استرجاعه) */}
-        <div className="md:col-span-2"><label className="block text-sm mb-2 text-zinc-300">Type</label><select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white"><option value="normal">Normal (سندوتش أو وجبة عادية)</option><option value="box">Box (بوكس مخصص قابل للاختيار)</option></select></div>
-
-        {/* اختيارات البوكس (تم استرجاعها) */}
-        {type === 'box' && (
-          <div className="md:col-span-2"><label className="block text-sm mb-2 text-[#FFB800]">Max Items in Box *</label><input type="number" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" placeholder="3" /></div>
-        )}
-        {type === 'box' && (
-          <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-            <label className="block text-sm mb-2 text-[#FFB800] font-bold">📦 أسماء المكونات التي تظهر داخل البوكس</label>
-            <div className="flex gap-2 mb-3">
-              <input type="text" placeholder="اسم المكون" value={boxItemNameInput} onChange={(e) => setBoxItemNameInput(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
-              <button type="button" onClick={() => { if(!boxItemNameInput)return; setBoxItemsList([...boxItemsList, {name: boxItemNameInput}]); setBoxItemNameInput(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
+        {/* قسم مجموعات التعديلات (Modifier Groups) */}
+        <div className="md:col-span-2 bg-[#050304] p-6 rounded-[2rem] border border-[#1F0A0E] mt-4">
+          <h4 className="text-xl font-bold text-white mb-4">🛠️ مجموعات الاختيارات والتعديلات (Modifier Groups)</h4>
+          <p className="text-zinc-400 text-sm mb-6">أنشئ مجموعات مثل "نوع العيش"، "بدون"، أو "المشروبات" وحدد الحد الأدنى والأقصى للاختيار.</p>
+          
+          <div className="flex flex-wrap gap-2 mb-6 items-end bg-[#100609] p-4 rounded-2xl border border-[#1F0A0E]">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs text-zinc-400 mb-1">اسم المجموعة (مثال: Sandwich)</label>
+              <input type="text" value={newGroupName} onChange={(e)=>setNewGroupName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
             </div>
-            {boxItemsList.length > 0 && <div className="space-y-2">{boxItemsList.map((b, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{b.name}</span><button type="button" onClick={()=>setBoxItemsList(boxItemsList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
+            <div className="w-24">
+              <label className="block text-xs text-zinc-400 mb-1">الحد الأدنى (Min)</label>
+              <input type="number" min="0" value={newGroupMin} onChange={(e)=>setNewGroupMin(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
+            </div>
+            <div className="w-24">
+              <label className="block text-xs text-zinc-400 mb-1">الحد الأقصى (Max)</label>
+              <input type="number" min="1" value={newGroupMax} onChange={(e)=>setNewGroupMax(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
+            </div>
+            <button type="button" onClick={handleAddGroup} className="bg-[#FF4500] text-white px-6 py-3 rounded-xl font-bold text-sm h-[46px] hover:bg-[#E03D00] shadow-lg">➕ إنشاء مجموعة</button>
           </div>
-        )}
 
-        {/* الأحجام (تم استرجاعها) */}
-        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/40">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">⚖️ أحجام الصنف وأسعارها (مثل: كيلو، نص، ربع)</label>
-          <div className="flex gap-2 mb-3">
-            <input type="text" placeholder="اسم الحجم" value={sizeNameInput} onChange={(e) => setSizeNameInput(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
-            <input type="number" placeholder="السعر" value={sizePriceInput} onChange={(e) => setSizePriceInput(e.target.value)} className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
-            <button type="button" onClick={() => { if(!sizeNameInput || !sizePriceInput)return; setSizesList([...sizesList, {name: sizeNameInput, price: Number(sizePriceInput)}]); setSizeNameInput(''); setSizePriceInput(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
+          <div className="space-y-6">
+            {modifierGroups.map((group, gIndex) => (
+              <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative">
+                <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="absolute top-4 left-4 text-red-400 bg-red-500/10 px-3 py-1 rounded-lg text-xs font-bold">🗑️ حذف المجموعة</button>
+                <h5 className="font-bold text-[#FFB800] text-lg mb-1">{group.name}</h5>
+                <p className="text-zinc-500 text-xs mb-4">الحد الأدنى: {group.min} | الحد الأقصى: {group.max}</p>
+                
+                <div className="flex gap-2 mb-4 items-end">
+                  <input type="text" placeholder="اسم الخيار (مثال: بدون جبنة)" value={newOptionNames[gIndex] || ''} onChange={(e) => setNewOptionNames({...newOptionNames, [gIndex]: e.target.value})} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
+                  <input type="number" placeholder="السعر الإضافي (0 لو مجاني)" value={newOptionPrices[gIndex] || ''} onChange={(e) => setNewOptionPrices({...newOptionPrices, [gIndex]: e.target.value})} className="w-32 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
+                  <button type="button" onClick={() => handleAddOption(gIndex)} className="bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-700">إضافة خيار</button>
+                </div>
+
+                {group.options.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {group.options.map((opt, oIndex) => (
+                      <div key={oIndex} className="flex justify-between items-center bg-[#050304] border border-[#1F0A0E] px-4 py-2 rounded-xl text-sm">
+                        <span>{opt.name} {opt.price > 0 && <span className="text-[#FFB800]">(+{opt.price} ج)</span>}</span>
+                        <button type="button" onClick={() => handleRemoveOption(gIndex, oIndex)} className="text-red-400 font-bold">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-          {sizesList.length > 0 && <div className="space-y-2">{sizesList.map((s, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{s.name} - {s.price} ج</span><button type="button" onClick={()=>setSizesList(sizesList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
         </div>
 
-        {/* الإضافات (تم استرجاعها) */}
-        <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#1F0A0E]">
-          <label className="block text-sm mb-2 text-[#FFB800] font-bold">✨ الإضافات الاختيارية</label>
-          <div className="flex gap-2 mb-3">
-            <input type="text" placeholder="اسم الإضافة" value={addonName} onChange={(e) => setAddonName(e.target.value)} className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
-            <input type="number" placeholder="السعر" value={addonPrice} onChange={(e) => setAddonPrice(e.target.value)} className="w-32 bg-[#100609] border border-[#1F0A0E] rounded-2xl p-3 text-white text-sm" />
-            <button type="button" onClick={() => { if(!addonName || !addonPrice)return; setAddonsList([...addonsList, {name: addonName, price: Number(addonPrice)}]); setAddonName(''); setAddonPrice(''); }} className="bg-[#FF4500] text-white px-5 rounded-2xl font-bold text-sm">➕ إضافة</button>
-          </div>
-          {addonsList.length > 0 && <div className="space-y-2">{addonsList.map((a, i) => <div key={i} className="flex justify-between items-center bg-[#100609] px-4 py-2 rounded-xl text-sm"><span>{a.name} (+{a.price} ج)</span><button type="button" onClick={()=>setAddonsList(addonsList.filter((_,idx)=>idx!==i))} className="text-red-400">✕</button></div>)}</div>}
-        </div>
-
-        {/* الوصف (تم استرجاعه) */}
         <div className="md:col-span-2">
-            <label className="block text-sm mb-2 text-[#FFB800] font-bold">Description *</label>
-            <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="Description..." />
+            <label className="block text-sm mb-2 text-[#FFB800] font-bold">وصف الصنف *</label>
+            <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="طعم ولا في الخيال..." />
         </div>
 
         <div className="md:col-span-2 mt-4 flex gap-4"><button type="submit" className="flex-1 bg-[#FF4500] text-white font-bold py-4 rounded-2xl hover:bg-[#E03D00] transition shadow-lg">{editId ? t.save : t.addItem}</button>{editId && <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">{t.cancel}</button>}</div>
@@ -683,18 +674,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 
       <div className="space-y-12 mt-12">
         <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
-        
-        {orphanItems.length > 0 && (
-          <div className="bg-[#1a0505] border border-red-500/40 rounded-[2.5rem] p-8 shadow-2xl">
-            <h4 className="text-xl font-black text-red-500 mb-6 border-r-4 border-red-500 pr-4">
-              ⚠️ أصناف بدون قسم أو قسمها محذوف ({orphanItems.length} صنف)
-            </h4>
-            <div className="space-y-4">
-              {orphanItems.map((item, itemIndex) => renderItemCard(item, itemIndex, orphanItems))}
-            </div>
-          </div>
-        )}
-
         {categories.map(cat => {
           const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
           return (
@@ -715,37 +694,22 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
 const CartPage = ({ cart, setCart, lang }) => {
   const t = translations[lang];
   const itemsTotal = cart.reduce((sum, item) => sum + item.price, 0);
-
   const [orderType, setOrderType] = useState('delivery');
   const [deliveryZones, setDeliveryZones] = useState([]);
   const [selectedZone, setSelectedZone] = useState(null);
-
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/zones`)
-      .then(res => res.json())
-      .then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); })
-      .catch(err => {});
-  }, []);
-
-  const groupedCart = cart.reduce((acc, item) => {
-    const existing = acc.find(i => i.name === item.name);
-    if (existing) existing.quantity += 1;
-    else acc.push({ ...item, quantity: 1 });
-    return acc;
+    fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); }).catch(err => {});
   }, []);
 
   const deliveryFee = orderType === 'delivery' && selectedZone ? selectedZone.fee : 0;
   const grandTotal = itemsTotal + deliveryFee;
 
-  const handleIncrease = (itemName) => { const itemToAdd = cart.find(i => i.name === itemName); if (itemToAdd) setCart([...cart, { ...itemToAdd }]); };
-  const handleDecrease = (itemName) => { const indexToRemove = cart.findIndex(i => i.name === itemName); if (indexToRemove !== -1) { const newCart = [...cart]; newCart.splice(indexToRemove, 1); setCart(newCart); } };
-  const handleRemoveCompletely = (itemName) => { setCart(cart.filter(i => i.name !== itemName)); };
+  const handleRemoveCompletely = (cartId) => { setCart(cart.filter(i => i.cartId !== cartId)); };
 
   const sendOrderToWhatsApp = () => {
     if (cart.length === 0) return alert("السلة فارغة!");
@@ -762,7 +726,15 @@ const CartPage = ({ cart, setCart, lang }) => {
     }
 
     message += `\n🛒 *الأصناف المطلوبة:*\n`;
-    groupedCart.forEach((item) => { message += `▪️ ${item.quantity}× ${item.name} — (${item.price * item.quantity} ج)\n`; });
+    cart.forEach((item) => { 
+      message += `▪️ 1× ${item.name} — (${item.price} ج)\n`; 
+      if(item.modifiersInfo && item.modifiersInfo.length > 0) {
+        item.modifiersInfo.forEach(mod => { message += `   - ${mod}\n`; });
+      }
+      if(item.notes) {
+        message += `   📝 ملاحظات: ${item.notes}\n`;
+      }
+    });
     message += `\n-------------------\n🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
     if (orderType === 'delivery') message += `🚚 *سعر التوصيل:* ${deliveryFee} ج\n`;
     message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
@@ -775,12 +747,9 @@ const CartPage = ({ cart, setCart, lang }) => {
     return (
       <section className="px-6 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#050304] text-white flex flex-col items-center justify-center">
         <div className="bg-[#100609] border border-[#25D366] rounded-[2.5rem] p-12 text-center shadow-[0_0_35px_rgba(37,211,102,0.2)] w-full">
-          <div className="text-7xl mb-4">✅</div>
-          <h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
-          <p className="text-xl mb-6 text-zinc-300">رقم الأوردر بتاعك هو:</p>
-          <div className="bg-[#050304] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-2xl inline-block mb-8 tracking-widest shadow-xl">{placedOrderId}</div>
-          <p className="text-sm text-zinc-400 mb-8">تم تحويلك للواتساب لإرسال الطلب للمطعم.</p>
-          <button onClick={() => setPlacedOrderId(null)} className="text-white bg-[#FF4500] hover:bg-[#E03D00] px-8 py-4 rounded-2xl font-bold transition shadow-lg">رجوع للسلة</button>
+          <div className="text-7xl mb-4">✅</div><h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
+          <div className="bg-[#050304] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-2xl inline-block mb-8">{placedOrderId}</div>
+          <button onClick={() => setPlacedOrderId(null)} className="text-white bg-[#FF4500] px-8 py-4 rounded-2xl font-bold transition">رجوع للسلة</button>
         </div>
       </section>
     );
@@ -790,58 +759,43 @@ const CartPage = ({ cart, setCart, lang }) => {
     <section className="px-6 py-12 max-w-4xl mx-auto min-h-screen bg-[#050304] text-white">
       <h2 className="text-3xl font-black text-[#FFB800] mb-8 border-b border-[#1A0B0E] pb-4">{t.cart}</h2>
       {cart.length === 0 ? (
-        <div className="border border-[#1F0A0E] bg-[#100609] rounded-[2.5rem] p-16 text-center shadow-2xl">
-          <div className="text-zinc-600 text-6xl mb-4">🛒</div>
-          <h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2>
-          <Link to="/menu" className="text-[#FF4500] underline hover:text-white font-bold">{t.backToMenu}</Link>
-        </div>
+        <div className="border border-[#1F0A0E] bg-[#100609] rounded-[2.5rem] p-16 text-center"><h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] shadow-2xl">
+          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E]">
             <h3 className="text-xl font-bold text-[#FFB800] mb-6">محتويات السلة</h3>
             <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
-              {groupedCart.map((item, index) => (
-                <div key={index} className="flex justify-between items-center border-b border-[#1F0A0E] pb-4">
-                  <div><h4 className="text-base font-bold text-white">{item.name}</h4><p className="text-[#FFB800] font-bold text-sm">{item.price * item.quantity} ج</p></div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-[#050304] border border-[#1F0A0E] rounded-2xl px-3 py-1 gap-3">
-                      <button onClick={() => handleDecrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">-</button>
-                      <span className="font-black text-white">{item.quantity}</span>
-                      <button onClick={() => handleIncrease(item.name)} className="text-[#FF4500] font-black text-lg hover:text-white">+</button>
-                    </div>
-                    <button onClick={() => handleRemoveCompletely(item.name)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20">❌</button>
+              {cart.map((item) => (
+                <div key={item.cartId} className="flex justify-between items-start border-b border-[#1F0A0E] pb-4">
+                  <div className="flex-1">
+                    <h4 className="text-base font-bold text-white">{item.name}</h4>
+                    {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => ( <p key={idx} className="text-xs text-zinc-400">- {mod}</p> ))}
+                    {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
+                    <p className="text-[#FFB800] font-bold text-sm mt-1">{item.price} ج</p>
                   </div>
+                  <button onClick={() => handleRemoveCompletely(item.cartId)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold ml-3">❌</button>
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
-              <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
-              {orderType === 'delivery' && <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>}
-            </div>
-            <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center">
-              <span className="text-lg font-bold">{t.total}</span><span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span>
-            </div>
+            <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center"><span className="text-lg font-bold">{t.total}</span><span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span></div>
           </div>
-
-          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] flex flex-col justify-between shadow-2xl">
+          <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] flex flex-col justify-between">
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-[#FFB800] mb-2">بيانات التوصيل والاستلام</h3>
               <div className="grid grid-cols-2 gap-3 mb-2">
-                <button type="button" onClick={() => setOrderType('delivery')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🛵 توصيل دليفري</button>
-                <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500] shadow-lg' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
+                <button type="button" onClick={() => setOrderType('delivery')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🛵 توصيل دليفري</button>
+                <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
               </div>
-              <div><label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label><input type="text" placeholder="اكتب اسمك..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
-              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" maxLength="11" placeholder="010xxxxxxxx" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm tracking-wider" /></div>
+              <div><label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
+              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون *</label><input type="text" maxLength="11" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
               {orderType === 'delivery' && (
                 <>
-                  <div><label className="block text-xs text-zinc-300 mb-1">اختر منطقة التوصيل *</label><select value={selectedZone ? selectedZone._id : ''} onChange={(e) => { const zone = deliveryZones.find(z => z._id === e.target.value); setSelectedZone(zone); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer">{deliveryZones.map(zone => (<option key={zone._id} value={zone._id}>{zone.name} ({zone.fee} جنيه)</option>))}</select></div>
-                  <div><label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label><textarea rows="2" placeholder="الشارع، رقم العمارة، الدور..." value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
+                  <div><label className="block text-xs text-zinc-300 mb-1">منطقة التوصيل *</label><select value={selectedZone?._id||''} onChange={(e) => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer">{deliveryZones.map(z => (<option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>))}</select></div>
+                  <div><label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label><textarea value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
                 </>
               )}
             </div>
-            <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black text-lg py-4.5 rounded-2xl hover:bg-[#20bd5a] transition mt-6 flex items-center justify-center gap-2 shadow-2xl cursor-pointer">
-              {t.whatsappOrder}
-            </button>
+            <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black text-lg py-4.5 rounded-2xl mt-6">{t.whatsappOrder}</button>
           </div>
         </div>
       )}
@@ -861,17 +815,12 @@ function App() {
   const [lang, setLang] = useState('ar');
   const [logoClicks, setLogoClicks] = useState(0);
 
+  // States لـ Modal الصنف الجديد
   const [selectedItemDetail, setSelectedItemDetail] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedAddon, setSelectedAddon] = useState(null);
+  const [selectedModifiers, setSelectedModifiers] = useState({}); // { groupIndex: [optionIndex1, optionIndex2] }
+  const [itemNotes, setItemNotes] = useState('');
 
-  const fetchItems = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/items`);
-      let data = await res.json();
-      setMenuItems(data.map(item => ({ ...item, discount: Number(item.discount) || 0 })));
-    } catch (err) {}
-  };
+  const fetchItems = async () => { try { const res = await fetch(`${API_BASE}/api/items`); let data = await res.json(); setMenuItems(data.map(item => ({ ...item, discount: Number(item.discount) || 0 }))); } catch (err) {} };
   const fetchCategories = async () => { try { const res = await fetch(`${API_BASE}/api/categories`); setCategories(await res.json()); } catch (err) {} };
   const fetchSettings = async () => { try { const res = await fetch(`${API_BASE}/api/settings`); setSiteSettings(await res.json()); } catch (err) {} };
 
@@ -882,10 +831,7 @@ function App() {
       const newCount = prev + 1;
       if (newCount === 3) {
         const pass = window.prompt("🔒 Admin Password:");
-        if (pass === "15926") {
-          setIsAuthenticated(true);
-          navigate('/secret-admin-dashboard');
-        } else if (pass !== null) { alert("Wrong password!"); }
+        if (pass === "15926") { setIsAuthenticated(true); navigate('/secret-admin-dashboard'); }
         return 0;
       }
       return newCount;
@@ -893,24 +839,71 @@ function App() {
   };
 
   const handleOpenItemDetailsModal = (item) => {
-    const hasSizes = item.sizes && item.sizes.length > 0;
-    const hasAddons = item.addons && item.addons.length > 0;
-    if (hasSizes || hasAddons) {
-      setSelectedItemDetail(item); setSelectedSize(hasSizes ? item.sizes[0] : null); setSelectedAddon(null);
+    let migratedGroups = item.modifierGroups || [];
+    if (migratedGroups.length === 0 && (item.sizes?.length > 0 || item.addons?.length > 0)) {
+      if (item.sizes?.length > 0) migratedGroups.push({ name: "اختر الحجم", min: 1, max: 1, options: item.sizes });
+      if (item.addons?.length > 0) migratedGroups.push({ name: "الإضافات الاختيارية", min: 0, max: item.addons.length, options: item.addons });
+    }
+
+    if (migratedGroups.length > 0) {
+      setSelectedItemDetail({...item, modifierGroups: migratedGroups});
+      setSelectedModifiers({});
+      setItemNotes('');
     } else {
-      setCart([...cart, { ...item, price: getDiscountedPrice(item.price, item.discount) }]);
+      setCart([...cart, { ...item, cartId: Date.now(), price: getDiscountedPrice(item.price, item.discount) }]);
     }
   };
 
+  const handleModifierSelection = (gIndex, oIndex, groupMax) => {
+    const currentSelected = selectedModifiers[gIndex] || [];
+    if (groupMax === 1) {
+      setSelectedModifiers({ ...selectedModifiers, [gIndex]: [oIndex] });
+    } else {
+      if (currentSelected.includes(oIndex)) {
+        setSelectedModifiers({ ...selectedModifiers, [gIndex]: currentSelected.filter(i => i !== oIndex) });
+      } else {
+        if (currentSelected.length < groupMax) {
+          setSelectedModifiers({ ...selectedModifiers, [gIndex]: [...currentSelected, oIndex] });
+        }
+      }
+    }
+  };
+
+  const isFormValid = () => {
+    if (!selectedItemDetail || !selectedItemDetail.modifierGroups) return true;
+    return selectedItemDetail.modifierGroups.every((group, gIndex) => {
+      const count = (selectedModifiers[gIndex] || []).length;
+      return count >= group.min && count <= group.max;
+    });
+  };
+
+  let modalFinalPrice = 0;
+  if (selectedItemDetail) {
+    modalFinalPrice = getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount);
+    if (selectedItemDetail.modifierGroups) {
+      selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
+        const selectedOptIndices = selectedModifiers[gIndex] || [];
+        selectedOptIndices.forEach(oIndex => { modalFinalPrice += group.options[oIndex].price; });
+      });
+    }
+  }
+
   const handleAddCustomizedItemToCart = () => {
-    if (!selectedItemDetail) return;
-    let itemName = selectedItemDetail.name;
-    if (selectedSize) itemName += ` (${selectedSize.name})`;
-    if (selectedAddon) itemName += ` - ${selectedAddon.name}`;
-    const basePrice = selectedSize ? selectedSize.price : selectedItemDetail.price;
-    const finalPrice = getDiscountedPrice(basePrice, selectedItemDetail.discount) + (selectedAddon ? selectedAddon.price : 0);
-    setCart([...cart, { ...selectedItemDetail, name: itemName, price: finalPrice }]);
-    setSelectedItemDetail(null); setSelectedSize(null); setSelectedAddon(null);
+    if (!isFormValid()) return;
+    let modifiersInfo = [];
+    selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
+      const selectedOptIndices = selectedModifiers[gIndex] || [];
+      selectedOptIndices.forEach(oIndex => { modifiersInfo.push(`${group.name}: ${group.options[oIndex].name}`); });
+    });
+    
+    setCart([...cart, { 
+      ...selectedItemDetail, 
+      cartId: Date.now(), 
+      price: modalFinalPrice, 
+      modifiersInfo, 
+      notes: itemNotes 
+    }]);
+    setSelectedItemDetail(null); setSelectedModifiers({}); setItemNotes('');
   };
 
   return (
@@ -920,13 +913,10 @@ function App() {
           <Link to="/" className="shrink-0 flex items-center">
             {siteSettings.logoImage ? <img src={siteSettings.logoImage} alt="Bahbah Burger" className="h-14 md:h-16 w-auto object-contain" /> : <span className="text-3xl font-black italic text-white">Bahbah</span>}
           </Link>
-          
           <div className="hidden md:flex items-center gap-10 text-sm font-black">
             <Link to="/" className="relative py-7 hover:text-[#ef321b] transition">الرئيسية</Link>
             <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">المنيو</Link>
-            <Link to="/menu" className="py-7 hover:text-[#ef321b] transition">العروض</Link>
           </div>
-
           <div className="flex items-center gap-4">
             <Link to="/cart" className="relative flex items-center gap-2 hover:text-[#ef321b] transition">
               <span className="text-2xl">🛒</span>
@@ -946,75 +936,79 @@ function App() {
       </div>
 
       {selectedItemDetail && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-xl">
-          <div className="bg-[#100609] border border-[#FF4500]/50 rounded-[2.5rem] w-full max-w-lg p-8 relative shadow-2xl">
-            <button onClick={() => setSelectedItemDetail(null)} className="absolute top-6 left-6 text-red-400 text-xl font-bold bg-red-500/10 w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-500/20">✕</button>
-            <h3 className="text-3xl font-black text-white mb-6">{selectedItemDetail.name}</h3>
+        <div className="fixed inset-0 bg-black/95 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-xl">
+          <div className="bg-[#f2f2f2] w-full max-w-lg md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
             
-            {/* الأحجام */}
-            {selectedItemDetail.sizes && selectedItemDetail.sizes.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-extrabold text-[#FFB800]">اختر الحجم:</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {selectedItemDetail.sizes.map((sz, idx) => {
-                    const finalSzPrice = getDiscountedPrice(sz.price, selectedItemDetail.discount);
-                    return (
-                      <div key={idx} onClick={() => setSelectedSize(sz)} className={`p-4 rounded-2xl border cursor-pointer flex flex-col items-center justify-center transition ${selectedSize === sz ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800] shadow-lg' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                        <span className="font-bold">{sz.name}</span>
-                        {selectedItemDetail.discount > 0 ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-zinc-500 line-through font-bold">{sz.price} ج</span>
-                            <span className="text-sm font-black text-[#FFB800]">{finalSzPrice} ج</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-black text-[#FFB800]">{sz.price} ج</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* الهيدر بتاع المودال */}
+            <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0 shadow-sm z-10">
+              <h3 className="text-xl font-bold text-gray-900">{selectedItemDetail.name}</h3>
+              <button onClick={() => setSelectedItemDetail(null)} className="text-gray-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 font-bold">✕</button>
+            </div>
 
-            {/* الإضافات */}
-            {selectedItemDetail.addons && selectedItemDetail.addons.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <h4 className="text-sm font-extrabold text-[#FFB800]">✨ الإضافات الاختيارية:</h4>
-                <div className="flex flex-col gap-3">
-                  <label className={`p-4 rounded-2xl border cursor-pointer flex items-center justify-between transition ${!selectedAddon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="radio" name="addon" checked={!selectedAddon} onChange={() => setSelectedAddon(null)} className="hidden" />
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!selectedAddon ? 'border-[#FF4500]' : 'border-[#1F0A0E]'}`}>
-                        {!selectedAddon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
+            {/* محتوى الاختيارات سكرول */}
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              {selectedItemDetail.modifierGroups && selectedItemDetail.modifierGroups.map((group, gIndex) => {
+                const selectedCount = (selectedModifiers[gIndex] || []).length;
+                const isSatisfied = selectedCount >= group.min && selectedCount <= group.max;
+                
+                return (
+                  <div key={gIndex} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                      <div>
+                        <h4 className="font-bold text-gray-800 text-[15px]">{group.name}</h4>
+                        {group.min > 0 && !isSatisfied && <p className="text-[11px] text-red-500 font-bold mt-1">يجب اختيار على الأقل {group.min} من {group.name}</p>}
+                        {group.min === 0 && <p className="text-[11px] text-gray-400 mt-1">اختياري</p>}
                       </div>
-                      <span className="font-bold text-sm">بدون إضافات</span>
+                      <span className="text-sm font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-md">{selectedCount}/{group.max}</span>
                     </div>
-                    <span className="text-sm font-black">+0 ج</span>
-                  </label>
 
-                  {selectedItemDetail.addons.map((addon, idx) => (
-                    <label key={idx} className={`p-4 rounded-2xl border cursor-pointer flex items-center justify-between transition ${selectedAddon === addon ? 'bg-[#FF4500]/20 border-[#FF4500] text-[#FFB800]' : 'bg-[#050304] border-[#1F0A0E] text-zinc-300'}`}>
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="addon" checked={selectedAddon === addon} onChange={() => setSelectedAddon(addon)} className="hidden" />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedAddon === addon ? 'border-[#FF4500]' : 'border-[#1F0A0E]'}`}>
-                          {selectedAddon === addon && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
-                        </div>
-                        <span className="font-bold text-sm">{addon.name}</span>
-                      </div>
-                      <span className="text-sm font-black text-[#FFB800]">+{addon.price} ج</span>
-                    </label>
-                  ))}
-                </div>
+                    <div className="flex flex-col">
+                      {group.options.map((opt, oIndex) => {
+                        const isSelected = (selectedModifiers[gIndex] || []).includes(oIndex);
+                        const isDisabled = !isSelected && selectedCount >= group.max;
+
+                        return (
+                          <label key={oIndex} className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-0 cursor-pointer transition ${isSelected ? 'bg-orange-50' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center gap-3">
+                              {group.max === 1 ? (
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500]' : 'border-gray-300'}`}>
+                                  {isSelected && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
+                                </div>
+                              ) : (
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500] bg-[#FF4500]' : 'border-gray-300 bg-white'}`}>
+                                  {isSelected && <span className="text-white text-xs font-bold">✓</span>}
+                                </div>
+                              )}
+                              <span className={`text-[15px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{opt.name}</span>
+                            </div>
+                            {opt.price > 0 && <span className="text-[14px] text-gray-600 font-medium">+ ج.م {opt.price}</span>}
+                            <input type={group.max === 1 ? 'radio' : 'checkbox'} checked={isSelected} disabled={isDisabled} onChange={() => handleModifierSelection(gIndex, oIndex, group.max)} className="hidden" />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* الملاحظات */}
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-4">
+                <h4 className="font-bold text-gray-800 text-[15px] mb-3">الملاحظات</h4>
+                <textarea rows="2" placeholder="أي ملاحظات خاصة بالطلب..." value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-sm focus:outline-none focus:border-[#FF4500]" />
               </div>
-            )}
-            <button onClick={handleAddCustomizedItemToCart} className="w-full bg-[#FF4500] text-white font-black py-4 rounded-2xl hover:bg-[#E03D00] transition text-lg shadow-2xl">
-              أضف للسلة
-            </button>
+            </div>
+
+            {/* زرار الإضافة للسلة */}
+            <div className="bg-white p-4 border-t border-gray-200 shrink-0">
+              <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3.5 px-6 rounded-2xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                <span>{modalFinalPrice} ج.م</span>
+                <span>إضافة للسلة</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* الفووتر اللي فيه الدخلة السرية للداشبورد (اضغط 3 مرات هنا) */}
       <footer id="footer" onClick={handleSecretLogoClick} className="bg-[#080808] border-t border-[#8d1710] mt-0 text-white/45 py-12 text-center text-xs cursor-default select-none">
         <div className="text-[#ef321b] text-3xl font-black italic mb-3">BAHBAH BURGER</div>
         جميع الحقوق محفوظة © 2026 بحبح برجر — Bahbah Burger
