@@ -998,17 +998,19 @@ function App() {
     });
   };
 
-  // حساب السعر جوه المودال مع مراعاة الخصم
-  let modalBasePrice = selectedItemDetail ? (selectedItemDetail.price > 0 ? selectedItemDetail.price : (selectedItemDetail.modifierGroups?.[1]?.options?.[0]?.price || 0)) : 0;
-  let discountedBasePrice = selectedItemDetail ? getDiscountedPrice(modalBasePrice, selectedItemDetail.discount) : 0;
-  let modalFinalPrice = discountedBasePrice;
-
+  let modalFinalPrice = 0;
   if (selectedItemDetail) {
     if (selectedItemDetail.modifierGroups) {
       selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
         const selectedOptIndices = selectedModifiers[gIndex] || [];
-        selectedOptIndices.forEach(oIndex => { modalFinalPrice += group.options[oIndex].price; });
+        selectedOptIndices.forEach(oIndex => {
+          const opt = group.options[oIndex];
+          modalFinalPrice += getDiscountedPrice(opt.price, selectedItemDetail.discount);
+        });
       });
+    }
+    if (modalFinalPrice === 0 && selectedItemDetail.price > 0) {
+      modalFinalPrice = getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount);
     }
   }
 
@@ -1017,7 +1019,11 @@ function App() {
     let modifiersInfo = [];
     selectedItemDetail.modifierGroups.forEach((group, gIndex) => {
       const selectedOptIndices = selectedModifiers[gIndex] || [];
-      selectedOptIndices.forEach(oIndex => { modifiersInfo.push(`${group.name}: ${group.options[oIndex].name}`); });
+      selectedOptIndices.forEach(oIndex => {
+        const opt = group.options[oIndex];
+        const finalOptPrice = getDiscountedPrice(opt.price, selectedItemDetail.discount);
+        modifiersInfo.push(`${group.name}: ${opt.name} ${finalOptPrice > 0 ? `(+${finalOptPrice} ج)` : ''}`);
+      });
     });
     
     setCart([...cart, { 
@@ -1097,6 +1103,7 @@ function App() {
                       {group.options.map((opt, oIndex) => {
                         const isSelected = (selectedModifiers[gIndex] || []).includes(oIndex);
                         const isDisabled = group.max > 1 ? (!isSelected && selectedCount >= group.max) : false;
+                        const discountedOptPrice = getDiscountedPrice(opt.price, selectedItemDetail.discount);
 
                         return (
                           <label key={oIndex} className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-0 cursor-pointer transition ${isSelected ? 'bg-orange-50' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
@@ -1112,7 +1119,20 @@ function App() {
                               )}
                               <span className={`text-[15px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{opt.name}</span>
                             </div>
-                            {opt.price > 0 && <span className="text-[14px] text-gray-600 font-medium">+ ج.م {opt.price}</span>}
+                            {opt.price > 0 ? (
+                              <span className="text-[14px] text-gray-600 font-medium flex items-center gap-1.5">
+                                {selectedItemDetail.discount > 0 ? (
+                                  <>
+                                    <span className="text-[#FF4500] font-bold">+ ج.م {discountedOptPrice}</span>
+                                    <span className="text-xs text-gray-400 line-through">+ ج.م {opt.price}</span>
+                                  </>
+                                ) : (
+                                  `+ ج.م ${opt.price}`
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-[14px] text-gray-400 font-medium">أساسي</span>
+                            )}
                             <input type={group.max === 1 ? 'radio' : 'checkbox'} checked={isSelected} disabled={isDisabled} onChange={() => handleModifierSelection(gIndex, oIndex, group.max)} className="hidden" />
                           </label>
                         );
