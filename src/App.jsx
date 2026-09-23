@@ -375,6 +375,10 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     reader.readAsDataURL(file);
   };
 
+  const handleHeroImageUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 1200, 800, setHeroImg); };
+  const handleBannerImageUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 1000, 600, setBannerImg); };
+  const handleLogoUpload = (e) => { if(e.target.files[0]) compressImage(e.target.files[0], 300, 300, setLogoImg); };
+
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
@@ -439,7 +443,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
   const [newOptionNames, setNewOptionNames] = useState({});
   const [newOptionPrices, setNewOptionPrices] = useState({});
 
-  // 🔥 State جديد عشان نختار منه الصنف اللي هننسخ منه التعديلات
   const [importFromId, setImportFromId] = useState('');
 
   useEffect(() => {
@@ -481,7 +484,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
     setModifierGroups(updatedGroups);
   };
 
-  // 🔥 دالة النسخ من صنف تاني
   const handleImportModifiers = () => {
     if (!importFromId) return alert("اختار الصنف الأول من القائمة!");
     const sourceItem = menuItems.find(i => i._id === importFromId);
@@ -626,7 +628,6 @@ const AdminDashboard = ({ menuItems, categories, siteSettings, lang, fetchItems,
         <div className="md:col-span-2 bg-[#050304] p-6 rounded-[2rem] border border-[#1F0A0E] mt-4">
           <h4 className="text-xl font-bold text-white mb-4">🛠️ مجموعات الاختيارات والتعديلات (Modifier Groups)</h4>
           
-          {/* 🔥 ميزة استيراد الاختيارات من صنف تاني */}
           <div className="bg-[#180A0E] p-4 rounded-2xl border border-[#FF4500]/30 mb-6 flex flex-col md:flex-row items-end gap-3">
             <div className="flex-1 w-full">
               <label className="block text-sm text-[#FFB800] font-bold mb-2">🔄 توفير للوقت: استيراد الاختيارات من صنف تاني</label>
@@ -1010,7 +1011,10 @@ function App() {
                     <div className="flex flex-col">
                       {group.options.map((opt, oIndex) => {
                         const isSelected = (selectedModifiers[gIndex] || []).includes(oIndex);
-                        const isDisabled = !isSelected && selectedCount >= group.max;
+                        
+                        // 🔥 التعديل السحري هنا: لو الماكس أكتر من 1 هيقفل الخيارات الباقية لما يوصل للحد
+                        // لكن لو الماكس = 1 (زي الراديو) هيفضل سايبهم مفتوحين عشان يبدل بينهم عادي
+                        const isDisabled = group.max > 1 ? (!isSelected && selectedCount >= group.max) : false;
 
                         return (
                           <label key={oIndex} className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-0 cursor-pointer transition ${isSelected ? 'bg-orange-50' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
