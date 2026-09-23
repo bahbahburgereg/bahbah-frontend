@@ -878,13 +878,9 @@ function App() {
     if (migratedGroups.length > 0) {
       setSelectedItemDetail({...item, modifierGroups: migratedGroups});
       
-      const initialSelections = {};
-      migratedGroups.forEach((g, idx) => {
-        if (g.min === 1 && g.max === 1 && g.options.length > 0) {
-          initialSelections[idx] = [0]; 
-        }
-      });
-      setSelectedModifiers(initialSelections);
+      // 🔥 شلت الكود اللي كان بيختار أول أوبشن أوتوماتيك
+      // كده المودال هيفتح دايماً فاضي والعميل يختار براحته
+      setSelectedModifiers({});
       setItemNotes('');
     } else {
       setCart([...cart, { ...item, cartId: Date.now(), price: getDiscountedPrice(item.price, item.discount) }]);
@@ -999,7 +995,7 @@ function App() {
                         
                         {group.min > 0 ? (
                           <p className={`text-[11px] font-bold mt-1 ${isSatisfied ? 'text-green-600' : 'text-red-500'}`}>
-                            {isSatisfied ? '✓ تم الاختيار' : `إجباري - يجب اختيار ${group.min} على الأقل`}
+                            {isSatisfied ? '✓ تم الاختيار' : `يجب اختيار على الأقل ${group.min} من ${group.name}`}
                           </p>
                         ) : (
                           <p className="text-[11px] font-bold text-gray-400 mt-1">اختياري</p>
@@ -1012,8 +1008,6 @@ function App() {
                       {group.options.map((opt, oIndex) => {
                         const isSelected = (selectedModifiers[gIndex] || []).includes(oIndex);
                         
-                        // 🔥 التعديل السحري هنا: لو الماكس أكتر من 1 هيقفل الخيارات الباقية لما يوصل للحد
-                        // لكن لو الماكس = 1 (زي الراديو) هيفضل سايبهم مفتوحين عشان يبدل بينهم عادي
                         const isDisabled = group.max > 1 ? (!isSelected && selectedCount >= group.max) : false;
 
                         return (
