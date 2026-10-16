@@ -21,7 +21,6 @@ const clearSession = () => {
   try { localStorage.removeItem(SESSION_KEY); } catch {}
 };
 
-// طلب للسيرفر ومعاه التوكن. لو السيرفر رد "غير مصرح" بنقفل الجلسة ونرجّع لشاشة الدخول.
 const authRequest = async (token, path, options = {}, onUnauthorized) => {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -50,7 +49,6 @@ const loginRequest = async (username, password) => {
   return data;
 };
 
-// شاشة تسجيل الدخول (للكاشير ولوحة الإدارة)
 const StaffLogin = ({ title, onLogin, onBeforeSubmit, requireAdmin = false }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -125,16 +123,20 @@ const getDiscountedPrice = (price, discountPercent) => {
 // ================= 1. صفحة الرئيسية =================
 const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDetails, menuRef }) => {
   const t = translations[lang];
-  const [selectedHomeCat, setSelectedHomeCat] = useState('الكل');
+  const [selectedHomeCat, setSelectedHomeCat] = useState('');
+
+  useEffect(() => {
+    if (categories.length > 0 && !selectedHomeCat) {
+      const smashCat = categories.find(c => c.name.toLowerCase().includes('smash') || c.name.includes('سماش'));
+      setSelectedHomeCat(smashCat ? smashCat.name : categories[0].name);
+    }
+  }, [categories, selectedHomeCat]);
 
   const scrollToMenu = () => {
     if (menuRef.current) menuRef.current.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const offers = menuItems.filter(item => item.isOffer);
-  const filteredHomeItems = selectedHomeCat === 'الكل'
-    ? (offers.length > 0 ? offers.slice(0, 6) : menuItems.slice(0, 6))
-    : menuItems.filter(item => item.category === selectedHomeCat).slice(0, 6);
+  const filteredHomeItems = menuItems.filter(item => item.category === selectedHomeCat).slice(0, 6);
 
   return (
     <div className="bg-[#050505] text-white overflow-hidden">
@@ -175,35 +177,27 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
       </div>
 
       <div ref={menuRef} className="scroll-mt-[78px]"></div>
+      
       <section className="relative max-w-[1500px] mx-auto px-5 md:px-10 py-16 md:py-20">
         <div className="absolute left-0 top-10 w-40 h-80 bg-[#ef321b]/10 blur-3xl pointer-events-none" />
-        <div className="flex flex-col lg:grid lg:grid-cols-[250px_1fr_240px] gap-8 lg:gap-10 items-start">
-          <div className="pt-3 order-1 lg:order-none w-full">
-            <div className="text-[#ef321b] italic font-black text-3xl md:text-4xl">OUR</div>
-            <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">MENU</div>
-            <div className="mt-5 text-xl font-black">قائمة العظمة</div>
-            <p className="mt-4 text-white/55 text-sm leading-7">من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.</p>
-          </div>
-
-          <div className="relative min-h-[300px] lg:min-h-[360px] bg-[#120807] border border-[#ef321b]/35 overflow-hidden flex items-end order-2 lg:order-3 w-full rounded-2xl lg:rounded-none">
-            {siteSettings.promoBannerImage ? (
-              <img src={siteSettings.promoBannerImage} alt="Bahbah Offer" className="absolute inset-0 w-full h-full object-cover opacity-90" />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
-            )}
-            {!siteSettings.promoBannerImage && (
-              <div className="relative z-10 p-7">
-                <div className="text-[#ef321b] text-5xl font-black italic leading-[.8]">BAHBAH</div>
-                <div className="text-white text-4xl font-black italic leading-none">BURGER</div>
+        
+        <div className="flex flex-col gap-10">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-[#ef321b]/20 pb-8">
+            <div>
+              <div className="text-[#ef321b] italic font-black text-3xl md:text-4xl">OUR</div>
+              <div className="text-white uppercase italic font-black leading-[.82] text-6xl md:text-7xl">MENU</div>
+              <div className="mt-5 text-xl font-black">قائمة العظمة</div>
+              <p className="mt-4 text-white/55 text-sm leading-7">من البرجر الكلاسيك لحد التركيبات الخاصة.. كل لقمة في بحبح ليها حكاية.</p>
+            </div>
+            {siteSettings.promoBannerImage && (
+              <div className="relative w-full md:w-80 h-32 rounded-2xl overflow-hidden border border-[#ef321b]/35 shadow-lg">
+                <img src={siteSettings.promoBannerImage} alt="Bahbah Offer" className="absolute inset-0 w-full h-full object-cover" />
               </div>
             )}
           </div>
 
-          <div className="order-3 lg:order-2 w-full">
-            <div className="flex gap-2 overflow-x-auto pb-5 mb-2 scrollbar-none">
-              <button onClick={() => setSelectedHomeCat('الكل')} className={`shrink-0 px-8 py-3 font-black transition-all ${selectedHomeCat === 'الكل' ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/60 border border-white/5'}`} style={selectedHomeCat === 'الكل' ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>
-                {t.all}
-              </button>
+          <div className="w-full">
+            <div className="flex gap-2 overflow-x-auto pb-5 mb-4 scrollbar-none">
               {categories.map((cat) => (
                 <button key={cat._id} onClick={() => setSelectedHomeCat(cat.name)} className={`shrink-0 px-7 py-3 font-bold border transition-all ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`} style={selectedHomeCat === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>
                   {cat.name}
@@ -211,7 +205,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
                 const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
                 const price = getDiscountedPrice(basePrice, item.discount);
@@ -225,10 +219,10 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                         <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                       </div>
                       <div className="p-5">
-                        <h3 className="text-2xl font-black italic uppercase truncate">{item.name}</h3>
+                        <h3 className="text-xl font-black italic uppercase truncate">{item.name}</h3>
                         <p className="text-white/45 text-sm mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
                         <div className="flex items-end justify-between mt-6">
-                          <div className="text-[#ef321b] text-2xl font-black">
+                          <div className="text-[#ef321b] text-xl font-black">
                             {item.discount > 0 && basePrice > 0 ? (
                               <div className="flex items-center gap-2">
                                 <span>EGP {price}</span>
@@ -262,10 +256,16 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
 // ================= 2. صفحة المنيو =================
 const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
   const t = translations[lang];
-  const [selectedCategory, setSelectedCategory] = useState('الكل');
-  const categoriesToShow = selectedCategory === 'الكل' || selectedCategory === 'All'
-    ? categories
-    : categories.filter(cat => cat.name === selectedCategory);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategory) {
+      const smashCat = categories.find(c => c.name.toLowerCase().includes('smash') || c.name.includes('سماش'));
+      setSelectedCategory(smashCat ? smashCat.name : categories[0].name);
+    }
+  }, [categories, selectedCategory]);
+
+  const categoriesToShow = categories.filter(cat => cat.name === selectedCategory);
 
   return (
     <section className="bg-[#050505] text-white min-h-screen overflow-hidden">
@@ -279,9 +279,8 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
         </div>
 
         <div className="flex gap-2 overflow-x-auto py-7 scrollbar-none border-b border-white/5">
-          <button onClick={() => setSelectedCategory(lang === 'ar' ? 'الكل' : 'All')} className={`shrink-0 px-8 py-3 font-black ${selectedCategory === 'الكل' || selectedCategory === 'All' ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10'}`} style={{ clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' }}>{t.all}</button>
           {categories.map(cat => (
-            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10'}`}>{cat.name}</button>
+            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black transition-all ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10 hover:border-white/30'}`} style={selectedCategory === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>{cat.name}</button>
           ))}
         </div>
 
@@ -291,7 +290,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
           <div className="space-y-20 pt-10">
             {categoriesToShow.map(cat => {
               const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
-              if (!catItems.length) return null;
+              if (!catItems.length) return <div className="text-center text-white/40 py-10" key={cat._id}>لا توجد أصناف في {cat.name}</div>;
               return (
                 <div key={cat._id}>
                   <div className="flex items-center gap-5 mb-7">
@@ -312,10 +311,10 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                               <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                             </div>
                             <div className="p-5">
-                              <h3 className="text-2xl font-black italic uppercase truncate">{item.name}</h3>
+                              <h3 className="text-xl font-black italic uppercase truncate">{item.name}</h3>
                               <p className="text-sm text-white/45 mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
                               <div className="flex items-center justify-between mt-6">
-                                <span className="text-[#ef321b] text-2xl font-black" dir="ltr">
+                                <span className="text-[#ef321b] text-xl font-black" dir="ltr">
                                   {item.discount > 0 && basePrice > 0 ? `EGP ${price} (بدل ${basePrice})` : `EGP ${basePrice}`}
                                 </span>
                                 <span className="w-9 h-9 border border-white/15 flex items-center justify-center text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition">{soldOut ? '⛔' : '+'}</span>
@@ -339,8 +338,6 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
 // ================= 3. لوحة التحكم =================
 const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fetchCategories, fetchSettings, token, onUnauthorized, onLogout }) => {
   const t = translations[lang];
-
-  // كل طلبات لوحة الإدارة بتتبعت ومعاها توكن الأدمن
   const adminFetch = (path, options = {}) => authRequest(token, path, options, onUnauthorized);
 
   const [heroImg, setHeroImg] = useState(siteSettings.heroImage);
@@ -479,7 +476,6 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   };
 
   const handleRemoveGroup = (gIndex) => setModifierGroups(modifierGroups.filter((_, idx) => idx !== gIndex));
-
   const handleRemoveOption = (gIndex, oIndex) => {
     const updatedGroups = [...modifierGroups];
     updatedGroups[gIndex].options = updatedGroups[gIndex].options.filter((_, idx) => idx !== oIndex);
@@ -567,7 +563,6 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= catItems.length) return;
 
-    // بنعيد ترقيم القسم كله عشان الترتيب يفضل سليم حتى لو الأرقام القديمة متكررة
     const reordered = [...catItems];
     const tmp = reordered[index]; reordered[index] = reordered[targetIndex]; reordered[targetIndex] = tmp;
     try {
@@ -697,7 +692,6 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
       <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
         <h3 className="md:col-span-2 text-2xl font-black text-[#FFB800] mb-2 border-b border-[#1F0A0E] pb-4">{t.itemManage}</h3>
-
         <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: برجر دبل" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">السعر الأساسي *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 150" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
@@ -842,10 +836,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   );
 };
 
-// بوابة لوحة الإدارة: لازم دخول بحساب الأدمن (الباسورد بيتراجع في السيرفر مش في الموقع)
 const AdminDashboard = (props) => {
   const [session, setSession] = useState(readSession);
-
   const handleLogout = () => { clearSession(); setSession(null); };
 
   if (!session?.token || session.user?.role !== 'admin') {
@@ -881,10 +873,8 @@ const CartPage = ({ cart, setCart, lang }) => {
     if (!customerPhone.trim() || customerPhone.length !== 11 || isNaN(customerPhone)) return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
     if (orderType === 'delivery' && !customerAddress.trim()) return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
 
-    // نفتح نافذة الواتساب فوراً (قبل أي انتظار) عشان المتصفح مايحجبهاش
     const waWindow = window.open('', '_blank');
 
-    // نتأكد إن مفيش صنف في السلة خلص بعد ما العميل ضافه
     try {
       const freshRes = await fetch(`${API_BASE}/api/items`);
       const fresh = await freshRes.json();
@@ -901,30 +891,19 @@ const CartPage = ({ cart, setCart, lang }) => {
     const orderId = 'BB-' + Date.now().toString().slice(-4) + Math.floor(10 + Math.random() * 90);
 
     const orderPayload = {
-      orderId,
-      customerName,
-      customerPhone,
-      orderType,
+      orderId, customerName, customerPhone, orderType,
       customerAddress: orderType === 'delivery' ? customerAddress : 'استلام من الفرع',
       zoneName: orderType === 'delivery' && selectedZone ? selectedZone.name : 'استلام من الفرع',
       deliveryFee: orderType === 'delivery' ? deliveryFee : 0,
       items: cart.map((item) => ({
-        name: item.name,
-        price: item.price,
-        quantity: 1,
-        modifiers: item.modifiersInfo || [],
-        notes: item.notes || ''
+        name: item.name, price: item.price, quantity: 1, modifiers: item.modifiersInfo || [], notes: item.notes || ''
       })),
-      itemsTotal,
-      grandTotal
+      itemsTotal, grandTotal
     };
 
-    // إرسال الأوردر لشاشة الكاشير (السيرفر)
     try {
       const response = await fetch(`${API_BASE}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderPayload)
       });
       if (!response.ok) console.warn("Server responded with error when saving order, but WhatsApp will still open.");
     } catch (err) {
@@ -932,12 +911,10 @@ const CartPage = ({ cart, setCart, lang }) => {
     }
 
     let message = `🍔 أهلاً (بحبح برجر)، عندي أوردر جديد!\n🆔 *رقم الأوردر:* #${orderId}\n\n👤 *الاسم:* ${customerName}\n📞 *التليفون:* ${customerPhone}\n📦 *نوع الاستلام:* ${orderType === 'delivery' ? 'توصيل دليفري 🛵' : 'استلام من الفرع 🏪'}\n`;
-
     if (orderType === 'delivery') {
       message += `📍 *العنوان:* ${customerAddress}\n`;
       if (selectedZone) message += `🚚 *منطقة التوصيل:* ${selectedZone.name} (${selectedZone.fee} ج)\n`;
     }
-
     message += `\n🛒 *الأصناف المطلوبة:*\n`;
     cart.forEach((item) => {
       message += `▪️ 1× ${item.name} — (${item.price} ج)\n`;
@@ -1225,7 +1202,6 @@ const CashierDashboard = () => {
     try { localStorage.setItem('bahbahAutoPrint', next ? 'on' : 'off'); } catch (e) {}
   };
 
-  // بيطبع الأوردرات الجديدة اللي لسه ماتطبعتش (مرة واحدة بس لكل أوردر)
   const handleAutoPrint = (list) => {
     const printed = loadPrinted();
     if (!seededRef.current) {
@@ -1259,7 +1235,6 @@ const CashierDashboard = () => {
     return () => clearTimeout(t1);
   }, [printJob]);
 
-  // أي لمسة أو ضغطة في الصفحة بتفعّل الصوت لوحدها
   useEffect(() => {
     if (!token) return;
     const unlock = () => unlockAudio();
@@ -1562,7 +1537,6 @@ const CashierDashboard = () => {
     </div>
   );
 
-  // ===== شاشة الدخول =====
   if (!token) {
     return <StaffLogin title="🔒 دخول شاشة الكاشير" onBeforeSubmit={unlockAudio} onLogin={handleLoggedIn} />;
   }
@@ -1813,7 +1787,6 @@ function App() {
     loadAll();
   }, []);
 
-  // 3 ضغطات على الفوتر = صفحة الإدارة (بتطلب تسجيل دخول بنفسها)
   const handleSecretLogoClick = () => {
     setLogoClicks(prev => {
       const newCount = prev + 1;
