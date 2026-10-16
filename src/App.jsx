@@ -1893,28 +1893,27 @@ function App() {
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
         </Routes>
       </div>
-
 {selectedItemDetail && (
         <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
           <div className="bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
             
-            {/* 1. صورة الصنف وزر الإغلاق العائم */}
-            <div className="relative w-full h-10 md:h-40 shrink-0 bg-white border-b border-gray-200">
-              <button onClick={() => setSelectedItemDetail(null)} className="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold transition backdrop-blur-md">✕</button>
+            {/* 1. صورة الصنف وزر الإغلاق العائم (تم التصغير جداً) */}
+            <div className="relative w-full h-24 md:h-32 shrink-0 bg-white border-b border-gray-200">
+              <button onClick={() => setSelectedItemDetail(null)} className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition backdrop-blur-md">✕</button>
               <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
             </div>
 
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
-                                          {/* 2. اسم السندوتش والسعر والوصف */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-                <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-2xl font-black text-gray-900">{selectedItemDetail.name}</h3>
-                  <span className="text-xl font-black text-[#FF4500] whitespace-nowrap" dir="ltr">
+              {/* 2. اسم السندوتش والسعر والوصف */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm">
+                <div className="flex justify-between items-start gap-3">
+                  <h3 className="text-xl font-black text-gray-900 leading-tight">{selectedItemDetail.name}</h3>
+                  <span className="text-lg font-black text-[#FF4500] whitespace-nowrap" dir="ltr">
                     {selectedItemDetail.discount > 0 ? getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount) : selectedItemDetail.price} ج.م
                   </span>
                 </div>
                 {selectedItemDetail.description && (
-                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">{selectedItemDetail.description}</p>
+                  <p className="text-gray-500 text-xs mt-1.5 leading-relaxed">{selectedItemDetail.description}</p>
                 )}
               </div>
 
@@ -1924,21 +1923,21 @@ function App() {
                 const isSatisfied = selectedCount >= group.min && selectedCount <= group.max;
                 return (
                   <div key={gIndex} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <div className="px-3 py-2.5 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                       <div>
-                        <h4 className="font-bold text-gray-800 text-[15px] flex items-center gap-1">
+                        <h4 className="font-bold text-gray-800 text-[14px] flex items-center gap-1">
                           {group.name}
-                          {group.min > 0 && <span className="text-red-500 text-lg leading-none">*</span>}
+                          {group.min > 0 && <span className="text-red-500 text-base leading-none">*</span>}
                         </h4>
                         {group.min > 0 ? (
-                          <p className={`text-[11px] font-bold mt-1 ${isSatisfied ? 'text-green-600' : 'text-red-500'}`}>
+                          <p className={`text-[10px] font-bold mt-0.5 ${isSatisfied ? 'text-green-600' : 'text-red-500'}`}>
                             {isSatisfied ? '✓ تم الاختيار' : `يجب اختيار على الأقل ${group.min} من ${group.name}`}
                           </p>
                         ) : (
-                          <p className="text-[11px] font-bold text-gray-400 mt-1">اختياري</p>
+                          <p className="text-[10px] font-bold text-gray-400 mt-0.5">اختياري</p>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-md">{selectedCount}/{group.max}</span>
+                      <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-md">{selectedCount}/{group.max}</span>
                     </div>
 
                     <div className="flex flex-col">
@@ -1947,30 +1946,30 @@ function App() {
                         const isDisabled = group.max > 1 ? (!isSelected && selectedCount >= group.max) : false;
                         const discountedOptPrice = getDiscountedPrice(opt.price, selectedItemDetail.discount);
                         return (
-                          <label key={oIndex} className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-0 cursor-pointer transition ${isSelected ? 'bg-orange-50' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
-                            <div className="flex items-center gap-3">
+                          <label key={oIndex} className={`flex items-center justify-between p-3 border-b border-gray-100 last:border-0 cursor-pointer transition ${isSelected ? 'bg-orange-50' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center gap-2.5">
                               {group.max === 1 ? (
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500]' : 'border-gray-300'}`}>
-                                  {isSelected && <div className="w-2.5 h-2.5 bg-[#FF4500] rounded-full"></div>}
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500]' : 'border-gray-300'}`}>
+                                  {isSelected && <div className="w-2 h-2 bg-[#FF4500] rounded-full"></div>}
                                 </div>
                               ) : (
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500] bg-[#FF4500]' : 'border-gray-300 bg-white'}`}>
-                                  {isSelected && <span className="text-white text-xs font-bold">✓</span>}
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#FF4500] bg-[#FF4500]' : 'border-gray-300 bg-white'}`}>
+                                  {isSelected && <span className="text-white text-[10px] font-bold">✓</span>}
                                 </div>
                               )}
-                              <span className={`text-[15px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{opt.name}</span>
+                              <span className={`text-[14px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{opt.name}</span>
                             </div>
                             {opt.price > 0 ? (
-                              <span className="text-[14px] text-gray-600 font-medium flex items-center gap-1.5">
+                              <span className="text-[13px] text-gray-600 font-medium flex items-center gap-1.5">
                                 {selectedItemDetail.discount > 0 ? (
                                   <>
                                     <span className="text-[#FF4500] font-bold">+ ج.م {discountedOptPrice}</span>
-                                    <span className="text-xs text-gray-400 line-through">+ ج.م {opt.price}</span>
+                                    <span className="text-[10px] text-gray-400 line-through">+ ج.م {opt.price}</span>
                                   </>
                                 ) : `+ ج.م ${opt.price}`}
                               </span>
                             ) : (
-                              <span className="text-[14px] text-gray-400 font-medium">أساسي</span>
+                              <span className="text-[13px] text-gray-400 font-medium">أساسي</span>
                             )}
                             <input type={group.max === 1 ? 'radio' : 'checkbox'} checked={isSelected} disabled={isDisabled} onChange={() => handleModifierSelection(gIndex, oIndex, group.max)} className="hidden" />
                           </label>
@@ -1982,17 +1981,17 @@ function App() {
               })}
 
               {/* 4. الملاحظات */}
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-4">
-                <h4 className="font-bold text-gray-800 text-[15px] mb-3">الملاحظات</h4>
-                <textarea rows="2" placeholder="أي ملاحظات خاصة بالطلب..." value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-sm focus:outline-none focus:border-[#FF4500]" />
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-3">
+                <h4 className="font-bold text-gray-800 text-[14px] mb-2">الملاحظات</h4>
+                <textarea rows="2" placeholder="أي ملاحظات خاصة بالطلب..." value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-gray-800 text-xs focus:outline-none focus:border-[#FF4500]" />
               </div>
             </div>
 
             {/* 5. زر الإضافة للسلة */}
-            <div className="bg-white p-4 border-t border-gray-200 shrink-0">
-              <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3.5 px-6 rounded-2xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                <span>{modalFinalPrice} ج.م</span>
-                <span>إضافة للسلة</span>
+            <div className="bg-white p-3 border-t border-gray-200 shrink-0">
+              <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3 px-5 rounded-xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                <span className="text-sm">{modalFinalPrice} ج.م</span>
+                <span className="text-sm">إضافة للسلة</span>
               </button>
             </div>
           </div>
