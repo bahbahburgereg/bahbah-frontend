@@ -204,42 +204,43 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                 </button>
               ))}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
-                const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
-                const price = getDiscountedPrice(basePrice, item.discount);
-                const soldOut = item.available === false;
-                return (
-                  <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
-                    <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                      <div className="relative h-52 overflow-hidden bg-black">
-                        {soldOut && <span className="absolute top-3 right-3 z-20 bg-red-600 px-3 py-1 text-xs font-black">⛔ غير متاح حالياً</span>}
-                        {item.discount > 0 && <span className="absolute top-3 left-3 z-10 bg-[#ef321b] px-3 py-1 text-xs font-black">خصم {item.discount}%</span>}
-                        <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
-                      </div>
-                      <div className="p-5">
-                        <h3 className="text-xl font-black italic uppercase truncate">{item.name}</h3>
-                        <p className="text-white/45 text-sm mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
-                        <div className="flex items-end justify-between mt-6">
-                          <div className="text-[#ef321b] text-xl font-black">
-                            {item.discount > 0 && basePrice > 0 ? (
-                              <div className="flex items-center gap-2">
-                                <span>EGP {price}</span>
-                                <span className="text-xs text-zinc-500 line-through">EGP {basePrice}</span>
-                              </div>
-                            ) : `EGP ${basePrice}`}
-                          </div>
-                          <span className="w-9 h-9 border border-white/15 flex items-center justify-center text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition">{soldOut ? '⛔' : '+'}</span>
-                        </div>
-                      </div>
-                    </button>
-                  </article>
-                );
-              }) : (
-                <div className="col-span-full py-10 text-center text-white/40 font-bold border border-white/5 bg-[#111]">لا توجد أصناف في هذا القسم حالياً.</div>
-              )}
+<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+  {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
+    const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+    const price = getDiscountedPrice(basePrice, item.discount);
+    const soldOut = item.available === false;
+    return (
+      <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group flex flex-col overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
+        <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
+            {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
+            {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+            <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+          </div>
+          <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
+            <div>
+              <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
+              <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
             </div>
+            <div className="flex items-center justify-between mt-3 sm:mt-6">
+              <div className="text-[#ef321b] text-sm sm:text-xl font-black">
+                {item.discount > 0 && basePrice > 0 ? (
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span>EGP {price}</span>
+                    <span className="text-[9px] sm:text-xs text-zinc-500 line-through">EGP {basePrice}</span>
+                  </div>
+                ) : `EGP ${basePrice}`}
+              </div>
+              <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+            </div>
+          </div>
+        </button>
+      </article>
+    );
+  }) : (
+    <div className="col-span-full py-10 text-center text-white/40 font-bold border border-white/5 bg-[#111]">لا توجد أصناف في هذا القسم حالياً.</div>
+  )}
+</div>
 
             <div className="mt-8 text-center lg:text-left">
               <Link to="/menu" className="inline-block border border-[#ef321b] text-white px-8 py-3 font-black hover:bg-[#ef321b] transition">{t.seeMore}</Link>
@@ -297,35 +298,36 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                     <h2 className="text-4xl md:text-5xl font-black italic uppercase">{cat.name}</h2>
                     <div className="h-px flex-1 bg-gradient-to-r from-[#ef321b]/60 to-transparent" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {catItems.map(item => {
-                      const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
-                      const price = getDiscountedPrice(basePrice, item.discount);
-                      const soldOut = item.available === false;
-                      return (
-                        <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
-                          <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                            <div className="relative h-56 bg-black overflow-hidden">
-                              {soldOut && <span className="absolute top-3 right-3 z-20 bg-red-600 px-3 py-1 text-xs font-black">⛔ غير متاح حالياً</span>}
-                              {item.discount > 0 && <span className="absolute top-3 left-3 z-10 bg-[#ef321b] px-3 py-1 text-xs font-black">خصم {item.discount}%</span>}
-                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
-                            </div>
-                            <div className="p-5">
-                              <h3 className="text-xl font-black italic uppercase truncate">{item.name}</h3>
-                              <p className="text-sm text-white/45 mt-2 line-clamp-2 min-h-10">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
-                              <div className="flex items-center justify-between mt-6">
-                                <span className="text-[#ef321b] text-xl font-black" dir="ltr">
-                                  {item.discount > 0 && basePrice > 0 ? `EGP ${price} (بدل ${basePrice})` : `EGP ${basePrice}`}
-                                </span>
-                                <span className="w-9 h-9 border border-white/15 flex items-center justify-center text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition">{soldOut ? '⛔' : '+'}</span>
-                              </div>
-                            </div>
-                          </button>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+  {catItems.map(item => {
+    const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+    const price = getDiscountedPrice(basePrice, item.discount);
+    const soldOut = item.available === false;
+    return (
+      <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition flex flex-col overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
+        <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
+            {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
+            {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+            <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+          </div>
+          <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
+            <div>
+              <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
+              <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+            </div>
+            <div className="flex items-center justify-between mt-3 sm:mt-6">
+              <span className="text-[#ef321b] text-sm sm:text-xl font-black" dir="ltr">
+                {item.discount > 0 && basePrice > 0 ? `EGP ${price}` : `EGP ${basePrice}`}
+              </span>
+              <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+            </div>
+          </div>
+        </button>
+      </article>
+    );
+  })}
+</div>                </div>
               );
             })}
           </div>
