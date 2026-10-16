@@ -204,43 +204,43 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                 </button>
               ))}
             </div>
-<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-  {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
-    const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
-    const price = getDiscountedPrice(basePrice, item.discount);
-    const soldOut = item.available === false;
-    return (
-      <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group flex flex-col overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
-        <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
-            {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
-            {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
-            <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
-          </div>
-          <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
-            <div>
-              <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-              <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+              {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
+                const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+                const price = getDiscountedPrice(basePrice, item.discount);
+                const soldOut = item.available === false;
+                return (
+                  <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group flex flex-col overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
+                    <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                      <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
+                        {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
+                        {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+                        <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                      </div>
+                      <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
+                        <div>
+                          <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
+                          <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-3 sm:mt-6">
+                          <div className="text-[#ef321b] text-sm sm:text-xl font-black">
+                            {item.discount > 0 && basePrice > 0 ? (
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <span>EGP {price}</span>
+                                <span className="text-[9px] sm:text-xs text-zinc-500 line-through">EGP {basePrice}</span>
+                              </div>
+                            ) : `EGP ${basePrice}`}
+                          </div>
+                          <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+                        </div>
+                      </div>
+                    </button>
+                  </article>
+                );
+              }) : (
+                <div className="col-span-full py-10 text-center text-white/40 font-bold border border-white/5 bg-[#111]">لا توجد أصناف في هذا القسم حالياً.</div>
+              )}
             </div>
-            <div className="flex items-center justify-between mt-3 sm:mt-6">
-              <div className="text-[#ef321b] text-sm sm:text-xl font-black">
-                {item.discount > 0 && basePrice > 0 ? (
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <span>EGP {price}</span>
-                    <span className="text-[9px] sm:text-xs text-zinc-500 line-through">EGP {basePrice}</span>
-                  </div>
-                ) : `EGP ${basePrice}`}
-              </div>
-              <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
-            </div>
-          </div>
-        </button>
-      </article>
-    );
-  }) : (
-    <div className="col-span-full py-10 text-center text-white/40 font-bold border border-white/5 bg-[#111]">لا توجد أصناف في هذا القسم حالياً.</div>
-  )}
-</div>
 
             <div className="mt-8 text-center lg:text-left">
               <Link to="/menu" className="inline-block border border-[#ef321b] text-white px-8 py-3 font-black hover:bg-[#ef321b] transition">{t.seeMore}</Link>
@@ -299,35 +299,36 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                     <div className="h-px flex-1 bg-gradient-to-r from-[#ef321b]/60 to-transparent" />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-  {catItems.map(item => {
-    const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
-    const price = getDiscountedPrice(basePrice, item.discount);
-    const soldOut = item.available === false;
-    return (
-      <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition flex flex-col overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
-        <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
-            {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
-            {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
-            <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
-          </div>
-          <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
-            <div>
-              <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-              <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
-            </div>
-            <div className="flex items-center justify-between mt-3 sm:mt-6">
-              <span className="text-[#ef321b] text-sm sm:text-xl font-black" dir="ltr">
-                {item.discount > 0 && basePrice > 0 ? `EGP ${price}` : `EGP ${basePrice}`}
-              </span>
-              <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
-            </div>
-          </div>
-        </button>
-      </article>
-    );
-  })}
-</div>                </div>
+                    {catItems.map(item => {
+                      const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
+                      const price = getDiscountedPrice(basePrice, item.discount);
+                      const soldOut = item.available === false;
+                      return (
+                        <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition flex flex-col overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
+                          <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                            <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
+                              {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
+                              {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                            </div>
+                            <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
+                              <div>
+                                <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
+                                <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+                              </div>
+                              <div className="flex items-center justify-between mt-3 sm:mt-6">
+                                <span className="text-[#ef321b] text-sm sm:text-xl font-black" dir="ltr">
+                                  {item.discount > 0 && basePrice > 0 ? `EGP ${price}` : `EGP ${basePrice}`}
+                                </span>
+                                <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+                              </div>
+                            </div>
+                          </button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -463,7 +464,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const handleAddGroup = () => {
     if (!newGroupName.trim()) return;
     setModifierGroups([...modifierGroups, { name: newGroupName, min: Number(newGroupMin), max: Number(newGroupMax), options: [] }]);
-    setNewGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
+    newGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
   };
 
   const handleAddOption = (gIndex) => {
@@ -1894,14 +1895,30 @@ function App() {
       </div>
 
       {selectedItemDetail && (
-        <div className="fixed inset-0 bg-black/95 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-xl">
-          <div className="bg-[#f2f2f2] w-full max-w-lg md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
-            <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0 shadow-sm z-10">
-              <h3 className="text-xl font-bold text-gray-900">{selectedItemDetail.name}</h3>
-              <button onClick={() => setSelectedItemDetail(null)} className="text-gray-500 bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 font-bold">✕</button>
+        <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
+          <div className="bg-[#f4f4f5] w-full max-w-lg md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
+            
+            {/* 1. صورة الصنف وزر الإغلاق العائم */}
+            <div className="relative w-full h-56 md:h-64 shrink-0 bg-white border-b border-gray-200">
+              <button onClick={() => setSelectedItemDetail(null)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold transition backdrop-blur-md">✕</button>
+              <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
             </div>
 
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              {/* 2. اسم السندوتش والسعر والوصف */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <div className="flex justify-between items-start gap-4">
+                  <h3 className="text-2xl font-black text-gray-900">{selectedItemDetail.name}</h3>
+                  <span className="text-xl font-black text-[#FF4500] whitespace-nowrap" dir="ltr">
+                    {selectedItemDetail.discount > 0 ? getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount) : selectedItemDetail.price} ج.م
+                  </span>
+                </div>
+                {selectedItemDetail.description && (
+                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">{selectedItemDetail.description}</p>
+                )}
+              </div>
+
+              {/* 3. الإضافات والاختيارات */}
               {selectedItemDetail.modifierGroups && selectedItemDetail.modifierGroups.map((group, gIndex) => {
                 const selectedCount = (selectedModifiers[gIndex] || []).length;
                 const isSatisfied = selectedCount >= group.min && selectedCount <= group.max;
@@ -1964,12 +1981,14 @@ function App() {
                 );
               })}
 
+              {/* 4. الملاحظات */}
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm p-4">
                 <h4 className="font-bold text-gray-800 text-[15px] mb-3">الملاحظات</h4>
                 <textarea rows="2" placeholder="أي ملاحظات خاصة بالطلب..." value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-sm focus:outline-none focus:border-[#FF4500]" />
               </div>
             </div>
 
+            {/* 5. زر الإضافة للسلة */}
             <div className="bg-white p-4 border-t border-gray-200 shrink-0">
               <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3.5 px-6 rounded-2xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                 <span>{modalFinalPrice} ج.م</span>
