@@ -1894,18 +1894,18 @@ function App() {
         </Routes>
       </div>
 
-      {selectedItemDetail && (
+{selectedItemDetail && (
         <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
-          <div className="bg-[#f4f4f5] w-full max-w-lg md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
+          <div className="bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
             
             {/* 1. صورة الصنف وزر الإغلاق العائم */}
-            <div className="relative w-full h-56 md:h-64 shrink-0 bg-white border-b border-gray-200">
+            <div className="relative w-full h-40 md:h-48 shrink-0 bg-white border-b border-gray-200">
               <button onClick={() => setSelectedItemDetail(null)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold transition backdrop-blur-md">✕</button>
               <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
             </div>
 
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
-              {/* 2. اسم السندوتش والسعر والوصف */}
+                            {/* 2. اسم السندوتش والسعر والوصف */}
               <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
                 <div className="flex justify-between items-start gap-4">
                   <h3 className="text-2xl font-black text-gray-900">{selectedItemDetail.name}</h3>
