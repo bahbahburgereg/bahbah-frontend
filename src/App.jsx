@@ -1899,7 +1899,7 @@ function App() {
           <div className="bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
             
             {/* 1. صورة الصنف وزر الإغلاق العائم */}
-            <div className="relative w-full h-32 md:h-40 shrink-0 bg-white border-b border-gray-200">
+            <div className="relative w-full h-10 md:h-40 shrink-0 bg-white border-b border-gray-200">
               <button onClick={() => setSelectedItemDetail(null)} className="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold transition backdrop-blur-md">✕</button>
               <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
             </div>
