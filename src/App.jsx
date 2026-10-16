@@ -93,7 +93,7 @@ const StaffLogin = ({ title, onLogin, onBeforeSubmit, requireAdmin = false }) =>
 const translations = {
   ar: {
     home: "الرئيسية", menu: "المنيو", cart: "السلة", admin: "الإدارة", all: "الكل",
-    orderNow: "اطلب أكلتك دلوقتي 🍔", ourMenu: "قائمة العظمة (المنيو)", bestOffers: "العروض النارية 🔥",
+    orderNow: "اطلب دلوقتي 🍔", ourMenu: "قائمة العظمة (المنيو)", bestOffers: "العروض النارية 🔥",
     seeMore: "عرض الكل ➔", hotlineText: "الخط الساخن",
     rights: "جميع الحقوق محفوظة © 2026 بحبح برجر - Bahbah Burger",
     addToCart: "أضف للسلة 🛒", customizeBox: "صمم بوكس الأحلام ⚙️", details: "اختيار و تخصيص",
@@ -220,7 +220,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                       <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                         <div>
                           <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-                          <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+                          <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || ''}</p>
                         </div>
                         <div className="flex items-center justify-between mt-3 sm:mt-6">
                           <div className="text-[#ef321b] text-sm sm:text-xl font-black">
@@ -275,7 +275,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
           <div>
             <div className="text-[#ef321b] italic font-black text-3xl">OUR</div>
             <h1 className="text-6xl md:text-8xl uppercase italic font-black leading-[.8]">MENU</h1>
-            <p className="mt-5 text-white/50">قائمة العظمة — اختار مزاجك وخلي الباقي على بحبح.</p>
+            <p className="mt-5 text-white/50"> اختارعلي  مزاجك وخلي الباقي على بحبح.</p>
           </div>
         </div>
 
@@ -314,7 +314,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                             <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                               <div>
                                 <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-                                <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || 'طعم بحبح.. من أول لقمة.'}</p>
+                                <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || ''}</p>
                               </div>
                               <div className="flex items-center justify-between mt-3 sm:mt-6">
                                 <span className="text-[#ef321b] text-sm sm:text-xl font-black" dir="ltr">
