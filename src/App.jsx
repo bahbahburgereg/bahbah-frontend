@@ -120,8 +120,50 @@ const getDiscountedPrice = (price, discountPercent) => {
   return Math.round(price * (1 - discountPercent / 100));
 };
 
+// ================= عدّاد الكمية على كارت الصنف (بدل علامة +) =================
+const CardQty = ({ item, cart, setCart, soldOut }) => {
+  const count = (cart || []).filter(c => String(c._id) === String(item._id)).length;
+  const hasOptions = (item.modifierGroups?.length > 0) || (item.sizes?.length > 0) || (item.addons?.length > 0);
+  const box = "w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center shrink-0";
+
+  if (soldOut) return <span className={`${box} border border-white/15 text-sm sm:text-xl`}>⛔</span>;
+
+  if (count === 0) {
+    return <span className={`${box} border border-white/15 text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition`}>+</span>;
+  }
+
+  // صنف له اختيارات (حجم/إضافات): نعرض العدد بس، والدوس على الكارت يفتح الاختيارات ويضيف نسخة تانية
+  if (hasOptions) {
+    return (
+      <span className="flex items-center gap-1.5 shrink-0" title="موجود في السلة">
+        <span className="bg-[#ef321b] text-white font-black text-xs sm:text-sm px-2 h-7 sm:h-9 flex items-center justify-center min-w-[2.2rem]">✓ {count}</span>
+      </span>
+    );
+  }
+
+  const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+  const inc = (e) => {
+    stop(e);
+    setCart([...cart, { ...item, cartId: Date.now() + Math.random(), price: getDiscountedPrice(item.price, item.discount) }]);
+  };
+  const dec = (e) => {
+    stop(e);
+    let idx = -1;
+    for (let i = cart.length - 1; i >= 0; i--) { if (String(cart[i]._id) === String(item._id)) { idx = i; break; } }
+    if (idx !== -1) { const next = [...cart]; next.splice(idx, 1); setCart(next); }
+  };
+
+  return (
+    <span className="flex items-center border border-[#ef321b] bg-[#ef321b]/10 shrink-0" onClick={stop}>
+      <span role="button" tabIndex={0} onClick={dec} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none">−</span>
+      <span className="min-w-[1.6rem] sm:min-w-[2rem] text-center font-black text-sm sm:text-lg">{count}</span>
+      <span role="button" tabIndex={0} onClick={inc} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none">+</span>
+    </span>
+  );
+};
+
 // ================= 1. صفحة الرئيسية =================
-const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDetails, menuRef }) => {
+const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDetails, menuRef, cart, setCart }) => {
   const t = translations[lang];
   const [selectedHomeCat, setSelectedHomeCat] = useState('');
 
@@ -231,7 +273,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                               </div>
                             ) : `EGP ${basePrice}`}
                           </div>
-                          <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+                          <CardQty item={item} cart={cart} setCart={setCart} soldOut={soldOut} />
                         </div>
                       </div>
                     </button>
@@ -255,7 +297,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
 };
 
 // ================= 2. صفحة المنيو =================
-const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
+const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, setCart }) => {
   const t = translations[lang];
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -327,7 +369,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                                     </span>
                                   )}
                                 </div>
-                                <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
+                                <CardQty item={item} cart={cart} setCart={setCart} soldOut={soldOut} />
                               </div>
                             </div>
                           </button>
@@ -2002,8 +2044,8 @@ function App() {
 
       <div className="flex-1">
         <Routes>
-          <Route path="/" element={<HomePage lang={lang} siteSettings={siteSettings} menuItems={menuItems} categories={categories} handleOpenItemDetails={handleOpenItemDetailsModal} menuRef={menuRef} />} />
-          <Route path="/menu" element={<MenuPage menuItems={menuItems} categories={categories} lang={lang} handleOpenItemDetails={handleOpenItemDetailsModal} />} />
+          <Route path="/" element={<HomePage lang={lang} siteSettings={siteSettings} menuItems={menuItems} categories={categories} handleOpenItemDetails={handleOpenItemDetailsModal} menuRef={menuRef} cart={cart} setCart={setCart} />} />
+          <Route path="/menu" element={<MenuPage menuItems={menuItems} categories={categories} lang={lang} handleOpenItemDetails={handleOpenItemDetailsModal} cart={cart} setCart={setCart} />} />
           <Route path="/secret-admin-dashboard" element={<AdminDashboard menuItems={menuItems} categories={categories} siteSettings={siteSettings} lang={lang} fetchItems={fetchItems} fetchCategories={fetchCategories} fetchSettings={fetchSettings} />} />
           <Route path="/cashier" element={<CashierDashboard />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
