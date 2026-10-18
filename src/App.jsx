@@ -389,6 +389,101 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
 
 // ================= 3. لوحة التحكم =================
 // ================= تعديل الخصم لأكتر من صنف مرة واحدة =================
+// ================= تصغير الصور (للجديد وللي مرفوع قبل كده) =================
+const supportsWebp = (() => {
+  try { return document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp'); } catch (e) { return false; }
+})();
+
+// بياخد صورة (لينك أو Blob) ويرجّع Data URL أصغر
+const shrinkImage = (blobOrUrl, maxW, maxH, quality = 0.78) => new Promise((resolve, reject) => {
+  const url = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+  const img = new Image();
+  img.onload = () => {
+    let w = img.width; let h = img.height;
+    const ratio = Math.min(1, maxW / w, maxH / h);
+    w = Math.round(w * ratio); h = Math.round(h * ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    if (typeof blobOrUrl !== 'string') URL.revokeObjectURL(url);
+    resolve(canvas.toDataURL(supportsWebp ? 'image/webp' : 'image/jpeg', quality));
+  };
+  img.onerror = () => reject(new Error('image load failed'));
+  img.src = url;
+});
+
+const ImageOptimizerPanel = ({ menuItems, siteSettings, adminFetch, fetchItems, fetchSettings }) => {
+  const [open, setOpen] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [log, setLog] = useState([]);
+  const [summary, setSummary] = useState('');
+
+  const kb = (n) => `${Math.round(n / 1024)} ك.ب`;
+
+  const run = async () => {
+    if (!window.confirm('هيصغّر صور الأصناف والهيرو والبانر الكبيرة. مفيش رجوع للصورة الأصلية. تكمل؟')) return;
+    setRunning(true); setLog([]); setSummary('');
+    let before = 0; let after = 0; let done = 0;
+    const add = (line) => setLog(prev => [...prev, line]);
+
+    const handle = async (label, src, maxW, maxH, save) => {
+      if (!src) return;
+      try {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        if (blob.size < 70 * 1024) { add(`⏭️ ${label}: صغيرة أصلاً (${kb(blob.size)})`); return; }
+        const small = await shrinkImage(blob, maxW, maxH);
+        const newSize = Math.round(small.length * 0.75);
+        if (newSize > blob.size * 0.85) { add(`⏭️ ${label}: مفيش فرق كبير`); return; }
+        const ok = await save(small);
+        if (!ok) { add(`❌ ${label}: فشل الحفظ`); return; }
+        before += blob.size; after += newSize; done += 1;
+        add(`✅ ${label}: ${kb(blob.size)} ← ${kb(newSize)}`);
+      } catch (e) {
+        add(`❌ ${label}: ${e.message}`);
+      }
+    };
+
+    for (const it of menuItems) {
+      if (!it.image || !/^https?:\/\//.test(it.image) || !it.image.startsWith(API_BASE)) continue;
+      await handle(it.name, it.image, 700, 700, async (data) => {
+        const r = await adminFetch(`/api/items/${it._id}`, { method: 'PUT', body: JSON.stringify({ image: data }) });
+        return r.ok;
+      });
+    }
+    const settingsJobs = [['صورة الهيرو', 'heroImage', 1400, 900], ['صورة البانر', 'promoBannerImage', 900, 600]];
+    for (const [label, field, mw, mh] of settingsJobs) {
+      const src = siteSettings?.[field];
+      if (!src || !src.startsWith(API_BASE)) continue;
+      await handle(label, src, mw, mh, async (data) => {
+        const r = await adminFetch('/api/settings', { method: 'PUT', body: JSON.stringify({ [field]: data }) });
+        return r.ok;
+      });
+    }
+
+    await fetchItems(); if (fetchSettings) await fetchSettings();
+    setSummary(done === 0 ? 'مفيش صور محتاجة تصغير.' : `تم تصغير ${done} صورة: من ${kb(before)} لـ ${kb(after)} (وفّرت ${kb(before - after)})`);
+    setRunning(false);
+  };
+
+  return (
+    <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5 mb-6">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between text-right">
+        <span className="font-black text-[#FFB800] text-lg">🖼️ تصغير الصور الحالية (لتسريع الموقع)</span>
+        <span className="text-zinc-400">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="mt-4 space-y-3">
+          <p className="text-zinc-400 text-sm">بيمر على كل صورة كبيرة (أكتر من 70 ك.ب) ويصغّرها ويحفظها. اترك الصفحة مفتوحة لحد ما يخلص.</p>
+          <button type="button" disabled={running} onClick={run} className={`px-5 py-3 rounded-xl font-black text-white ${running ? 'bg-zinc-600' : 'bg-[#FF4500] hover:bg-[#E03D00]'}`}>{running ? '...جاري التصغير' : '🚀 ابدأ التصغير'}</button>
+          {summary && <p className="text-green-400 font-bold text-sm">{summary}</p>}
+          {log.length > 0 && <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 max-h-60 overflow-y-auto text-xs text-zinc-300 space-y-1">{log.map((l, i) => <p key={i}>{l}</p>)}</div>}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BulkDiscountPanel = ({ menuItems, categories, adminFetch, fetchItems }) => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
@@ -542,15 +637,15 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         else { if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; } }
         canvas.width = width; canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL('image/jpeg', 0.8));
+        callback(canvas.toDataURL(supportsWebp ? 'image/webp' : 'image/jpeg', 0.78));
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
 
-  const handleHeroImageUpload = (e) => { if (e.target.files[0]) compressImage(e.target.files[0], 1200, 800, setHeroImg); };
-  const handleBannerImageUpload = (e) => { if (e.target.files[0]) compressImage(e.target.files[0], 1000, 600, setBannerImg); };
+  const handleHeroImageUpload = (e) => { if (e.target.files[0]) compressImage(e.target.files[0], 1400, 900, setHeroImg); };
+  const handleBannerImageUpload = (e) => { if (e.target.files[0]) compressImage(e.target.files[0], 900, 600, setBannerImg); };
   const handleLogoUpload = (e) => { if (e.target.files[0]) compressImage(e.target.files[0], 300, 300, setLogoImg); };
 
   const handleSaveSettings = async (e) => {
@@ -855,7 +950,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         <div><label className="block text-sm mb-2 text-zinc-300">السعر الأساسي *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 150" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">القسم *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
-        <div><label className="block text-sm mb-2 text-zinc-300">صورة الصنف</label><input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) compressImage(e.target.files[0], 800, 800, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">صورة الصنف</label><input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) compressImage(e.target.files[0], 700, 700, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
 
         <div className="md:col-span-2 bg-[#050304] p-4 rounded-2xl border border-[#FF4500]/30 flex items-center gap-3">
           <input type="checkbox" id="isOfferCheck" checked={isOffer} onChange={(e) => setIsOffer(e.target.checked)} className="w-5 h-5 accent-[#FF4500] cursor-pointer" />
@@ -980,6 +1075,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
       </form>
 
       <BulkDiscountPanel menuItems={menuItems} categories={categories} adminFetch={adminFetch} fetchItems={fetchItems} />
+      <ImageOptimizerPanel menuItems={menuItems} siteSettings={siteSettings} adminFetch={adminFetch} fetchItems={fetchItems} fetchSettings={fetchSettings} />
 
       <div className="space-y-12 mt-12">
         <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
@@ -2475,25 +2571,32 @@ function App() {
   const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier';
   const menuRef = useRef(null);
   const [cart, setCart] = useState([]);
-  const [menuItems, setMenuItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [siteSettings, setSiteSettings] = useState({ heroImage: '', heroTitleAr: '', heroTitleEn: '', logoImage: '' });
+  const menuCache = (() => { try { const c = JSON.parse(localStorage.getItem('bahbahMenuCache')); return c && Array.isArray(c.items) && c.items.length ? c : null; } catch (e) { return null; } })();
+  const [menuItems, setMenuItems] = useState(menuCache ? menuCache.items : []);
+  const [categories, setCategories] = useState(menuCache && Array.isArray(menuCache.categories) ? menuCache.categories : []);
+  const [siteSettings, setSiteSettings] = useState(menuCache && menuCache.settings ? menuCache.settings : { heroImage: '', heroTitleAr: '', heroTitleEn: '', logoImage: '' });
   const [lang, setLang] = useState('ar');
   const [logoClicks, setLogoClicks] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!menuCache);
 
   const [selectedItemDetail, setSelectedItemDetail] = useState(null);
   const [selectedModifiers, setSelectedModifiers] = useState({});
   const [itemNotes, setItemNotes] = useState('');
 
-  const fetchItems = async () => { try { const res = await fetch(`${API_BASE}/api/items`); const data = await res.json(); setMenuItems(data.map(item => ({ ...item, discount: Number(item.discount) || 0 }))); } catch (err) {} };
-  const fetchCategories = async () => { try { const res = await fetch(`${API_BASE}/api/categories`); setCategories(await res.json()); } catch (err) {} };
-  const fetchSettings = async () => { try { const res = await fetch(`${API_BASE}/api/settings`); setSiteSettings(await res.json()); } catch (err) {} };
+  const fetchItems = async () => { try { const res = await fetch(`${API_BASE}/api/items`); const data = await res.json(); const list = data.map(item => ({ ...item, discount: Number(item.discount) || 0 })); setMenuItems(list); return list; } catch (err) { return null; } };
+  const fetchCategories = async () => { try { const res = await fetch(`${API_BASE}/api/categories`); const data = await res.json(); setCategories(data); return data; } catch (err) { return null; } };
+  const fetchSettings = async () => { try { const res = await fetch(`${API_BASE}/api/settings`); const data = await res.json(); setSiteSettings(data); return data; } catch (err) { return null; } };
 
   useEffect(() => {
     const loadAll = async () => {
-      setIsLoading(true);
-      try { await Promise.all([fetchItems(), fetchCategories(), fetchSettings()]); }
+      // لو فيه نسخة محفوظة من آخر زيارة بنعرضها فوراً ونحدّثها في الخلفية
+      if (!menuCache) setIsLoading(true);
+      try {
+        const [items, cats, settings] = await Promise.all([fetchItems(), fetchCategories(), fetchSettings()]);
+        if (Array.isArray(items) && items.length) {
+          try { localStorage.setItem('bahbahMenuCache', JSON.stringify({ items, categories: cats, settings })); } catch (e) {}
+        }
+      }
       finally { setIsLoading(false); }
     };
     loadAll();
