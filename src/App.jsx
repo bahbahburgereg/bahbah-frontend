@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
 const API_BASE = 'https://bahbah-backend-production.up.railway.app';
@@ -1196,10 +1196,24 @@ const dayKeyOf = (v) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 const dayLabelOf = (v) => new Date(v).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const PAY_LABELS = { cash: 'كاش', visa: 'فيزا', instapay: 'انستا باي', wallet: 'محفظة' };
+const typeLabel = (o) => (o.orderType === 'delivery' ? '🛵 توصيل' : o.orderType === 'talabat' ? `🛍️ طلبات${o.talabatNo ? ' #' + o.talabatNo : ''}` : '🏪 استلام');
+// تقسيم الإيراد: كاش/فيزا/انستا/محفظة (طلبات لوحدها لأنها مش بتدخل الدرج)
+const paySplit = (list) => {
+  const payments = {}; let talabat = 0; let discounts = 0;
+  list.forEach(o => {
+    discounts += Number(o.discountAmount) || 0;
+    if (o.orderType === 'talabat') { talabat += Number(o.grandTotal) || 0; return; }
+    const k = o.paymentMethod || 'cash';
+    payments[k] = (payments[k] || 0) + (Number(o.grandTotal) || 0);
+  });
+  return { payments, talabat, discounts };
+};
 const sumOrders = (list) => ({
   count: list.length,
   total: list.reduce((sum, o) => sum + (Number(o.grandTotal) || 0), 0),
-  delivery: list.reduce((sum, o) => sum + (Number(o.deliveryFee) || 0), 0)
+  delivery: list.reduce((sum, o) => sum + (Number(o.deliveryFee) || 0), 0),
+  ...paySplit(list)
 });
 
 // ================= فاتورة الطباعة (ورق حراري) =================
@@ -1220,7 +1234,8 @@ const Receipt80 = ({ order, type, cashierName }) => {
   const items = order.items || [];
   const fee = Number(order.deliveryFee) || 0;
   const total = Number(order.grandTotal) || 0;
-  const subtotal = total - fee;
+  const discount = Number(order.discountAmount) || 0;
+  const subtotal = total - fee + discount;
   const dt = order.createdAt ? new Date(order.createdAt) : new Date();
   const dateText = dt.toLocaleDateString('ar-EG');
   const timeText = dt.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -1278,12 +1293,17 @@ const Receipt80 = ({ order, type, cashierName }) => {
           <div className="rc-row"><span>رسوم التوصيل</span><span>{order.delivery} ج</span></div>
           <div className="rc-row rc-total"><span>إجمالي الشيفت</span><span>{order.total} ج</span></div>
           <div className="rc-line" />
+          {Object.entries(order.payments || {}).map(([k, v]) => <div className="rc-row" key={k}><span>{PAY_LABELS[k] || k}</span><span>{v} ج</span></div>)}
+          {order.talabat > 0 && <div className="rc-row"><span>طلبات</span><span>{order.talabat} ج</span></div>}
+          {order.discounts > 0 && <div className="rc-row"><span>إجمالي الخصومات</span><span>{order.discounts} ج</span></div>}
+          {order.cancelled > 0 && <div className="rc-row"><span>أوردرات ملغية</span><span>{order.cancelled}</span></div>}
+          <div className="rc-line" />
         </>
       ) : type === 'kitchen' ? (
         <>
           <div className="rc-center rc-big">🍳 أوردر المطبخ</div>
           <div className="rc-kid" dir="ltr">#{order.orderId}</div>
-          <div className="rc-row rc-big"><span>{isDelivery ? '🛵 توصيل' : '🏪 استلام'}</span><span>{timeText}</span></div>
+          <div className="rc-row rc-big"><span>{typeLabel(order)}</span><span>{timeText}</span></div>
           <div className="rc-line" />
           {items.map((it, i) => (
             <div key={i} className="rc-kitem">
@@ -1302,11 +1322,12 @@ const Receipt80 = ({ order, type, cashierName }) => {
           <div className="rc-row"><span>التاريخ: {dateText}</span><span>الوقت: {timeText}</span></div>
           {cashierName && <div className="rc-row"><span>الكاشير: {cashierName}</span></div>}
           <div className="rc-line" />
-          <div className="rc-big">{isDelivery ? '🛵 توصيل' : '🏪 استلام من الفرع'}</div>
-          <div>الاسم: {order.customerName}</div>
-          <div>التليفون: <span dir="ltr">{order.customerPhone}</span></div>
+          <div className="rc-big">{typeLabel(order)}</div>
+          {order.orderType !== 'talabat' && order.customerName && order.customerName !== '-' && <div>الاسم: {order.customerName}</div>}
+          {order.orderType !== 'talabat' && order.customerPhone && order.customerPhone !== '-' && <div>التليفون: <span dir="ltr">{order.customerPhone}</span></div>}
           {isDelivery && order.zoneName && <div>المنطقة: {order.zoneName}</div>}
           {isDelivery && order.customerAddress && <div>العنوان: {order.customerAddress}</div>}
+          {isDelivery && order.driverName && <div>السواق: {order.driverName}</div>}
           <div className="rc-line" />
           <table>
             <thead><tr><th>الصنف</th><th style={{ textAlign: 'center' }}>كمية</th><th className="rc-num">السعر</th></tr></thead>
@@ -1322,8 +1343,10 @@ const Receipt80 = ({ order, type, cashierName }) => {
           </table>
           <div className="rc-line" />
           <div className="rc-row"><span>المجموع</span><span>{subtotal} ج</span></div>
+          {discount > 0 && <div className="rc-row"><span>خصم {order.discountPercent}%</span><span>- {discount} ج</span></div>}
           {isDelivery && <div className="rc-row"><span>التوصيل</span><span>{fee} ج</span></div>}
           <div className="rc-row rc-total"><span>الإجمالي</span><span>{total} ج</span></div>
+          {order.paymentMethod && <div className="rc-row"><span>الدفع</span><span>{PAY_LABELS[order.paymentMethod] || order.paymentMethod}</span></div>}
           <div className="rc-line" />
           <div className="rc-center rc-sub">شكراً لاختياركم {RESTAURANT_NAME} ❤️</div>
           <div className="rc-center rc-sub">بالهنا والشفا</div>
@@ -1334,17 +1357,406 @@ const Receipt80 = ({ order, type, cashierName }) => {
   );
 };
 
+// ================= شاشة البيع (POS) داخل الكاشير =================
+const POS_PAYS = [['cash', '💵 كاش'], ['visa', '💳 فيزا'], ['instapay', '📱 انستا باي'], ['wallet', '👛 محفظة']];
+const POS_MAX_CASHIER_DISCOUNT = 50;
+
+const readPosPresets = () => {
+  try {
+    const a = JSON.parse(localStorage.getItem('bahbahPosDiscounts'));
+    if (Array.isArray(a) && a.length) return a.map(Number).filter(n => n > 0 && n <= 100).slice(0, 8);
+  } catch (e) {}
+  return [10, 20, 30, 50];
+};
+
+const posGroupsOf = (item) => {
+  let groups = [...(item.modifierGroups || [])];
+  if (groups.length === 0 && (item.sizes?.length > 0 || item.addons?.length > 0)) {
+    if (item.sizes?.length > 0) groups.push({ name: 'اختر الحجم', min: 1, max: 1, options: item.sizes });
+    if (item.addons?.length > 0) groups.push({ name: 'الإضافات الاختيارية', min: 0, max: item.addons.length, options: item.addons });
+  }
+  return groups;
+};
+
+const PosScreen = ({ authFetch, isAdmin, onCreated }) => {
+  const [items, setItems] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCat, setActiveCat] = useState(null);
+  const [search, setSearch] = useState('');
+
+  const [cart, setCart] = useState(() => {
+    try { const a = JSON.parse(localStorage.getItem('bahbahPosCart')); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  });
+  const [modal, setModal] = useState(null); // { item, groups }
+  const [selMods, setSelMods] = useState({});
+  const [modalNotes, setModalNotes] = useState('');
+  const [modalQty, setModalQty] = useState(1);
+
+  const [orderType, setOrderType] = useState('pickup'); // pickup | delivery | talabat
+  const [pay, setPay] = useState('cash');
+  const [talabatNo, setTalabatNo] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [presets, setPresets] = useState(readPosPresets);
+  const [custName, setCustName] = useState('');
+  const [custPhone, setCustPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [zoneId, setZoneId] = useState('');
+  const [manualFee, setManualFee] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const load = async () => {
+    try {
+      const [ri, rc, rz] = await Promise.all([fetch(`${API_BASE}/api/items`), fetch(`${API_BASE}/api/categories`), fetch(`${API_BASE}/api/zones`)]);
+      const di = await ri.json(); const dc = await rc.json(); const dz = await rz.json();
+      if (Array.isArray(di)) setItems(di);
+      if (Array.isArray(dc)) setCats(dc);
+      if (Array.isArray(dz)) setZones(dz);
+    } catch (e) {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('bahbahPosCart', JSON.stringify(cart)); } catch (e) {}
+  }, [cart]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const sortedCats = [...cats].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const catName = activeCat ?? (sortedCats.find(c => items.some(i => i.category === c.name))?.name || sortedCats[0]?.name);
+  const q = search.trim().toLowerCase();
+  const shownItems = (q ? items.filter(i => i.name.toLowerCase().includes(q)) : items.filter(i => i.category === catName))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const countInCart = (id) => cart.filter(l => String(l._id) === String(id)).reduce((s, l) => s + l.qty, 0);
+
+  const addLine = (item, modifiersInfo, notes, unit, qty) => {
+    const key = [item._id, modifiersInfo.join('¦'), notes || ''].join('|');
+    setCart(prev => {
+      const i = prev.findIndex(l => l.key === key);
+      if (i !== -1) { const next = [...prev]; next[i] = { ...next[i], qty: next[i].qty + qty }; return next; }
+      return [...prev, { key, _id: item._id, name: item.name, unit, qty, modifiersInfo, notes: notes || '' }];
+    });
+  };
+
+  const pickItem = (item) => {
+    if (item.available === false) return;
+    const groups = posGroupsOf(item);
+    if (groups.length > 0) {
+      setModal({ item, groups }); setSelMods({}); setModalNotes(''); setModalQty(1);
+    } else {
+      addLine(item, [], '', getDiscountedPrice(item.price, item.discount), 1);
+    }
+  };
+
+  const toggleOpt = (gIndex, oIndex, max) => {
+    const cur = selMods[gIndex] || [];
+    if (max === 1) setSelMods({ ...selMods, [gIndex]: [oIndex] });
+    else if (cur.includes(oIndex)) setSelMods({ ...selMods, [gIndex]: cur.filter(i => i !== oIndex) });
+    else if (cur.length < max) setSelMods({ ...selMods, [gIndex]: [...cur, oIndex] });
+  };
+
+  const modalValid = modal ? modal.groups.every((g, gi) => { const c = (selMods[gi] || []).length; return c >= g.min && c <= g.max; }) : false;
+  let modalUnit = 0;
+  if (modal) {
+    if (modal.item.price > 0) modalUnit += getDiscountedPrice(modal.item.price, modal.item.discount);
+    modal.groups.forEach((g, gi) => (selMods[gi] || []).forEach(oi => { modalUnit += getDiscountedPrice(g.options[oi].price, modal.item.discount); }));
+  }
+
+  const confirmModal = () => {
+    if (!modalValid) return;
+    const info = [];
+    modal.groups.forEach((g, gi) => (selMods[gi] || []).forEach(oi => {
+      const opt = g.options[oi];
+      const p = getDiscountedPrice(opt.price, modal.item.discount);
+      info.push(`${g.name}: ${opt.name}${p > 0 ? ` (+${p} ج)` : ''}`);
+    }));
+    addLine(modal.item, info, modalNotes.trim(), modalUnit, modalQty);
+    setModal(null);
+  };
+
+  const changeQty = (key, d) => setCart(prev => prev.map(l => (l.key === key ? { ...l, qty: l.qty + d } : l)).filter(l => l.qty > 0));
+  const removeLine = (key) => setCart(prev => prev.filter(l => l.key !== key));
+  const clearCart = () => { if (cart.length === 0) return; if (window.confirm('تمسح كل الأصناف من السلة؟')) setCart([]); };
+
+  const itemsTotal = cart.reduce((s, l) => s + l.unit * l.qty, 0);
+  const discountAmount = Math.round(itemsTotal * discount / 100);
+  const zone = zones.find(z => z._id === zoneId);
+  const fee = orderType === 'delivery' ? (zone ? Number(zone.fee) || 0 : Number(manualFee) || 0) : 0;
+  const total = itemsTotal - discountAmount + fee;
+
+  const chooseType = (t) => {
+    setOrderType(t);
+    if (t === 'talabat' && !['cash', 'visa'].includes(pay)) setPay('cash');
+  };
+
+  const editPresets = () => {
+    const txt = window.prompt('اكتب نسب الخصم المحفوظة مفصولة بفاصلة (مثال: 10,20,30,50)', presets.join(','));
+    if (txt === null) return;
+    const list = txt.split(/[,،\s]+/).map(Number).filter(n => n > 0 && n <= 100).slice(0, 8);
+    if (list.length === 0) return alert('اكتب رقم واحد على الأقل');
+    setPresets(list);
+    try { localStorage.setItem('bahbahPosDiscounts', JSON.stringify(list)); } catch (e) {}
+  };
+
+  const setCustomDiscount = (v) => {
+    const n = Math.max(0, Math.min(100, Number(String(v).replace(/[^\d.]/g, '')) || 0));
+    setDiscount(n);
+  };
+
+  const submit = async () => {
+    if (busy) return;
+    if (cart.length === 0) return alert('السلة فاضية');
+    if (orderType === 'talabat' && !talabatNo.trim()) return alert('اكتب رقم أوردر طلبات');
+    if (orderType === 'delivery' && !address.trim()) return alert('اكتب عنوان التوصيل');
+    if (!isAdmin && discount > POS_MAX_CASHIER_DISCOUNT) return alert(`أقصى خصم مسموح ${POS_MAX_CASHIER_DISCOUNT}%`);
+    setBusy(true);
+    try {
+      const payload = {
+        orderType, paymentMethod: pay, talabatNo: talabatNo.trim(), discountPercent: discount,
+        customerName: custName.trim(), customerPhone: custPhone.trim(), customerAddress: address.trim(),
+        zoneName: zone ? zone.name : (orderType === 'delivery' ? 'توصيل' : ''), deliveryFee: fee,
+        items: cart.map(l => ({ name: l.name, price: l.unit, quantity: l.qty, modifiers: l.modifiersInfo, notes: l.notes }))
+      };
+      const res = await authFetch('/api/pos/orders', { method: 'POST', body: JSON.stringify(payload) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'حصل خطأ، الأوردر ما اتسجلش');
+      } else {
+        onCreated(data);
+        setToast(`✅ أوردر #${data.orderId} اتبعت للمطبخ`);
+        setCart([]); setDiscount(0); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setPay('cash');
+      }
+    } catch (e) {
+      alert('النت قاطع، الأوردر ما اتسجلش. استخدم الكاشير الأوفلاين لحد ما النت يرجع.');
+    }
+    setBusy(false);
+  };
+
+  const typeBtn = (key, label) => (
+    <button type="button" onClick={() => chooseType(key)} className={`flex-1 py-3 rounded-xl font-black text-sm border transition ${orderType === key ? 'bg-[#FF4500] text-white border-[#FFB800]' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E] hover:border-[#FF4500]'}`}>{label}</button>
+  );
+
+  const inp = 'w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm';
+
+  return (
+    <div dir="rtl" className="flex gap-3 items-stretch" style={{ height: 'calc(100vh - 128px)', minHeight: 560 }}>
+      {toast && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[120] bg-green-600 text-white font-black px-6 py-3 rounded-2xl shadow-2xl">{toast}</div>}
+
+      {/* المنيو */}
+      <div className="flex-1 flex gap-3 min-w-0">
+        <div className="w-32 shrink-0 overflow-y-auto space-y-2 pr-1">
+          {sortedCats.map(c => (
+            <button key={c._id} type="button" onClick={() => { setActiveCat(c.name); setSearch(''); }} className={`w-full min-h-[64px] px-2 py-3 rounded-2xl font-black text-sm leading-tight transition border-2 ${!q && catName === c.name ? 'bg-[#FF4500] text-white border-[#FFB800] shadow-[0_0_12px_rgba(255,69,0,0.6)]' : 'bg-[#2a120a] text-orange-200 border-transparent hover:border-[#FF4500]'}`}>{c.name}</button>
+          ))}
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex gap-2 mb-3">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 دوّر على صنف" className={inp} />
+            <button type="button" onClick={load} className="bg-zinc-800 text-white px-4 rounded-xl text-sm font-bold shrink-0">🔄</button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {loading ? <p className="text-zinc-500 text-center py-16">جاري تحميل المنيو...</p> : shownItems.length === 0 ? (
+              <p className="text-zinc-500 text-center py-16">مفيش أصناف هنا</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                {shownItems.map(it => {
+                  const off = it.available === false;
+                  const n = countInCart(it._id);
+                  const hasOpts = posGroupsOf(it).length > 0;
+                  return (
+                    <button key={it._id} type="button" disabled={off} onClick={() => pickItem(it)} className={`relative min-h-[96px] rounded-2xl p-3 text-center border-2 transition flex flex-col items-center justify-center gap-1 ${off ? 'bg-red-950/50 border-red-900 opacity-60 cursor-not-allowed' : n > 0 ? 'bg-[#2b1208] border-[#FF4500]' : 'bg-[#100609] border-[#1F0A0E] hover:border-[#FF4500] active:scale-95'}`}>
+                      {n > 0 && <span className="absolute top-1.5 left-1.5 bg-[#FF4500] text-white text-xs font-black min-w-[1.5rem] h-6 px-1 rounded-full flex items-center justify-center">{n}</span>}
+                      <span className="font-black text-white text-sm leading-tight">{it.name}</span>
+                      {off ? <span className="text-red-400 text-xs font-black">⛔ خلص</span> : (
+                        <span className="text-[#FFB800] text-sm font-black">
+                          {it.discount > 0 && <span className="text-zinc-500 line-through text-xs ml-1">{it.price}</span>}
+                          {getDiscountedPrice(it.price, it.discount)} ج{hasOpts && it.price <= 0 ? ' +' : ''}
+                        </span>
+                      )}
+                      {hasOpts && !off && <span className="text-[10px] text-zinc-500">اختيارات</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* السلة */}
+      <div className="w-[420px] max-w-[46vw] shrink-0 bg-[#100609] border border-[#FF4500]/40 rounded-2xl flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1F0A0E] bg-[#180A0E]">
+          <span className="font-black text-[#FFB800]">🧾 الأوردر ({cart.reduce((s, l) => s + l.qty, 0)})</span>
+          <button type="button" onClick={clearCart} className="text-xs bg-red-500/15 text-red-400 px-3 py-1.5 rounded-lg font-bold">🗑️ مسح الكل</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-[110px]">
+          {cart.length === 0 ? <p className="text-zinc-600 text-center py-10 text-sm">اختار أصناف من المنيو</p> : cart.map(l => (
+            <div key={l.key} className="px-3 py-1.5 border-b border-[#1F0A0E]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-white text-sm flex-1">{l.name}</span>
+                <span className="text-[#FFB800] font-black text-sm shrink-0">{l.unit * l.qty} ج</span>
+              </div>
+              {l.modifiersInfo.length > 0 && <p className="text-[11px] text-zinc-400">{l.modifiersInfo.map(stripMoney).join(' · ')}</p>}
+              {l.notes && <p className="text-[11px] text-[#FFB800]">📝 {l.notes}</p>}
+              <div className="flex items-center gap-1.5 mt-1">
+                <button type="button" onClick={() => changeQty(l.key, -1)} className="w-8 h-8 rounded-lg bg-zinc-800 text-white text-lg font-black">−</button>
+                <span className="min-w-[1.8rem] text-center text-white font-black">{l.qty}</span>
+                <button type="button" onClick={() => changeQty(l.key, 1)} className="w-8 h-8 rounded-lg bg-zinc-800 text-white text-lg font-black">+</button>
+                <span className="text-[11px] text-zinc-500 mr-1">{l.unit} ج للواحد</span>
+                <button type="button" onClick={() => removeLine(l.key)} className="mr-auto w-8 h-8 rounded-lg bg-red-500/15 text-red-400 font-black">✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-[#1F0A0E] p-3 space-y-2 overflow-y-auto max-h-[40%]">
+          <div className="flex gap-2">
+            {typeBtn('pickup', '🏪 استلام')}
+            {typeBtn('delivery', '🛵 دليفيري')}
+            {typeBtn('talabat', '🛍️ طلبات')}
+          </div>
+
+          {orderType === 'talabat' && (
+            <input value={talabatNo} onChange={(e) => setTalabatNo(e.target.value)} placeholder="رقم أوردر طلبات (اكتبه بإيدك)" className={inp} dir="ltr" />
+          )}
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {POS_PAYS.filter(([k]) => orderType !== 'talabat' || ['cash', 'visa'].includes(k)).map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setPay(k)} className={`py-2.5 rounded-xl text-xs font-black border transition ${orderType === 'talabat' ? 'col-span-2' : ''} ${pay === k ? 'bg-green-600 text-white border-green-400' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E] hover:border-green-500'}`}>{label}</button>
+            ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-zinc-400 font-bold">الخصم</span>
+              <button type="button" onClick={editPresets} className="text-[11px] text-zinc-500 underline">✏️ تعديل القيم</button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <button type="button" onClick={() => setDiscount(0)} className={`px-3 py-2 rounded-lg text-xs font-black border ${discount === 0 ? 'bg-zinc-600 text-white border-zinc-400' : 'bg-[#050304] text-zinc-400 border-[#1F0A0E]'}`}>بدون</button>
+              {presets.map(p => {
+                const blocked = !isAdmin && p > POS_MAX_CASHIER_DISCOUNT;
+                return (
+                  <button key={p} type="button" disabled={blocked} onClick={() => setDiscount(p)} className={`px-3 py-2 rounded-lg text-xs font-black border ${blocked ? 'opacity-30 cursor-not-allowed border-[#1F0A0E] text-zinc-500' : discount === p ? 'bg-[#FF4500] text-white border-[#FFB800]' : 'bg-[#050304] text-[#FFB800] border-[#1F0A0E] hover:border-[#FF4500]'}`}>{p}%</button>
+                );
+              })}
+              <input value={discount || ''} onChange={(e) => setCustomDiscount(e.target.value)} placeholder="%" className="w-16 bg-[#050304] border border-[#1F0A0E] rounded-lg px-2 py-2 text-white text-xs text-center" dir="ltr" />
+            </div>
+            {!isAdmin && discount > POS_MAX_CASHIER_DISCOUNT && <p className="text-[11px] text-red-400 mt-1">أقصى خصم للكاشير {POS_MAX_CASHIER_DISCOUNT}%</p>}
+          </div>
+
+          {orderType === 'delivery' && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input value={custName} onChange={(e) => setCustName(e.target.value)} placeholder="اسم العميل (اختياري)" className={inp} />
+                <input value={custPhone} onChange={(e) => setCustPhone(e.target.value.replace(/[^\d+]/g, ''))} placeholder="التليفون" className={inp} dir="ltr" />
+              </div>
+              <div className="flex gap-2">
+                <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={inp + ' !w-[42%]'}>
+                  <option value="">رسوم يدوي</option>
+                  {zones.map(z => <option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>)}
+                </select>
+                {!zone ? <input value={manualFee} onChange={(e) => setManualFee(e.target.value.replace(/\D/g, ''))} placeholder="رسوم التوصيل" className={inp} dir="ltr" /> : null}
+              </div>
+              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان بالتفصيل *" className={inp} />
+            </div>
+          )}
+
+
+
+        </div>
+
+        <div className="shrink-0 border-t border-[#FF4500]/40 bg-[#180A0E] p-3 space-y-2">
+          <div className="flex items-center justify-between text-xs text-zinc-400 gap-2">
+            <span>المجموع {itemsTotal} ج</span>
+            {discountAmount > 0 && <span className="text-green-400 font-bold">خصم {discount}%: - {discountAmount} ج</span>}
+            {fee > 0 && <span>توصيل {fee} ج</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-[#FFB800] text-3xl font-black whitespace-nowrap">{total} ج</div>
+            <button type="button" onClick={submit} disabled={busy || cart.length === 0} className={`flex-1 py-3.5 rounded-2xl font-black text-base transition ${busy || cart.length === 0 ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'}`}>{busy ? '...جاري الحفظ' : '✅ تأكيد وإرسال للمطبخ'}</button>
+          </div>
+        </div>
+      </div>
+
+      {/* اختيارات الصنف */}
+      {modal && (
+        <div className="fixed inset-0 z-[110] bg-black/75 flex items-center justify-center p-4" onClick={() => setModal(null)}>
+          <div dir="rtl" className="bg-[#100609] border border-[#FF4500]/60 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-3 border-b border-[#1F0A0E] flex items-center justify-between">
+              <span className="font-black text-white text-lg">{modal.item.name}</span>
+              <button type="button" onClick={() => setModal(null)} className="text-zinc-400 text-xl px-2">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {modal.groups.map((g, gi) => {
+                const sel = selMods[gi] || [];
+                return (
+                  <div key={gi}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-[#FFB800] text-sm">{g.name}{g.min > 0 && <span className="text-red-400"> *</span>}</span>
+                      <span className={`text-[11px] font-bold ${sel.length >= g.min && sel.length <= g.max ? 'text-green-400' : 'text-red-400'}`}>{sel.length}/{g.max}{g.min > 0 ? ' (مطلوب)' : ' (اختياري)'}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {g.options.map((opt, oi) => {
+                        const on = sel.includes(oi);
+                        const p = getDiscountedPrice(opt.price, modal.item.discount);
+                        const disabled = g.max > 1 && !on && sel.length >= g.max;
+                        return (
+                          <button key={oi} type="button" disabled={disabled} onClick={() => toggleOpt(gi, oi, g.max)} className={`px-3 py-3 rounded-xl text-sm font-bold border-2 text-right transition ${on ? 'bg-[#FF4500] text-white border-[#FFB800]' : disabled ? 'opacity-40 bg-[#050304] border-[#1F0A0E] text-zinc-500' : 'bg-[#050304] border-[#1F0A0E] text-zinc-200 hover:border-[#FF4500]'}`}>
+                            {opt.name}{p > 0 && <span className="block text-[11px] opacity-80">+{p} ج</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <input value={modalNotes} onChange={(e) => setModalNotes(e.target.value)} placeholder="📝 ملاحظات (اختياري)" className={inp} />
+            </div>
+            <div className="p-4 border-t border-[#1F0A0E] flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setModalQty(q2 => Math.max(1, q2 - 1))} className="w-10 h-10 rounded-lg bg-zinc-800 text-white text-xl font-black">−</button>
+                <span className="min-w-[2rem] text-center text-white font-black text-xl">{modalQty}</span>
+                <button type="button" onClick={() => setModalQty(q2 => q2 + 1)} className="w-10 h-10 rounded-lg bg-zinc-800 text-white text-xl font-black">+</button>
+              </div>
+              <button type="button" onClick={confirmModal} disabled={!modalValid} className={`flex-1 py-3 rounded-xl font-black ${modalValid ? 'bg-green-600 text-white' : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'}`}>إضافة · {modalUnit * modalQty} ج</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ================= 5. شاشة الكاشير (بحسابات وأدوار) =================
-const CashierDashboard = () => {
+const CashierDashboard = ({ initialTab = 'active' }) => {
   const [session, setSession] = useState(readSession);
   const [orders, setOrders] = useState([]);
-  const [cashierTab, setCashierTab] = useState('active'); // active | archive | stock | staff
+  const [cashierTab, setCashierTab] = useState(initialTab); // pos | active | archive | stock | staff
   const [soundReady, setSoundReady] = useState(false);
 
   const [stockItems, setStockItems] = useState([]);
   const [stockCats, setStockCats] = useState([]);
   const [stockSearch, setStockSearch] = useState('');
   const [stockLoading, setStockLoading] = useState(false);
+
+  const [driverModal, setDriverModal] = useState(null);
+  const [driverName, setDriverName] = useState('');
+  const [cancelModal, setCancelModal] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const [staff, setStaff] = useState([]);
   const [newName, setNewName] = useState('');
@@ -1408,7 +1820,7 @@ const CashierDashboard = () => {
     if (fresh.length === 0) return;
     fresh.forEach(o => {
       printed.add(o._id || o.orderId);
-      if (autoPrintRef.current && o.status !== 'completed') requestPrint(o, 'kitchen');
+      if (autoPrintRef.current && o.status !== 'completed' && o.status !== 'cancelled') requestPrint(o, 'kitchen');
     });
     savePrinted();
   };
@@ -1573,11 +1985,60 @@ const CashierDashboard = () => {
     if (token && isAdmin && cashierTab === 'staff') fetchStaff();
   }, [token, cashierTab]);
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, extra = {}) => {
     try {
-      await authFetch(`/api/orders/${orderId}`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
+      const res = await authFetch(`/api/orders/${orderId}`, { method: 'PUT', body: JSON.stringify({ status: newStatus, ...extra }) });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || 'حصل خطأ، حاول تاني');
+        fetchOrders();
+        return false;
+      }
       fetchOrders();
-    } catch (err) {}
+      return true;
+    } catch (err) {
+      if (err.message !== 'unauthorized') alert('تعذر الاتصال بالسيرفر، حاول تاني');
+      return false;
+    }
+  };
+
+  // إنهاء الأوردر: الدليفيري بيسأل عن اسم السواق الأول
+  const doFinish = async (ord, extra = {}) => {
+    const ok = await updateOrderStatus(ord._id || ord.orderId, 'completed', extra);
+    if (ok && autoPrint) requestPrint({ ...ord, ...extra }, 'customer');
+    return ok;
+  };
+  const finishOrder = (ord) => {
+    if (ord.orderType === 'delivery') { setDriverName(''); setDriverModal(ord); return; }
+    doFinish(ord);
+  };
+  const readDrivers = () => { try { const a = JSON.parse(localStorage.getItem('bahbahDrivers')); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+  const confirmDriver = async () => {
+    const name = driverName.trim();
+    if (!name) return alert('اكتب اسم السواق');
+    const ord = driverModal;
+    setDriverModal(null);
+    try { localStorage.setItem('bahbahDrivers', JSON.stringify([name, ...readDrivers().filter(d => d !== name)].slice(0, 12))); } catch (e) {}
+    await doFinish(ord, { driverName: name });
+  };
+  const knownDrivers = Array.from(new Set([...readDrivers(), ...orders.map(o => o.driverName).filter(Boolean)])).slice(0, 8);
+
+  const startCancel = (ord) => { setCancelReason(''); setCancelModal(ord); };
+  const submitCancel = async () => {
+    const reason = cancelReason.trim();
+    if (reason.length < 2) return alert('اكتب سبب الإلغاء');
+    const ord = cancelModal;
+    setCancelModal(null);
+    await updateOrderStatus(ord._id || ord.orderId, 'cancelled', { cancelReason: reason });
+  };
+
+  // أوردر اتعمل من شاشة الـPOS: نطبع المطبخ على طول ونعلّمه متطبوع عشان الاستعلام ما يطبعوش تاني
+  const handlePosCreated = (ord) => {
+    const printed = loadPrinted();
+    printed.add(ord._id || ord.orderId);
+    savePrinted();
+    if (autoPrintRef.current) requestPrint(ord, 'kitchen');
+    fetchOrders();
   };
 
   const deleteOrder = async (id) => {
@@ -1638,8 +2099,9 @@ const CashierDashboard = () => {
     return () => clearInterval(ringInterval);
   }, [token, soundReady, hasNewOrders]);
 
-  const activeOrders = orders.filter(o => o.status !== 'completed');
+  const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
   const doneOrders = orders.filter(o => o.status === 'completed');
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled');
 
   const lastClosedAt = shiftClosings.length ? new Date(shiftClosings[0].closedAt).getTime() : 0;
   const shiftOrders = doneOrders.filter(o => new Date(o.completedAt || o.createdAt).getTime() > lastClosedAt);
@@ -1674,19 +2136,22 @@ const CashierDashboard = () => {
   };
 
   const renderOrderCard = (ord) => (
-    <div key={ord._id || ord.orderId} className={`bg-[#100609] border rounded-2xl p-5 shadow-xl flex flex-col justify-between ${ord.status === 'completed' ? 'border-[#1F0A0E]' : ord.status === 'accepted' ? 'border-yellow-500/60' : 'border-red-500 animate-pulse'}`}>
+    <div key={ord._id || ord.orderId} className={`bg-[#100609] border rounded-2xl p-5 shadow-xl flex flex-col justify-between ${ord.status === 'cancelled' ? 'border-zinc-700 opacity-70' : ord.status === 'completed' ? 'border-[#1F0A0E]' : ord.status === 'accepted' ? 'border-yellow-500/60' : 'border-red-500 animate-pulse'}`}>
       <div>
         <div className="flex justify-between items-center mb-3 border-b border-[#1F0A0E] pb-2">
           <span className="font-black text-[#FFB800] text-lg">#{ord.orderId}</span>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-            {ord.status === 'completed' ? 'مكتمل ✅' : ord.status === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔'}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'cancelled' ? 'bg-zinc-700 text-zinc-300' : ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+            {ord.status === 'cancelled' ? 'ملغي ✖' : ord.status === 'completed' ? 'مكتمل ✅' : ord.status === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔'}
           </span>
         </div>
 
         <div className="text-sm space-y-1 mb-4 text-zinc-300">
-          <p>👤 <strong className="text-white">{ord.customerName}</strong></p>
-          <p>📞 <strong className="text-white">{ord.customerPhone}</strong></p>
-          <p>📦 <strong className="text-white">{ord.orderType === 'delivery' ? `توصيل (${ord.zoneName})` : 'استلام من الفرع'}</strong></p>
+          {ord.orderType !== 'talabat' && ord.customerName && ord.customerName !== '-' && <p>👤 <strong className="text-white">{ord.customerName}</strong></p>}
+          {ord.orderType !== 'talabat' && ord.customerPhone && ord.customerPhone !== '-' && <p>📞 <strong className="text-white">{ord.customerPhone}</strong></p>}
+          <p>📦 <strong className="text-white">{ord.orderType === 'delivery' ? `توصيل (${ord.zoneName})` : typeLabel(ord)}</strong>{ord.source === 'pos' && <span className="text-[10px] text-zinc-500 mr-2">من الكاشير</span>}</p>
+          {ord.paymentMethod && <p>💰 <span className="text-zinc-300 text-xs">{PAY_LABELS[ord.paymentMethod] || ord.paymentMethod}{ord.discountAmount > 0 ? ` · خصم ${ord.discountPercent}% (${ord.discountAmount} ج)` : ''}</span></p>}
+          {ord.driverName && <p>🛵 <span className="text-zinc-300 text-xs">السواق: {ord.driverName}</span></p>}
+          {ord.status === 'cancelled' && <p>✖ <span className="text-red-400 text-xs">سبب الإلغاء: {ord.cancelReason} ({ord.cancelledBy})</span></p>}
           {ord.orderType === 'delivery' && <p>📍 <span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
           {ord.createdAt && <p>🕒 <span className="text-zinc-400 text-xs">{new Date(ord.createdAt).toLocaleString('ar-EG')}</span></p>}
           {ord.acceptedBy && <p>✅ <span className="text-zinc-400 text-xs">قبله: {ord.acceptedBy}</span></p>}
@@ -1718,9 +2183,11 @@ const CashierDashboard = () => {
             <button onClick={() => updateOrderStatus(ord._id || ord.orderId, 'accepted')} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg">✅ قبول الأوردر (إيقاف الصوت)</button>
           )}
           {ord.status === 'accepted' && (
-            <button onClick={() => { updateOrderStatus(ord._id || ord.orderId, 'completed'); if (autoPrint) requestPrint(ord, 'customer'); }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold transition">🏁 إنهاء الأوردر (تم التسليم)</button>
+            <button onClick={() => finishOrder(ord)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold transition">{ord.orderType === 'delivery' ? '🛵 جاهز للتوصيل' : '🏁 تم التسليم'}</button>
           )}
+          {ord.status === 'cancelled' && <span className="flex-1 text-center text-zinc-400 text-xs font-bold py-2">الأوردر ملغي</span>}
           {ord.status === 'completed' && <span className="flex-1 text-center text-green-400 text-xs font-bold py-2">تم تسليم الأوردر</span>}
+          {(ord.status === 'pending' || ord.status === 'accepted') && <button onClick={() => startCancel(ord)} title="إلغاء الأوردر" className="text-red-300 bg-red-500/15 hover:bg-red-500/30 px-3 rounded-xl text-xs font-bold">✖ إلغاء</button>}
           <button onClick={() => requestPrint(ord, 'kitchen')} title="طباعة ورقة المطبخ" className="text-white bg-zinc-700 hover:bg-zinc-600 px-3 rounded-xl text-sm font-bold">🍳</button>
           <button onClick={() => requestPrint(ord, 'customer')} title="طباعة فاتورة العميل" className="text-white bg-zinc-700 hover:bg-zinc-600 px-3 rounded-xl text-sm font-bold">🧾</button>
           {isAdmin && <button onClick={() => deleteOrder(ord._id)} className="text-red-400 bg-red-500/10 px-3 rounded-xl text-xs font-bold">🗑️</button>}
@@ -1734,13 +2201,13 @@ const CashierDashboard = () => {
   }
 
   const tabBtn = (key, label) => (
-    <button type="button" onClick={() => setCashierTab(key)} className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-base transition border ${cashierTab === key ? 'bg-[#FF4500] text-white border-[#FFB800] shadow-[0_0_15px_rgba(255,69,0,0.5)]' : 'bg-[#100609] text-zinc-300 border-[#1F0A0E] hover:border-[#FF4500]'}`}>{label}</button>
+    <button type="button" onClick={() => setCashierTab(key)} className={`flex-1 md:flex-none ${cashierTab === 'pos' ? 'px-4 py-2 text-sm' : 'px-6 py-3 text-base'} rounded-xl font-black transition border ${cashierTab === key ? 'bg-[#FF4500] text-white border-[#FFB800] shadow-[0_0_15px_rgba(255,69,0,0.5)]' : 'bg-[#100609] text-zinc-300 border-[#1F0A0E] hover:border-[#FF4500]'}`}>{label}</button>
   );
 
   return (
-    <section className="px-8 py-12 max-w-7xl mx-auto min-h-screen bg-[#050304] text-white">
-      <div className="flex flex-wrap gap-3 justify-between items-center mb-8 border-b border-[#1F0A0E] pb-4">
-        <h2 className="text-3xl font-bold text-[#FFB800]">
+    <section className={`${cashierTab === 'pos' ? 'px-3 py-3 w-full' : 'px-8 py-12 max-w-7xl mx-auto'} min-h-screen bg-[#050304] text-white`}>
+      <div className={`flex flex-wrap gap-3 justify-between items-center border-b border-[#1F0A0E] ${cashierTab === 'pos' ? 'mb-2 pb-2' : 'mb-8 pb-4'}`}>
+        <h2 className={`${cashierTab === 'pos' ? 'text-xl' : 'text-3xl'} font-bold text-[#FFB800]`}>
           🖥️ شاشة الكاشير
           {newCount > 0 && <span className="bg-red-600 text-white text-base px-3 py-1 rounded-full mr-3 animate-pulse">🔔 {newCount} جديد</span>}
           {preparingCount > 0 && <span className="bg-yellow-500/20 text-yellow-400 text-base px-3 py-1 rounded-full mr-2">{preparingCount} قيد التحضير</span>}
@@ -1750,7 +2217,7 @@ const CashierDashboard = () => {
             👤 {user.name} {isAdmin && <span className="text-[#FFB800] font-bold">(أدمن)</span>}
           </span>
           {soundReady && <button onClick={playBeep} className="bg-zinc-800 px-4 py-2 rounded-xl text-sm font-bold text-white">🔊 تجربة الصوت</button>}
-          <button onClick={toggleAutoPrint} className={`px-4 py-2 rounded-xl text-sm font-bold text-white ${autoPrint ? 'bg-green-700' : 'bg-zinc-700'}`}>🖨️ طباعة تلقائية (مطبخ + عميل): {autoPrint ? 'شغالة' : 'مقفولة'}</button>
+          <button onClick={toggleAutoPrint} className={`px-4 py-2 rounded-xl text-sm font-bold text-white ${autoPrint ? 'bg-green-700' : 'bg-zinc-700'}`}>🖨️ طباعة تلقائية: {autoPrint ? 'شغالة' : 'مقفولة'}</button>
           <button onClick={fetchOrders} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-bold text-white">🔄 تحديث</button>
           {isAdmin && <Link to="/secret-admin-dashboard" className="bg-zinc-800 px-4 py-2 rounded-xl text-sm font-bold text-white">⚙️ الإدارة</Link>}
           <button onClick={logout} className="bg-zinc-700 px-4 py-2 rounded-xl text-sm font-bold text-white">🚪 خروج</button>
@@ -1763,12 +2230,15 @@ const CashierDashboard = () => {
         </button>
       )}
 
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className={`flex flex-wrap gap-3 ${cashierTab === 'pos' ? 'mb-2' : 'mb-8'}`}>
+        {tabBtn('pos', '🧾 كاشير (POS)')}
         {tabBtn('active', `🔥 الأوردرات النشطة (${activeOrders.length})`)}
         {tabBtn('archive', `📦 الأرشيف (${doneOrders.length})`)}
         {tabBtn('stock', '🍽️ الأصناف المتاحة')}
         {isAdmin && tabBtn('staff', '👥 إدارة الكاشيرات')}
       </div>
+
+      {cashierTab === 'pos' && <PosScreen authFetch={authFetch} isAdmin={isAdmin} onCreated={handlePosCreated} />}
 
       {cashierTab === 'active' && (
         activeOrders.length === 0 ? (
@@ -1784,6 +2254,11 @@ const CashierDashboard = () => {
             <div>
               <p className="font-black text-[#FFB800] text-lg">🕒 الشيفت الحالي</p>
               <p className="text-zinc-300 text-sm mt-1">{shiftStats.count} أوردر مكتمل · توصيل {shiftStats.delivery} ج</p>
+              <p className="text-zinc-400 text-xs mt-1">
+                {Object.entries(shiftStats.payments).map(([k, v]) => `${PAY_LABELS[k] || k}: ${v} ج`).join(' · ')}
+                {shiftStats.talabat > 0 ? ` · طلبات: ${shiftStats.talabat} ج` : ''}
+                {shiftStats.discounts > 0 ? ` · خصومات: ${shiftStats.discounts} ج` : ''}
+              </p>
               {shiftClosings[0] && <p className="text-zinc-500 text-xs mt-1">آخر تقفيل: {new Date(shiftClosings[0].closedAt).toLocaleString('ar-EG')} ({shiftClosings[0].closedBy})</p>}
             </div>
             <div className="flex items-center gap-4">
@@ -1834,6 +2309,13 @@ const CashierDashboard = () => {
             })
           )}
         </div>
+      )}
+
+      {cashierTab === 'archive' && cancelledOrders.length > 0 && (
+        <details className="mt-6 bg-[#100609] border border-red-900/50 rounded-2xl p-4">
+          <summary className="cursor-pointer font-bold text-red-300">✖ أوردرات ملغية ({cancelledOrders.length})</summary>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{cancelledOrders.map(renderOrderCard)}</div>
+        </details>
       )}
 
       {cashierTab === 'stock' && (
@@ -1914,6 +2396,41 @@ const CashierDashboard = () => {
         </div>
       )}
 
+      {driverModal && (
+        <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => setDriverModal(null)}>
+          <div dir="rtl" className="bg-[#100609] border border-[#FF4500]/60 rounded-2xl w-full max-w-md p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-[#FFB800]">🛵 مين السواق؟ (أوردر #{driverModal.orderId})</h3>
+            {knownDrivers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {knownDrivers.map(d => <button key={d} type="button" onClick={() => setDriverName(d)} className={`px-4 py-2 rounded-xl text-sm font-bold border ${driverName === d ? 'bg-[#FF4500] text-white border-[#FFB800]' : 'bg-[#050304] text-zinc-200 border-[#1F0A0E]'}`}>{d}</button>)}
+              </div>
+            )}
+            <input autoFocus value={driverName} onChange={(e) => setDriverName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') confirmDriver(); }} placeholder="اكتب اسم السواق" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white" />
+            <div className="flex gap-3">
+              <button type="button" onClick={confirmDriver} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl">✅ تأكيد وطباعة الفاتورة</button>
+              <button type="button" onClick={() => setDriverModal(null)} className="px-5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelModal && (
+        <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => setCancelModal(null)}>
+          <div dir="rtl" className="bg-[#100609] border border-red-500/60 rounded-2xl w-full max-w-md p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-red-400">✖ إلغاء أوردر #{cancelModal.orderId}</h3>
+            <p className="text-zinc-400 text-xs">الأوردر مش هيتمسح، هيفضل في الأرشيف بحالة "ملغي" وسببه ومين لغاه، ومش بيتحسب في الإيراد.</p>
+            <div className="flex flex-wrap gap-2">
+              {['العميل لغى', 'غلط في الأوردر', 'الصنف خلص', 'اتأخر', 'تجربة'].map(r => <button key={r} type="button" onClick={() => setCancelReason(r)} className={`px-3 py-2 rounded-xl text-sm font-bold border ${cancelReason === r ? 'bg-red-600 text-white border-red-400' : 'bg-[#050304] text-zinc-200 border-[#1F0A0E]'}`}>{r}</button>)}
+            </div>
+            <input value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="سبب الإلغاء (إجباري)" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white" />
+            <div className="flex gap-3">
+              <button type="button" onClick={submitCancel} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl">تأكيد الإلغاء</button>
+              <button type="button" onClick={() => setCancelModal(null)} className="px-5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Receipt80 order={printJob?.order} type={printJob?.type} cashierName={user?.name} />
     </section>
   );
@@ -1953,6 +2470,9 @@ const BahbahLoader = () => {
 // ================= التطبيق الرئيسي =================
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // صفحات الكاشير/الـPOS: من غير هيدر وفوتر الموقع عشان الشاشة كلها للشغل
+  const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier';
   const menuRef = useRef(null);
   const [cart, setCart] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -2054,7 +2574,7 @@ function App() {
 
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#050304] text-white font-sans flex flex-col justify-between relative selection:bg-[#FF4500] selection:text-white">
-      <nav className="sticky top-0 z-50 bg-[#050505]/95 backdrop-blur-md border-b border-white/10">
+      {!isStaffPage && <nav className="sticky top-0 z-50 bg-[#050505]/95 backdrop-blur-md border-b border-white/10">
         <div className="max-w-[1500px] mx-auto h-[78px] px-5 md:px-10 flex items-center justify-between">
           <Link to="/" className="shrink-0 flex items-center">
             {siteSettings.logoImage ? <img src={siteSettings.logoImage} alt="Bahbah Burger" className="h-14 md:h-16 w-auto object-contain" /> : <span className="text-3xl font-black italic text-white">Bahbah</span>}
@@ -2071,7 +2591,7 @@ function App() {
             </Link>
           </div>
         </div>
-      </nav>
+      </nav>}
 
       <div className="flex-1">
         <Routes>
@@ -2079,6 +2599,7 @@ function App() {
           <Route path="/menu" element={<MenuPage menuItems={menuItems} categories={categories} lang={lang} handleOpenItemDetails={handleOpenItemDetailsModal} cart={cart} setCart={setCart} />} />
           <Route path="/secret-admin-dashboard" element={<AdminDashboard menuItems={menuItems} categories={categories} siteSettings={siteSettings} lang={lang} fetchItems={fetchItems} fetchCategories={fetchCategories} fetchSettings={fetchSettings} />} />
           <Route path="/cashier" element={<CashierDashboard />} />
+          <Route path="/pos" element={<CashierDashboard initialTab="pos" />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
         </Routes>
       </div>
@@ -2187,10 +2708,10 @@ function App() {
         </div>
       )}
 
-      <footer id="footer" onClick={handleSecretLogoClick} className="bg-[#080808] border-t border-[#8d1710] mt-0 text-white/45 py-12 text-center text-xs cursor-default select-none">
+      {!isStaffPage && <footer id="footer" onClick={handleSecretLogoClick} className="bg-[#080808] border-t border-[#8d1710] mt-0 text-white/45 py-12 text-center text-xs cursor-default select-none">
         <div className="text-[#ef321b] text-3xl font-black italic mb-3">BAHBAH BURGER</div>
         جميع الحقوق محفوظة © 2026 بحبح برجر — Bahbah Burger
-      </footer>
+      </footer>}
     </div>
   );
 }
