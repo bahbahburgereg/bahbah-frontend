@@ -120,6 +120,14 @@ const getDiscountedPrice = (price, discountPercent) => {
   return Math.round(price * (1 - discountPercent / 100));
 };
 
+// ================= Meta Pixel: تتبع الأحداث =================
+// بيبعت الحدث لفيسبوك (لو البكسل متحمل). مفيش أي بيانات شخصية بتتبعت (لا اسم ولا تليفون ولا عنوان).
+const track = (event, data, eventId) => {
+  try {
+    if (window.fbq) window.fbq('track', event, data, eventId ? { eventID: eventId } : undefined);
+  } catch (e) {}
+};
+
 // ================= عدّاد الكمية على كارت الصنف (بدل علامة +) =================
 const CardQty = ({ item, cart, setCart, soldOut }) => {
   const count = (cart || []).filter(c => String(c._id) === String(item._id)).length;
@@ -144,6 +152,7 @@ const CardQty = ({ item, cart, setCart, soldOut }) => {
   const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
   const inc = (e) => {
     stop(e);
+    track('AddToCart', { content_name: item.name, content_ids: [String(item._id)], content_type: 'product', value: getDiscountedPrice(item.price, item.discount), currency: 'EGP' });
     setCart([...cart, { ...item, cartId: Date.now() + Math.random(), price: getDiscountedPrice(item.price, item.discount) }]);
   };
   const dec = (e) => {
@@ -388,7 +397,6 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
 };
 
 // ================= 3. لوحة التحكم =================
-// ================= تعديل الخصم لأكتر من صنف مرة واحدة =================
 // ================= تصغير الصور (للجديد وللي مرفوع قبل كده) =================
 const supportsWebp = (() => {
   try { return document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp'); } catch (e) { return false; }
@@ -484,6 +492,7 @@ const ImageOptimizerPanel = ({ menuItems, siteSettings, adminFetch, fetchItems, 
   );
 };
 
+// ================= تعديل الخصم لأكتر من صنف مرة واحدة =================
 const BulkDiscountPanel = ({ menuItems, categories, adminFetch, fetchItems }) => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
@@ -715,7 +724,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const handleAddGroup = () => {
     if (!newGroupName.trim()) return;
     setModifierGroups([...modifierGroups, { name: newGroupName, min: Number(newGroupMin), max: Number(newGroupMax), options: [] }]);
-    newGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
+    setNewGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
   };
 
   const handleAddOption = (gIndex) => {
@@ -1119,6 +1128,11 @@ const CartPage = ({ cart, setCart, lang }) => {
     fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); }).catch(err => {});
   }, []);
 
+  // Meta Pixel: العميل فتح السلة وفيها أصناف
+  useEffect(() => {
+    if (cart.length > 0) track('InitiateCheckout', { value: itemsTotal, currency: 'EGP', num_items: cart.length });
+  }, []);
+
   const deliveryFee = orderType === 'delivery' && selectedZone ? selectedZone.fee : 0;
   const grandTotal = itemsTotal + deliveryFee;
 
@@ -1199,6 +1213,9 @@ const CartPage = ({ cart, setCart, lang }) => {
     message += `\n-------------------\n🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
     if (orderType === 'delivery') message += `🚚 *سعر التوصيل:* ${deliveryFee} ج\n`;
     message += `💰 *الإجمالي النهائي: ${grandTotal} جنيه*\n`;
+
+    // Meta Pixel: تم إرسال الأوردر (الـ orderId بيمنع تسجيل نفس الأوردر مرتين)
+    track('Purchase', { value: grandTotal, currency: 'EGP', content_type: 'product', content_ids: groupedCart.map(g => String(g.item._id)), num_items: cart.length }, orderId);
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     if (waWindow) waWindow.location.href = whatsappUrl;
@@ -2602,6 +2619,13 @@ function App() {
     loadAll();
   }, []);
 
+  // Meta Pixel: PageView مع كل تنقل بين الصفحات (من غير صفحات الكاشير والأدمن)
+  useEffect(() => {
+    const p = location.pathname;
+    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard') return;
+    track('PageView');
+  }, [location.pathname]);
+
   const handleSecretLogoClick = () => {
     setLogoClicks(prev => {
       const newCount = prev + 1;
@@ -2622,8 +2646,11 @@ function App() {
       setSelectedItemDetail({ ...item, modifierGroups: migratedGroups });
       setSelectedModifiers({});
       setItemNotes('');
+      track('ViewContent', { content_name: item.name, content_ids: [String(item._id)], content_type: 'product', value: getDiscountedPrice(item.price, item.discount), currency: 'EGP' });
     } else {
-      setCart([...cart, { ...item, cartId: Date.now() + Math.random(), price: getDiscountedPrice(item.price, item.discount) }]);
+      const p = getDiscountedPrice(item.price, item.discount);
+      setCart([...cart, { ...item, cartId: Date.now() + Math.random(), price: p }]);
+      track('AddToCart', { content_name: item.name, content_ids: [String(item._id)], content_type: 'product', value: p, currency: 'EGP' });
     }
   };
 
@@ -2670,6 +2697,7 @@ function App() {
     });
 
     setCart([...cart, { ...selectedItemDetail, cartId: Date.now() + Math.random(), price: modalFinalPrice, modifiersInfo, notes: itemNotes }]);
+    track('AddToCart', { content_name: selectedItemDetail.name, content_ids: [String(selectedItemDetail._id)], content_type: 'product', value: modalFinalPrice, currency: 'EGP' });
     setSelectedItemDetail(null); setSelectedModifiers({}); setItemNotes('');
   };
 
@@ -2706,11 +2734,12 @@ function App() {
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
         </Routes>
       </div>
-{selectedItemDetail && (
+
+      {selectedItemDetail && (
         <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
           <div className="bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
-            
-            {/* 1. صورة الصنف وزر الإغلاق العائم (تم التصغير جداً) */}
+
+            {/* 1. صورة الصنف وزر الإغلاق العائم */}
             <div className="relative w-full h-24 md:h-32 shrink-0 bg-white border-b border-gray-200">
               <button onClick={() => setSelectedItemDetail(null)} className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition backdrop-blur-md">✕</button>
               <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
