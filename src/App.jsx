@@ -1028,6 +1028,23 @@ const CartPage = ({ cart, setCart, lang }) => {
 
   const handleRemoveCompletely = (cartId) => { setCart(cart.filter(i => i.cartId !== cartId)); };
 
+  // نجمّع الأصناف المتطابقة بالظبط (نفس الصنف ونفس الاختيارات والملاحظات) في سطر واحد بعدد
+  const cartKey = (i) => [i._id, i.name, i.price, (i.modifiersInfo || []).join('¦'), i.notes || ''].join('|');
+  const groupedCart = (() => {
+    const map = new Map();
+    cart.forEach((i) => {
+      const k = cartKey(i);
+      if (!map.has(k)) map.set(k, { key: k, item: i, qty: 0, ids: [] });
+      const g = map.get(k);
+      g.qty += 1;
+      g.ids.push(i.cartId);
+    });
+    return [...map.values()];
+  })();
+  const addOneMore = (g) => setCart([...cart, { ...g.item, cartId: Date.now() + Math.random() }]);
+  const removeOne = (g) => { const id = g.ids[g.ids.length - 1]; setCart(cart.filter(i => i.cartId !== id)); };
+  const removeGroup = (g) => setCart(cart.filter(i => !g.ids.includes(i.cartId)));
+
   const sendOrderToWhatsApp = async () => {
     if (cart.length === 0) return alert("السلة فارغة!");
     if (!customerName.trim()) return alert("من فضلك اكتب اسمك الكامل.");
@@ -1056,8 +1073,8 @@ const CartPage = ({ cart, setCart, lang }) => {
       customerAddress: orderType === 'delivery' ? customerAddress : 'استلام من الفرع',
       zoneName: orderType === 'delivery' && selectedZone ? selectedZone.name : 'استلام من الفرع',
       deliveryFee: orderType === 'delivery' ? deliveryFee : 0,
-      items: cart.map((item) => ({
-        name: item.name, price: item.price, quantity: 1, modifiers: item.modifiersInfo || [], notes: item.notes || ''
+      items: groupedCart.map((g) => ({
+        name: g.item.name, price: g.item.price, quantity: g.qty, modifiers: g.item.modifiersInfo || [], notes: g.item.notes || ''
       })),
       itemsTotal, grandTotal
     };
@@ -1077,8 +1094,9 @@ const CartPage = ({ cart, setCart, lang }) => {
       if (selectedZone) message += `🚚 *منطقة التوصيل:* ${selectedZone.name} (${selectedZone.fee} ج)\n`;
     }
     message += `\n🛒 *الأصناف المطلوبة:*\n`;
-    cart.forEach((item) => {
-      message += `▪️ 1× ${item.name} — (${item.price} ج)\n`;
+    groupedCart.forEach((g) => {
+      const item = g.item;
+      message += `▪️ ${g.qty}× ${item.name} — (${item.price} ج${g.qty > 1 ? ` × ${g.qty} = ${item.price * g.qty} ج` : ''})\n`;
       if (item.modifiersInfo && item.modifiersInfo.length > 0) item.modifiersInfo.forEach(mod => { message += `   - ${mod}\n`; });
       if (item.notes) message += `   📝 ملاحظات: ${item.notes}\n`;
     });
@@ -1120,17 +1138,27 @@ const CartPage = ({ cart, setCart, lang }) => {
           <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E]">
             <h3 className="text-xl font-bold text-[#FFB800] mb-6">محتويات السلة</h3>
             <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
-              {cart.map((item) => (
-                <div key={item.cartId} className="flex justify-between items-start border-b border-[#1F0A0E] pb-4">
-                  <div className="flex-1">
-                    <h4 className="text-base font-bold text-white">{item.name}</h4>
-                    {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {mod}</p>))}
-                    {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
-                    <p className="text-[#FFB800] font-bold text-sm mt-1">{item.price} ج</p>
+              {groupedCart.map((g) => {
+                const item = g.item;
+                return (
+                  <div key={g.key} className="flex justify-between items-start border-b border-[#1F0A0E] pb-4">
+                    <div className="flex-1">
+                      <h4 className="text-base font-bold text-white">{g.qty > 1 && <span className="text-[#FF4500] font-black ml-1">{g.qty}×</span>} {item.name}</h4>
+                      {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {mod}</p>))}
+                      {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
+                      <p className="text-[#FFB800] font-bold text-sm mt-1">
+                        {item.price * g.qty} ج{g.qty > 1 && <span className="text-zinc-500 font-normal text-xs"> ({item.price} ج للواحد)</span>}
+                      </p>
+                      <div className="inline-flex items-center border border-[#FF4500]/60 mt-2 rounded-lg overflow-hidden">
+                        <button type="button" onClick={() => removeOne(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500]">−</button>
+                        <span className="min-w-[2rem] text-center font-black text-sm">{g.qty}</span>
+                        <button type="button" onClick={() => addOneMore(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500]">+</button>
+                      </div>
+                    </div>
+                    <button onClick={() => removeGroup(g)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold ml-3">❌</button>
                   </div>
-                  <button onClick={() => handleRemoveCompletely(item.cartId)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold ml-3">❌</button>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
               <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
@@ -1175,10 +1203,13 @@ const sumOrders = (list) => ({
 });
 
 // ================= فاتورة الطباعة (ورق حراري) =================
+// ورقة المطبخ (big) من غير أي أسعار: بنشيل "(+122 ج)" من تعديلات الصنف
+const stripMoney = (m) => String(m).replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*\)/g, '').trim();
+
 const ItemExtras = ({ it, big = false }) => (
   <>
     {(it.modifiers || []).map((m, i) => (
-      <small key={i} style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 600 }}>- {m}</small>
+      <small key={i} style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 600 }}>- {big ? stripMoney(m) : m}</small>
     ))}
     {it.notes && <small style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 700 }}>📝 {it.notes}</small>}
   </>
