@@ -214,7 +214,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                     <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                       <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
                         {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
-                        {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+                        {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
                         <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                       </div>
                       <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
@@ -308,7 +308,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                           <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                             <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
                               {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
-                              {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-2 py-0.5 text-[10px] sm:text-xs font-black">خصم {item.discount}%</span>}
+                              {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
                               <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                             </div>
                             <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
@@ -317,9 +317,16 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
                                 <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || ''}</p>
                               </div>
                               <div className="flex items-center justify-between mt-3 sm:mt-6">
-                                <span className="text-[#ef321b] text-sm sm:text-xl font-black" dir="ltr">
-                                  {item.discount > 0 && basePrice > 0 ? `EGP ${price}` : `EGP ${basePrice}`}
-                                </span>
+                                <div className="flex items-center gap-1.5 sm:gap-2" dir="ltr">
+                                  <span className="text-[#ef321b] text-sm sm:text-xl font-black whitespace-nowrap">
+                                    EGP {item.discount > 0 && basePrice > 0 ? price : basePrice}
+                                  </span>
+                                  {item.discount > 0 && basePrice > 0 && (
+                                    <span className="text-[10px] sm:text-sm text-zinc-500 line-through whitespace-nowrap">
+                                      EGP {basePrice}
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="w-7 h-7 sm:w-9 sm:h-9 border border-white/15 flex items-center justify-center text-sm sm:text-xl group-hover:bg-[#ef321b] group-hover:border-[#ef321b] transition shrink-0">{soldOut ? '⛔' : '+'}</span>
                               </div>
                             </div>
