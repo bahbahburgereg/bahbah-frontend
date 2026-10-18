@@ -257,7 +257,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                       <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
                         {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
                         {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
-                        <img src={item.image} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                        <img src={item.image} alt={item.name} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                       </div>
                       <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                         <div>
@@ -351,7 +351,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
                             <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
                               {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
                               {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
-                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                             </div>
                             <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                               <div>
@@ -738,7 +738,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
           <span className="text-zinc-500 font-black text-xs leading-none">{itemIndex + 1}</span>
           <button type="button" onClick={() => handleMoveItem(item.category, itemIndex, 'down')} disabled={itemIndex === list.length - 1} className={`text-xs ${itemIndex === list.length - 1 ? 'text-zinc-700' : 'text-[#FFB800] hover:text-white transition'}`}>▼</button>
         </div>
-        <img src={item.image} alt="" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
+        <img src={item.image} alt="" loading="lazy" decoding="async" className="w-16 h-12 object-cover rounded-xl bg-[#100609]" />
         <div>
           <h4 className="font-bold text-white">
             {item.name}
