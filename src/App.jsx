@@ -346,6 +346,113 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails }) => {
 };
 
 // ================= 3. لوحة التحكم =================
+// ================= تعديل الخصم لأكتر من صنف مرة واحدة =================
+const BulkDiscountPanel = ({ menuItems, categories, adminFetch, fetchItems }) => {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [newDiscount, setNewDiscount] = useState('');
+  const [catFilter, setCatFilter] = useState('all');
+  const [saving, setSaving] = useState(false);
+
+  const visible = menuItems
+    .filter(i => catFilter === 'all' || i.category === catFilter)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const currentDiscounts = [...new Set(menuItems.map(i => Number(i.discount) || 0).filter(d => d > 0))].sort((a, b) => b - a);
+
+  const toggle = (id) => setSelected(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  const selectAllVisible = () => setSelected(prev => [...new Set([...prev, ...visible.map(i => i._id)])]);
+  const selectByDiscount = (d) => setSelected(visible.filter(i => (Number(i.discount) || 0) === d).map(i => i._id));
+
+  const apply = async () => {
+    const value = Number(newDiscount);
+    if (newDiscount === '' || !Number.isFinite(value) || value < 0 || value > 100) return alert('اكتب نسبة الخصم الجديدة (من 0 لـ 100)');
+    if (selected.length === 0) return alert('اختار صنف واحد على الأقل');
+    const msg = value === 0
+      ? `هتشيل الخصم من ${selected.length} صنف. متأكد؟`
+      : `هتغير الخصم لـ ${value}% على ${selected.length} صنف. متأكد؟`;
+    if (!window.confirm(msg)) return;
+    setSaving(true);
+    try {
+      const res = await adminFetch('/api/items/bulk-discount', {
+        method: 'PUT',
+        body: JSON.stringify({ ids: selected, discount: value })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'حصل خطأ'); }
+      else {
+        alert(`تم تعديل الخصم على ${data.matched} صنف ✅`);
+        setSelected([]); setNewDiscount('');
+        fetchItems();
+      }
+    } catch (err) { alert('تعذر الاتصال بالسيرفر'); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="bg-[#100609] border border-[#FF4500]/40 rounded-[2rem] p-6 mt-10">
+      <button type="button" onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between text-right">
+        <span className="text-xl font-black text-[#FFB800]">🏷️ تعديل الخصم لأكتر من صنف مرة واحدة</span>
+        <span className="text-zinc-400 text-lg">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="mt-6 space-y-5">
+          <div className="flex flex-wrap gap-3 items-center">
+            <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="bg-[#0A0407] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm">
+              <option value="all">كل الأقسام</option>
+              {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+            </select>
+            <button type="button" onClick={selectAllVisible} className="bg-zinc-700 text-white px-4 py-2 rounded-xl text-sm font-bold">✔ حدد كل الظاهر</button>
+            <button type="button" onClick={() => setSelected([])} className="bg-zinc-800 text-white px-4 py-2 rounded-xl text-sm font-bold">✖ إلغاء التحديد</button>
+          </div>
+
+          {currentDiscounts.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-zinc-400 text-sm">تحديد سريع:</span>
+              {currentDiscounts.map(d => (
+                <button key={d} type="button" onClick={() => selectByDiscount(d)} className="bg-[#FF4500]/20 text-[#FFB800] border border-[#FF4500]/40 px-3 py-1.5 rounded-xl text-xs font-black">
+                  كل اللي عليه خصم {d}%
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+            {visible.length === 0 && <p className="text-zinc-500 text-sm">مفيش أصناف.</p>}
+            {visible.map(item => {
+              const on = selected.includes(item._id);
+              const d = Number(item.discount) || 0;
+              return (
+                <label key={item._id} className={`flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 border cursor-pointer transition ${on ? 'bg-[#FF4500]/15 border-[#FF4500]' : 'bg-[#0A0407] border-[#1F0A0E] hover:border-zinc-600'}`}>
+                  <span className="flex items-center gap-3">
+                    <input type="checkbox" checked={on} onChange={() => toggle(item._id)} className="w-4 h-4 accent-[#FF4500]" />
+                    <span className="font-bold text-white text-sm">{item.name}</span>
+                    <span className="text-xs text-zinc-500">{item.category}</span>
+                  </span>
+                  <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${d > 0 ? 'bg-[#FFB800] text-black' : 'bg-zinc-800 text-zinc-400'}`}>{d > 0 ? `خصم ${d}%` : 'من غير خصم'}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap gap-3 items-center border-t border-[#1F0A0E] pt-5">
+            <span className="text-white font-bold text-sm">محدد: {selected.length} صنف</span>
+            <input
+              type="number" min="0" max="100" value={newDiscount} onChange={(e) => setNewDiscount(e.target.value)}
+              placeholder="الخصم الجديد %"
+              className="bg-[#0A0407] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm w-40"
+            />
+            <button type="button" onClick={apply} disabled={saving} className="bg-[#FF4500] hover:bg-[#E03D00] disabled:opacity-60 text-white font-black px-6 py-2.5 rounded-xl">
+              {saving ? '...' : '✅ تطبيق الخصم على المحدد'}
+            </button>
+            <span className="text-zinc-500 text-xs">اكتب 0 لو عايز تشيل الخصم.</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fetchCategories, fetchSettings, token, onUnauthorized, onLogout }) => {
   const t = translations[lang];
   const adminFetch = (path, options = {}) => authRequest(token, path, options, onUnauthorized);
@@ -829,6 +936,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
           {editId && <button type="button" onClick={resetForm} className="bg-zinc-700 text-white px-6 rounded-2xl font-bold">{t.cancel}</button>}
         </div>
       </form>
+
+      <BulkDiscountPanel menuItems={menuItems} categories={categories} adminFetch={adminFetch} fetchItems={fetchItems} />
 
       <div className="space-y-12 mt-12">
         <h3 className="text-2xl font-bold text-[#FFB800] border-b border-[#1A0B0E] pb-3">📋 إدارة وترتيب الأصناف حسب الأقسام</h3>
