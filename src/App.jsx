@@ -1097,7 +1097,7 @@ const CartPage = ({ cart, setCart, lang }) => {
     groupedCart.forEach((g) => {
       const item = g.item;
       message += `▪️ ${g.qty}× ${item.name} — (${item.price} ج${g.qty > 1 ? ` × ${g.qty} = ${item.price * g.qty} ج` : ''})\n`;
-      if (item.modifiersInfo && item.modifiersInfo.length > 0) item.modifiersInfo.forEach(mod => { message += `   - ${mod}\n`; });
+      if (item.modifiersInfo && item.modifiersInfo.length > 0) item.modifiersInfo.forEach(mod => { message += `   - ${stripMoney(mod)}\n`; });
       if (item.notes) message += `   📝 ملاحظات: ${item.notes}\n`;
     });
     message += `\n-------------------\n🏷️ *قيمة الأصناف:* ${itemsTotal} ج\n`;
@@ -1144,7 +1144,7 @@ const CartPage = ({ cart, setCart, lang }) => {
                   <div key={g.key} className="flex justify-between items-start border-b border-[#1F0A0E] pb-4">
                     <div className="flex-1">
                       <h4 className="text-base font-bold text-white">{g.qty > 1 && <span className="text-[#FF4500] font-black ml-1">{g.qty}×</span>} {item.name}</h4>
-                      {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {mod}</p>))}
+                      {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {stripMoney(mod)}</p>))}
                       {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
                       <p className="text-[#FFB800] font-bold text-sm mt-1">
                         {item.price * g.qty} ج{g.qty > 1 && <span className="text-zinc-500 font-normal text-xs"> ({item.price} ج للواحد)</span>}
@@ -1209,7 +1209,7 @@ const stripMoney = (m) => String(m).replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*
 const ItemExtras = ({ it, big = false }) => (
   <>
     {(it.modifiers || []).map((m, i) => (
-      <small key={i} style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 600 }}>- {big ? stripMoney(m) : m}</small>
+      <small key={i} style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 600 }}>- {stripMoney(m)}</small>
     ))}
     {it.notes && <small style={{ display: 'block', fontSize: big ? '14px' : '10px', fontWeight: 700 }}>📝 {it.notes}</small>}
   </>
@@ -1700,7 +1700,7 @@ const CashierDashboard = () => {
                 <span className="text-white font-medium">{it.quantity}× {it.name}</span>
                 <span className="text-[#FFB800]">{it.price * it.quantity} ج</span>
               </div>
-              {(it.modifiers || []).map((m, i) => (<p key={i} className="text-zinc-400 pr-3">- {m}</p>))}
+              {(it.modifiers || []).map((m, i) => (<p key={i} className="text-zinc-400 pr-3">- {stripMoney(m)}</p>))}
               {it.notes && <p className="text-[#FFB800] pr-3">📝 {it.notes}</p>}
             </div>
           ))}
