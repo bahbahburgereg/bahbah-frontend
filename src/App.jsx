@@ -1204,7 +1204,7 @@ const sumOrders = (list) => ({
 
 // ================= فاتورة الطباعة (ورق حراري) =================
 // ورقة المطبخ (big) من غير أي أسعار: بنشيل "(+122 ج)" من تعديلات الصنف
-const stripMoney = (m) => String(m).replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*\)/g, '').trim();
+const stripMoney = (m) => String(m).replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*\)/g, '').replace(/^[^:]*:\s*/, '').trim();
 
 const ItemExtras = ({ it, big = false }) => (
   <>
