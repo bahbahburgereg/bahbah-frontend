@@ -128,6 +128,159 @@ const track = (event, data, eventId) => {
   } catch (e) {}
 };
 
+// ================= مواعيد الطلب (فتح / قفل) =================
+const fmtTime = (hhmm) => {
+  const [h, m] = String(hhmm || '00:00').split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'م' : 'ص'}`;
+};
+
+const useStoreStatus = () => {
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/store-status`, { cache: 'no-store' });
+        const d = await r.json();
+        if (alive) setStatus(d);
+      } catch (e) {}
+    };
+    load();
+    const t = setInterval(load, 60000);
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { alive = false; clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
+  return status;
+};
+
+const StoreClosedBanner = ({ status }) => {
+  if (!status || status.isOpen) return null;
+  return (
+    <div className="bg-gradient-to-l from-[#8d1710] via-[#ef321b] to-[#8d1710] text-white text-center px-4 py-2.5 text-sm md:text-base font-black leading-relaxed">
+      🌙 {status.message}
+      {status.mode === 'auto' && <span className="block md:inline md:mr-3 text-white/85 font-bold text-xs md:text-sm">مواعيد الطلب: {fmtTime(status.openTime)} – {fmtTime(status.closeTime)}</span>}
+    </div>
+  );
+};
+
+// زراير سريعة في شاشة الكاشير
+const StoreToggle = ({ authFetch }) => {
+  const [st, setSt] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try { const r = await fetch(`${API_BASE}/api/store-status`, { cache: 'no-store' }); const d = await r.json(); if (alive) setSt(d); } catch (e) {}
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+
+  const setMode = async (mode) => {
+    if (busy || st?.mode === mode) return;
+    const msgs = { open: 'تفتح استقبال الأوردرات دلوقتي؟', closed: 'تقفل استقبال الأوردرات من الموقع دلوقتي؟', auto: 'ترجّعه تلقائي حسب المواعيد؟' };
+    if (!window.confirm(msgs[mode])) return;
+    setBusy(true);
+    try {
+      const r = await authFetch('/api/store-mode', { method: 'PUT', body: JSON.stringify({ mode }) });
+      const d = await r.json();
+      if (r.ok) setSt(d); else alert(d.error || 'حصل خطأ');
+    } catch (e) {}
+    setBusy(false);
+  };
+
+  if (!st) return null;
+  const btn = (mode, label, on) => (
+    <button type="button" disabled={busy} onClick={() => setMode(mode)} className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${st.mode === mode ? on : 'bg-[#050304] text-zinc-400 hover:text-white'}`}>{label}</button>
+  );
+  return (
+    <div className="flex items-center gap-1 bg-[#100609] border border-[#1F0A0E] rounded-xl p-1">
+      <span className={`px-3 py-1.5 rounded-lg text-xs font-black text-white ${st.isOpen ? 'bg-green-600' : 'bg-red-600'}`}>{st.isOpen ? '🟢 الموقع مفتوح' : '🔴 الموقع مقفول'}</span>
+      {btn('open', 'فتح', 'bg-green-700 text-white')}
+      {btn('closed', 'قفل', 'bg-red-700 text-white')}
+      {btn('auto', '⏰ تلقائي', 'bg-[#FF4500] text-white')}
+    </div>
+  );
+};
+
+// لوحة الأدمن: المواعيد ورسالة القفل
+const StoreHoursPanel = ({ adminFetch }) => {
+  const [st, setSt] = useState(null);
+  const [openTime, setOpenTime] = useState('12:00');
+  const [closeTime, setCloseTime] = useState('03:00');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/store-status`, { cache: 'no-store' });
+        const d = await r.json();
+        setSt(d); setOpenTime(d.openTime); setCloseTime(d.closeTime); setMessage(d.customMessage || '');
+      } catch (e) {}
+    })();
+  }, []);
+
+  const setMode = async (mode) => {
+    setBusy(true);
+    try {
+      const r = await adminFetch('/api/store-mode', { method: 'PUT', body: JSON.stringify({ mode }) });
+      const d = await r.json();
+      if (r.ok) setSt(d); else alert(d.error || 'حصل خطأ');
+    } catch (e) {}
+    setBusy(false);
+  };
+
+  const saveHours = async () => {
+    setBusy(true);
+    try {
+      const r = await adminFetch('/api/store-hours', { method: 'PUT', body: JSON.stringify({ openTime, closeTime, closedMessage: message }) });
+      const d = await r.json();
+      if (r.ok) { setSt(d); alert('تم حفظ المواعيد ✅'); } else alert(d.error || 'حصل خطأ');
+    } catch (e) {}
+    setBusy(false);
+  };
+
+  const modeBtn = (mode, label, on) => (
+    <button type="button" disabled={busy} onClick={() => setMode(mode)} className={`flex-1 py-3 rounded-2xl font-black text-sm border transition ${st?.mode === mode ? on : 'bg-[#050304] text-zinc-400 border-[#1F0A0E] hover:border-zinc-500'}`}>{label}</button>
+  );
+
+  return (
+    <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 className="text-xl font-bold text-[#FFB800]">⏰ مواعيد استقبال الأوردرات</h3>
+        {st && <span className={`px-4 py-1.5 rounded-full text-sm font-black text-white ${st.isOpen ? 'bg-green-600' : 'bg-red-600'}`}>{st.isOpen ? '🟢 مفتوح دلوقتي' : '🔴 مقفول دلوقتي'}</span>}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {modeBtn('open', '🟢 فتح (يدوي)', 'bg-green-700 text-white border-green-400')}
+        {modeBtn('closed', '🔴 قفل (يدوي)', 'bg-red-700 text-white border-red-400')}
+        {modeBtn('auto', '⏰ تلقائي حسب المواعيد', 'bg-[#FF4500] text-white border-[#FFB800]')}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-xs text-zinc-300 mb-1">بنفتح الساعة</label>
+          <input type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs text-zinc-300 mb-1">بنقفل الساعة (ممكن تكون بعد نص الليل)</label>
+          <input type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
+        </div>
+      </div>
+
+      <label className="block text-xs text-zinc-300 mb-1">رسالة القفل (اختياري — لو سبتها فاضية هتظهر الرسالة الافتراضية)</label>
+      <textarea rows="2" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="قفلنا دلوقتي 🌙 هنفتح الصبح بإذن الله" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm mb-4" />
+
+      <button type="button" disabled={busy} onClick={saveHours} className="w-full bg-[#FF4500] hover:bg-[#E03D00] disabled:opacity-60 text-white font-black py-4 rounded-2xl transition shadow-lg">💾 حفظ المواعيد والرسالة</button>
+      <p className="text-zinc-500 text-xs mt-3">الوضع اليدوي (فتح/قفل) بيفضل زي ما هو لحد ما ترجّعه "تلقائي".</p>
+    </div>
+  );
+};
+
 // ================= عدّاد الكمية على كارت الصنف (بدل علامة +) =================
 const CardQty = ({ item, cart, setCart, soldOut }) => {
   const count = (cart || []).filter(c => String(c._id) === String(item._id)).length;
@@ -875,6 +1028,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         </div>
       </div>
 
+      <StoreHoursPanel adminFetch={adminFetch} />
+
       <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
         <h3 className="text-xl font-bold text-[#FFB800] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
         <form onSubmit={handleAddZone} className="flex flex-col md:flex-row gap-4 mb-6">
@@ -1113,7 +1268,7 @@ const AdminDashboard = (props) => {
 };
 
 // ================= 4. صفحة السلة =================
-const CartPage = ({ cart, setCart, lang }) => {
+const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const t = translations[lang];
   const itemsTotal = cart.reduce((sum, item) => sum + item.price, 0);
   const [orderType, setOrderType] = useState('delivery');
@@ -1123,6 +1278,7 @@ const CartPage = ({ cart, setCart, lang }) => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState(null);
+  const storeClosed = !!(storeStatus && storeStatus.isOpen === false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); }).catch(err => {});
@@ -1163,6 +1319,13 @@ const CartPage = ({ cart, setCart, lang }) => {
 
     const waWindow = window.open('', '_blank');
 
+    // لو الموقع اتقفل (يدوي أو حسب المواعيد) نوقف الطلب قبل ما يتبعت
+    try {
+      const sr = await fetch(`${API_BASE}/api/store-status`, { cache: 'no-store' });
+      const st = await sr.json();
+      if (st && st.isOpen === false) { if (waWindow) waWindow.close(); return alert(st.message); }
+    } catch (err) {}
+
     try {
       const freshRes = await fetch(`${API_BASE}/api/items`);
       const fresh = await freshRes.json();
@@ -1193,6 +1356,10 @@ const CartPage = ({ cart, setCart, lang }) => {
       const response = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderPayload)
       });
+      if (response.status === 403) {
+        const d = await response.json().catch(() => ({}));
+        if (d.closed) { if (waWindow) waWindow.close(); return alert(d.error); }
+      }
       if (!response.ok) console.warn("Server responded with error when saving order, but WhatsApp will still open.");
     } catch (err) {
       console.error("Network error while saving order:", err);
@@ -1295,7 +1462,10 @@ const CartPage = ({ cart, setCart, lang }) => {
                 </>
               )}
             </div>
-            <button onClick={sendOrderToWhatsApp} className="w-full bg-[#25D366] text-black font-black text-lg py-4 rounded-2xl mt-6">{t.whatsappOrder}</button>
+            {storeClosed && (
+              <div className="mt-6 bg-red-500/10 border border-red-500/40 text-red-300 rounded-2xl p-4 text-sm font-bold text-center leading-relaxed">🌙 {storeStatus.message}</div>
+            )}
+            <button onClick={sendOrderToWhatsApp} disabled={storeClosed} className={`w-full font-black text-lg py-4 rounded-2xl mt-4 ${storeClosed ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-[#25D366] text-black'}`}>{storeClosed ? '🌙 الطلب مقفول دلوقتي' : t.whatsappOrder}</button>
           </div>
         </div>
       )}
@@ -2326,6 +2496,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {preparingCount > 0 && <span className="bg-yellow-500/20 text-yellow-400 text-base px-3 py-1 rounded-full mr-2">{preparingCount} قيد التحضير</span>}
         </h2>
         <div className="flex flex-wrap gap-2 items-center">
+          <StoreToggle authFetch={authFetch} />
           <span className="text-sm text-zinc-300 bg-[#100609] border border-[#1F0A0E] px-3 py-2 rounded-xl">
             👤 {user.name} {isAdmin && <span className="text-[#FFB800] font-bold">(أدمن)</span>}
           </span>
@@ -2595,6 +2766,7 @@ function App() {
   const [lang, setLang] = useState('ar');
   const [logoClicks, setLogoClicks] = useState(0);
   const [isLoading, setIsLoading] = useState(!menuCache);
+  const storeStatus = useStoreStatus();
 
   const [selectedItemDetail, setSelectedItemDetail] = useState(null);
   const [selectedModifiers, setSelectedModifiers] = useState({});
@@ -2722,6 +2894,7 @@ function App() {
             </Link>
           </div>
         </div>
+        <StoreClosedBanner status={storeStatus} />
       </nav>}
 
       <div className="flex-1">
@@ -2731,7 +2904,7 @@ function App() {
           <Route path="/secret-admin-dashboard" element={<AdminDashboard menuItems={menuItems} categories={categories} siteSettings={siteSettings} lang={lang} fetchItems={fetchItems} fetchCategories={fetchCategories} fetchSettings={fetchSettings} />} />
           <Route path="/cashier" element={<CashierDashboard />} />
           <Route path="/pos" element={<CashierDashboard initialTab="pos" />} />
-          <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} />} />
+          <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} storeStatus={storeStatus} />} />
         </Routes>
       </div>
 
