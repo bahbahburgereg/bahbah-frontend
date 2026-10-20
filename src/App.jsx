@@ -1729,7 +1729,8 @@ const Receipt80 = ({ order, type, cashierName }) => {
       ) : type === 'kitchen' ? (
         <>
           <div className="rc-center rc-big">🍳 أوردر المطبخ</div>
-          <div className="rc-kid" dir="ltr">#{order.orderId}</div>
+          <div className="rc-kid" dir="ltr">#{order.source === 'pos' && order.shiftReceiptNo ? order.shiftReceiptNo : order.orderId}</div>
+          {order.source === 'pos' && order.shiftReceiptNo && <div className="rc-center rc-small">رقم النظام: #{order.orderId}{order.orderType === 'talabat' && order.talabatNo ? ` | رقم طلبات: ${order.talabatNo}` : ''}</div>}
           <div className="rc-row rc-big"><span>{typeLabel(order)}</span><span>{timeText}</span></div>
           <div className="rc-line" />
           {items.map((it, i) => (
@@ -1745,7 +1746,8 @@ const Receipt80 = ({ order, type, cashierName }) => {
         <>
           <div className="rc-center"><h1 className="rc-title">{RESTAURANT_NAME}</h1><p className="rc-sub">📞 {RESTAURANT_PHONE}</p></div>
           <div className="rc-line" />
-          <div className="rc-row rc-big"><span>أوردر</span><span dir="ltr">#{order.orderId}</span></div>
+          <div className="rc-row rc-big"><span>رقم الإيصال</span><span dir="ltr">#{order.source === 'pos' && order.shiftReceiptNo ? order.shiftReceiptNo : order.orderId}</span></div>
+          {order.source === 'pos' && order.shiftReceiptNo && <div className="rc-small">رقم النظام: #{order.orderId}{order.orderType === 'talabat' && order.talabatNo ? ` | رقم طلبات: ${order.talabatNo}` : ''}</div>}
           <div className="rc-row"><span>التاريخ: {dateText}</span><span>الوقت: {timeText}</span></div>
           {cashierName && <div className="rc-row"><span>الكاشير: {cashierName}</span></div>}
           <div className="rc-line" />
