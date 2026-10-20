@@ -2223,6 +2223,32 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
     return () => clearInterval(t);
   }, []);
 
+  const posCartRepriced = useRef(false);
+
+  useEffect(() => {
+    if (!items.length || posCartRepriced.current) return;
+    posCartRepriced.current = true;
+    setCart((current) => current.map((line) => {
+      const item = items.find((candidate) => String(candidate._id) === String(line._id));
+      if (!item) return line;
+      const groups = posGroupsOf(item);
+      let unit = Number(item.price) > 0 ? Number(item.price) : 0;
+      const info = [];
+      for (const selection of (Array.isArray(line.modifierSelections) ? line.modifierSelections : [])) {
+        const gi = Number(selection.groupIndex);
+        if (!Number.isInteger(gi) || gi < 0 || gi >= groups.length) continue;
+        for (const oi of (Array.isArray(selection.optionIndices) ? selection.optionIndices : [])) {
+          const option = groups[gi]?.options?.[Number(oi)];
+          if (!option) continue;
+          const optionPrice = Number(option.price) || 0;
+          unit += optionPrice;
+          info.push(`${groups[gi].name}: ${option.name}${optionPrice > 0 ? ` (+${optionPrice} ج)` : ''}`);
+        }
+      }
+      return { ...line, unit, modifiersInfo: info.length ? info : (line.modifiersInfo || []) };
+    }));
+  }, [items]);
+
   useEffect(() => {
     try { localStorage.setItem('bahbahPosCart', JSON.stringify(cart)); } catch (e) {}
   }, [cart]);
@@ -2256,7 +2282,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
     if (groups.length > 0) {
       setModal({ item, groups }); setSelMods({}); setModalNotes(''); setModalQty(1);
     } else {
-      addLine(item, [], '', getDiscountedPrice(item.price, item.discount), 1, []);
+      addLine(item, [], '', (Number(item.price) || 0), 1, []);
     }
   };
 
@@ -2270,8 +2296,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
   const modalValid = modal ? modal.groups.every((g, gi) => { const c = (selMods[gi] || []).length; return c >= g.min && c <= g.max; }) : false;
   let modalUnit = 0;
   if (modal) {
-    if (modal.item.price > 0) modalUnit += getDiscountedPrice(modal.item.price, modal.item.discount);
-    modal.groups.forEach((g, gi) => (selMods[gi] || []).forEach(oi => { modalUnit += getDiscountedPrice(g.options[oi].price, modal.item.discount); }));
+    if (modal.item.price > 0) modalUnit += (Number(modal.item.price) || 0);
+    modal.groups.forEach((g, gi) => (selMods[gi] || []).forEach(oi => { modalUnit += (Number(g.options[oi].price) || 0); }));
   }
 
   const confirmModal = () => {
@@ -2279,7 +2305,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
     const info = [];
     modal.groups.forEach((g, gi) => (selMods[gi] || []).forEach(oi => {
       const opt = g.options[oi];
-      const p = getDiscountedPrice(opt.price, modal.item.discount);
+      const p = (Number(opt.price) || 0);
       info.push(`${g.name}: ${opt.name}${p > 0 ? ` (+${p} ج)` : ''}`);
     }));
     const modifierSelections = modal.groups.map((g, groupIndex) => ({
@@ -2398,12 +2424,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
                       <span className="font-black text-white text-sm leading-tight">{it.name}</span>
                       {off ? <span className="text-red-400 text-xs font-black">⛔ خلص</span> : (
                         <span className="text-[#FFB800] text-sm font-black">
-                          {it.price > 0 ? (
-                            <>
-                              {it.discount > 0 && <span className="text-zinc-500 line-through text-xs ml-1">{it.price}</span>}
-                              {getDiscountedPrice(it.price, it.discount)} ج
-                            </>
-                          ) : base > 0 ? <>من {getDiscountedPrice(base, it.discount)} ج</> : <span className="text-zinc-400 text-xs">حسب الاختيار</span>}
+                          {it.price > 0 ? <>{Number(it.price) || 0} ج</> : base > 0 ? <>من {base} ج</> : <span className="text-zinc-400 text-xs">حسب الاختيار</span>}
                         </span>
                       )}
                       {hasOpts && !off && <span className="text-[10px] text-zinc-500">اختيارات</span>}
@@ -2462,7 +2483,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-zinc-400 font-bold">الخصم</span>
+              <span className="text-xs text-zinc-400 font-bold">خصم يدوي على أوردر الكاشير</span>
               {isAdmin && <button type="button" onClick={editPresets} className="text-[11px] text-zinc-500 underline">✏️ تعديل القيم</button>}
             </div>
             <div className="flex flex-wrap gap-1.5 items-center">
@@ -2474,6 +2495,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
             </div>
             {discount > 0 && (
               <div className="mt-2 space-y-2">
+                <p className="text-[11px] text-zinc-500">ده خصم منفصل عن خصم الموقع، ومش بيتطبق إلا لما تختار نسبة هنا.</p>
                 <input value={discountReason} onChange={(e) => setDiscountReason(e.target.value)} placeholder="سبب الخصم (إجباري)" className={inp} />
                 {!isAdmin && discount > POS_MAX_CASHIER_DISCOUNT && <input type="password" inputMode="numeric" value={discountPin} onChange={(e) => setDiscountPin(e.target.value)} placeholder="PIN الأدمن للخصم فوق 15%" className={inp} dir="ltr" />}
               </div>
@@ -2531,7 +2553,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
                     <div className="grid grid-cols-2 gap-2">
                       {g.options.map((opt, oi) => {
                         const on = sel.includes(oi);
-                        const p = getDiscountedPrice(opt.price, modal.item.discount);
+                        const p = (Number(opt.price) || 0);
                         const disabled = g.max > 1 && !on && sel.length >= g.max;
                         return (
                           <button key={oi} type="button" disabled={disabled} onClick={() => toggleOpt(gi, oi, g.max)} className={`px-3 py-3 rounded-xl text-sm font-bold border-2 text-right transition ${on ? 'bg-[#FF4500] text-white border-[#FFB800]' : disabled ? 'opacity-40 bg-[#050304] border-[#1F0A0E] text-zinc-500' : 'bg-[#050304] border-[#1F0A0E] text-zinc-200 hover:border-[#FF4500]'}`}>
