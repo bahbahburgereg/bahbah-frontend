@@ -1887,25 +1887,23 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   };
 
   const doClose = async () => {
-    if (counted === '' || Number(counted) < 0) return alert('اكتب الكاش اللي عدّيته في الدرج');
-    if (handoverTo.trim().length < 2) return alert('اكتب اسم الكاشير المستلم عشان نثبت التسليم والاستلام');
-    const liveExpected = Number(expected || 0);
-    if (Math.abs(Number(counted) - liveExpected) > 0.009 && differenceReason.trim().length < 3) return alert('اكتب ملاحظة توضح اختلاف مبلغ التسليم قبل التقفيل');
-    if (differenceReason.trim() && differenceReason.trim().length < 3) return alert('اكتب ملاحظة واضحة');
-    if (!window.confirm(handoverTo.trim() ? `تقفل الوردية وتسجل تسليم ${money(Number(counted))} للكاشير ${handoverTo.trim()}؟ هو هيأكد الاستلام عند فتح ورديته.` : 'تقفل الوردية دلوقتي؟')) return;
+    if (!window.confirm('تأكيد تقفيل الوردية؟ هيتم حفظ صافي المبيعات وتقرير الوردية.')) return;
     setBusy(true);
     try {
-      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ countedCash: Number(counted), notes: [notes.trim(), differenceReason.trim() ? `سبب فرق النقدية: ${differenceReason.trim()}` : ''].filter(Boolean).join(' | '), handoverTo: handoverTo.trim() }) });
+      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({}) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(d.error || 'حصل خطأ'); }
-      else {
-        requestPrint(printForClosed(d, 'تقرير تقفيل الوردية'), 'report');
-        const diff = Number(d.difference) || 0;
-        alert(`تم تقفيل الوردية وطباعة التقرير. تم تسجيل تسليم ${money(Number(counted))} إلى ${d.handoverTo || handoverTo}. الكاشير المستلم لازم يعدّ المبلغ ويؤكد الاستلام عند فتح ورديته.`);
-        setCloseOpen(false); setCounted(''); setNotes(''); setDifferenceReason(''); setHandoverTo('');
+      if (!r.ok) {
+        alert(d.error || 'حصل خطأ أثناء تقفيل الوردية');
+      } else {
+        const netSales = Number(d.report?.total ?? d.total ?? rep?.total ?? 0);
+        setCloseOpen(false);
+        alert(`تم تقفيل الوردية بنجاح\nصافي المبيعات: ${money(netSales)}`);
+        setCounted(''); setNotes(''); setDifferenceReason(''); setHandoverTo('');
         await refreshShift(); await refreshClosed();
       }
-    } catch (e) {}
+    } catch (e) {
+      alert('تعذر الاتصال بالسيرفر. جرّب مرة تانية.');
+    }
     setBusy(false);
   };
 
@@ -2119,35 +2117,18 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
         </div>
       )}
 
-      {/* نافذة التقفيل */}
+      {/* نافذة تقفيل بسيطة: صافي المبيعات فقط */}
       {closeOpen && shift && (
         <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => !busy && setCloseOpen(false)}>
-          <div dir="rtl" className="bg-[#100609] border border-red-500/60 rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-black text-red-400">🔒 تقفيل وتسليم الوردية</h3>
-            {activeCount > 0 && <p className="bg-yellow-500/15 text-yellow-400 border border-yellow-500/40 rounded-xl p-3 text-xs font-bold">⚠️ فيه {activeCount} أوردر لسه شغال (مش مكتمل). مش هيتحسب في الوردية دي، هيتحسب في اللي بعدها لما يتسلّم.</p>}
-            <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-sm space-y-2">
-              <div className="flex justify-between"><span className="text-zinc-400">صافي المبيعات</span><span className="font-black text-white">{money(rep?.total)}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">مبيعات الكاش</span><span className="font-black text-white">{money(pays.cash || 0)}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">فيزا / انستا / محفظة</span><span className="font-black text-white">{money((pays.visa || 0) + (pays.instapay || 0) + (pays.wallet || 0))}</span></div>
-              <div className="flex justify-between border-t border-[#1F0A0E] pt-2"><span className="font-bold text-white">المتوقع في الدرج</span><span className="font-black text-[#FFB800]">{money(expected)}</span></div>
+          <div dir="rtl" className="bg-[#100609] border border-red-500/60 rounded-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-red-400">🔒 تقفيل الوردية</h3>
+            <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-5 text-center space-y-2">
+              <div className="text-sm text-zinc-400">صافي المبيعات (Net Sales)</div>
+              <div className="text-3xl font-black text-[#FFB800]">{money(rep?.total || 0)}</div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-zinc-300 mb-1">عدّ كل الفلوس الموجودة فعليًا في درج الكاشير *</label>
-              <input autoFocus type="number" min="0" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder="اكتب إجمالي النقدية بعد العد" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-xl text-center" dir="ltr" />
-              <p className="text-xs text-zinc-500 mt-2">اكتب المبلغ اللي عدّيته فعلًا، والتقرير هيسجل المبلغ للتسليم.</p>
-            </div>
-            {counted !== '' && Math.abs(Number(counted) - Number(expected || 0)) > 0.009 && <div className="space-y-1">
-              <label className="block text-sm font-bold text-zinc-300">ملاحظة على مبلغ التسليم (مطلوبة هنا)</label>
-              <input value={differenceReason} onChange={(e) => setDifferenceReason(e.target.value)} placeholder="اكتب توضيحًا مختصرًا" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-3 text-white text-sm" />
-            </div>}
-            <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ملاحظة إضافية (اختياري)" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-sm" />
-            <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 space-y-2">
-              <label className="block text-sm font-bold text-zinc-200">اسم الكاشير اللي هيستلم النقدية *</label>
-              <input value={handoverTo} onChange={(e) => setHandoverTo(e.target.value)} placeholder="اكتب الاسم المسجل في حساب الكاشير" className="w-full bg-[#100609] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" />
-              <p className="text-xs text-zinc-500">الكاشير المستلم هيعدّ الفلوس بنفسه ويؤكد المبلغ عند فتح ورديته.</p>
-            </div>
+            <p className="text-xs text-zinc-400 text-center">اضغط تقفيل لحفظ تقرير الوردية وإنهائها.</p>
             <div className="flex gap-3">
-              <button type="button" disabled={busy} onClick={doClose} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl">{busy ? '...' : 'تأكيد التقفيل وطباعة الورقة'}</button>
+              <button type="button" disabled={busy} onClick={doClose} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl">{busy ? 'جاري التقفيل...' : 'تقفيل الوردية'}</button>
               <button type="button" disabled={busy} onClick={() => setCloseOpen(false)} className="px-5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
             </div>
           </div>
