@@ -1585,6 +1585,7 @@ const ReportBody = ({ order }) => {
 
       {row('عدد الأوردرات', r.count || 0)}
       {row('إجمالي المبيعات', money(r.total), 'rc-total')}
+      {r.netSales !== undefined && row('صافي المبيعات (Net Sales)', money(r.netSales), 'rc-total')}
       {row('منها رسوم توصيل', money(r.delivery))}
       {Number(r.discounts) > 0 && row('إجمالي الخصومات', money(r.discounts))}
       {Number(r.cancelled) > 0 && row(`أوردرات ملغية (${r.cancelled})`, money(r.cancelledTotal))}
@@ -1803,9 +1804,10 @@ const LIGHT_THEME_CSS = (() => {
 })();
 
 // ================= شاشة فتح الوردية =================
-const OpenShiftForm = ({ authFetch, onDone }) => {
-  const [cash, setCash] = useState('');
+const OpenShiftForm = ({ authFetch, onDone, pendingHandover = null }) => {
+  const [cash, setCash] = useState(pendingHandover ? String(pendingHandover.amount ?? 0) : '');
   const [busy, setBusy] = useState(false);
+  useEffect(() => { if (pendingHandover) setCash(String(pendingHandover.amount ?? 0)); }, [pendingHandover?.shiftId]);
 
   const submit = async () => {
     if (cash === '' || Number(cash) < 0) return alert('اكتب الكاش اللي في الدرج دلوقتي (لو مفيش اكتب 0)');
@@ -1820,7 +1822,8 @@ const OpenShiftForm = ({ authFetch, onDone }) => {
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-bold text-zinc-300">الكاش الموجود في الدرج وقت الاستلام (رصيد الافتتاح)</label>
+      {pendingHandover && <div className="rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-200">استلام وردية من {pendingHandover.from}. النقدية المسلّمة المسجلة: <strong>{money(pendingHandover.amount)}</strong>. لازم تأكد نفس المبلغ عند الاستلام.</div>}
+      <label className="block text-sm font-bold text-zinc-300">{pendingHandover ? 'أكد النقدية اللي استلمتها فعليًا' : 'الكاش الموجود في الدرج وقت الاستلام (رصيد الافتتاح)'}</label>
       <input type="number" min="0" value={cash} onChange={(e) => setCash(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit(); }} placeholder="مثال: 500" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-lg text-center" dir="ltr" />
       <button type="button" disabled={busy} onClick={submit} className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-black py-3.5 rounded-xl">{busy ? '...' : '🟢 فتح الوردية'}</button>
     </div>
@@ -1838,7 +1841,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   const [closeOpen, setCloseOpen] = useState(false);
   const [counted, setCounted] = useState('');
   const [notes, setNotes] = useState('');
-  const [handover, setHandover] = useState(false);
+  const [handoverTo, setHandoverTo] = useState('');
   const [busy, setBusy] = useState(false);
 
   const defRange = () => {
@@ -1884,21 +1887,19 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
 
   const doClose = async () => {
     if (counted === '' || Number(counted) < 0) return alert('اكتب الكاش اللي عدّيته في الدرج');
-    if (!window.confirm(handover ? 'تقفل الوردية وتسلّم للكاشير اللي بعدك (هتتفتح وردية جديدة بنفس الكاش المعدود)؟' : 'تقفل الوردية دلوقتي؟')) return;
+    if (handoverTo.trim() && handoverTo.trim().length < 2) return alert('اكتب اسم الكاشير المستلم بشكل صحيح');
+    if (!window.confirm(handoverTo.trim() ? `تقفل الوردية وتسجل تسليم ${money(Number(counted))} للكاشير ${handoverTo.trim()}؟ هو هيأكد الاستلام عند فتح ورديته.` : 'تقفل الوردية دلوقتي؟')) return;
     setBusy(true);
     try {
-      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ countedCash: Number(counted), notes: notes.trim(), handover }) });
+      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ countedCash: Number(counted), notes: notes.trim(), handoverTo: handoverTo.trim() }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { alert(d.error || 'حصل خطأ'); }
       else {
-        if (isAdmin) {
-          requestPrint(printForClosed(d), 'report');
-          const diff = Number(d.difference) || 0;
-          alert(diff === 0 ? 'تم التقفيل ✅ الدرج مظبوط' : diff > 0 ? `تم التقفيل ✅ زيادة ${money(diff)} في الدرج` : `تم التقفيل ⚠️ عجز ${money(-diff)} في الدرج`);
-        } else {
-          alert('تم تقفيل الوردية. نتيجة مطابقة الدرج متاحة للأدمن فقط.');
-        }
-        setCloseOpen(false); setCounted(''); setNotes(''); setHandover(false);
+        requestPrint(printForClosed(d, 'تقرير تقفيل الوردية'), 'report');
+        const diff = Number(d.difference) || 0;
+        const result = diff === 0 ? 'الدرج مظبوط' : diff > 0 ? `زيادة ${money(diff)}` : `عجز ${money(-diff)}`;
+        alert(`تم تقفيل الوردية وطباعة التقرير. ${result}${d.handoverTo ? `\nتم تسجيل تسليم النقدية إلى ${d.handoverTo}. لازم الكاشير المستلم يسجل الدخول ويؤكد نفس المبلغ عند فتح ورديته.` : ''}`);
+        setCloseOpen(false); setCounted(''); setNotes(''); setHandoverTo('');
         await refreshShift(); await refreshClosed();
       }
     } catch (e) {}
@@ -1932,7 +1933,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
         <div className="max-w-md mx-auto bg-[#100609] border border-[#FF4500]/50 rounded-2xl p-6 space-y-4">
           <h3 className="text-xl font-black text-[#FFB800] text-center">🕒 مفيش وردية مفتوحة</h3>
           <p className="text-zinc-400 text-sm text-center">افتح وردية عشان تقدر تبيع من الكاشير ويتحسب الدرج والتقارير.</p>
-          <OpenShiftForm authFetch={authFetch} onDone={refreshShift} />
+          <OpenShiftForm authFetch={authFetch} onDone={async () => { await refreshShift(); await refreshClosed(); }} pendingHandover={shiftData?.pendingHandover || null} />
         </div>
       ) : (
         <>
@@ -1953,7 +1954,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {kpi('عدد الأوردرات', rep.count)}
-                {kpi('إجمالي المبيعات', money(rep.total))}
+                {kpi('صافي المبيعات (Net Sales)', money(rep.netSales ?? rep.total))}
                 {isAdmin && kpi('💵 كاش من غير طلبات', money(Math.max(0, (pays.cash || 0) - (rep.talabatCash || 0))))}
                 {kpi('💳 فيزا', money(pays.visa || 0))}
                 {kpi('📱 انستا باي', money(pays.instapay || 0))}
@@ -2139,10 +2140,11 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
               )}
             </div>
             <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ملاحظات (اختياري)" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-sm" />
-            <label className="flex items-start gap-3 bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 cursor-pointer">
-              <input type="checkbox" checked={handover} onChange={(e) => setHandover(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#FF4500]" />
-              <span className="text-sm text-zinc-300"><strong className="text-white">تسليم للكاشير اللي بعدك:</strong> يتفتح وردية جديدة على طول وبرصيد افتتاح = الكاش اللي عدّيته.</span>
-            </label>
+            <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 space-y-2">
+              <label className="block text-sm font-bold text-zinc-200">اسم الكاشير المستلم (اختياري لو مش هتسلّم الوردية مباشرة)</label>
+              <input value={handoverTo} onChange={(e) => setHandoverTo(e.target.value)} placeholder="اكتب الاسم المسجل في حساب الكاشير" className="w-full bg-[#100609] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" />
+              <p className="text-xs text-zinc-500">لو كتبت الاسم، هيتسجل مبلغ التسليم، والكاشير المستلم لازم يسجل الدخول ويؤكد استلام نفس المبلغ قبل فتح ورديته.</p>
+            </div>
             <div className="flex gap-3">
               <button type="button" disabled={busy} onClick={doClose} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl">{busy ? '...' : 'تأكيد التقفيل وطباعة الورقة'}</button>
               <button type="button" disabled={busy} onClick={() => setCloseOpen(false)} className="px-5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
@@ -3094,7 +3096,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
         </h2>
         <div className="flex flex-wrap gap-2 items-center">
           {shiftData && (shiftData.shift ? (
-            <button type="button" onClick={() => setCashierTab('shift')} className="bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-black" title="الوردية المفتوحة">🟢 وردية: {shiftData.shift.openedBy}{isAdmin ? ` · درج ${money(shiftData.report?.expectedCash)}` : ''}</button>
+            <button type="button" onClick={() => setCashierTab('shift')} className="bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-black" title="الوردية المفتوحة">🟢 ورديتك: {shiftData.shift.openedBy}{isAdmin ? ` · درج ${money(shiftData.report?.expectedCash)}` : ''}</button>
           ) : (
             <button type="button" onClick={() => setCashierTab('shift')} className="bg-red-600 text-white px-3 py-2 rounded-xl text-xs font-black animate-pulse">🔴 مفيش وردية — افتح</button>
           ))}
