@@ -1612,7 +1612,7 @@ const ReportBody = ({ order }) => {
           {Number(r.driverCash) > 0 && row('- كاش في عهدة السواقين', money(r.driverCash))}
           {row('المتوقع في الدرج', money(m.expectedCash ?? r.expectedCash), 'rc-big')}
           {m.countedCash !== undefined && m.countedCash !== null && row('المعدود فعلاً', money(m.countedCash), 'rc-big')}
-          {m.difference !== undefined && m.difference !== null && row(Number(m.difference) === 0 ? 'الفرق' : Number(m.difference) > 0 ? 'زيادة' : 'عجز', money(Math.abs(m.difference)), 'rc-total')}
+          {m.notes && row('ملاحظات التقفيل', m.notes)}
         </>
       )}
 
@@ -1888,10 +1888,10 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
 
   const doClose = async () => {
     if (counted === '' || Number(counted) < 0) return alert('اكتب الكاش اللي عدّيته في الدرج');
-    if (handoverTo.trim() && handoverTo.trim().length < 2) return alert('اكتب اسم الكاشير المستلم بشكل صحيح');
+    if (handoverTo.trim().length < 2) return alert('اكتب اسم الكاشير المستلم عشان نثبت التسليم والاستلام');
     const liveExpected = Number(expected || 0);
-    if (Math.abs(Number(counted) - liveExpected) > 0.009 && differenceReason.trim().length < 3) return alert('اكتب سبب العجز أو الزيادة قبل التقفيل');
-    if (handoverTo.trim() && differenceReason.trim() && differenceReason.trim().length < 3) return alert('اكتب سبب الفرق بشكل واضح');
+    if (Math.abs(Number(counted) - liveExpected) > 0.009 && differenceReason.trim().length < 3) return alert('اكتب ملاحظة توضح اختلاف مبلغ التسليم قبل التقفيل');
+    if (differenceReason.trim() && differenceReason.trim().length < 3) return alert('اكتب ملاحظة واضحة');
     if (!window.confirm(handoverTo.trim() ? `تقفل الوردية وتسجل تسليم ${money(Number(counted))} للكاشير ${handoverTo.trim()}؟ هو هيأكد الاستلام عند فتح ورديته.` : 'تقفل الوردية دلوقتي؟')) return;
     setBusy(true);
     try {
@@ -1901,8 +1901,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
       else {
         requestPrint(printForClosed(d, 'تقرير تقفيل الوردية'), 'report');
         const diff = Number(d.difference) || 0;
-        const result = diff === 0 ? 'الدرج مظبوط' : diff > 0 ? `زيادة ${money(diff)}` : `عجز ${money(-diff)}`;
-        alert(`تم تقفيل الوردية وطباعة التقرير. ${result}${d.handoverTo ? `\nتم تسجيل تسليم النقدية إلى ${d.handoverTo}. لازم الكاشير المستلم يسجل الدخول ويؤكد نفس المبلغ عند فتح ورديته.` : ''}`);
+        alert(`تم تقفيل الوردية وطباعة التقرير. تم تسجيل تسليم ${money(Number(counted))} إلى ${d.handoverTo || handoverTo}. الكاشير المستلم لازم يعدّ المبلغ ويؤكد الاستلام عند فتح ورديته.`);
         setCloseOpen(false); setCounted(''); setNotes(''); setDifferenceReason(''); setHandoverTo('');
         await refreshShift(); await refreshClosed();
       }
@@ -2070,15 +2069,11 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
         {(closedShifts || []).length === 0 ? <p className="text-zinc-500 text-sm">مفيش ورديات مقفولة لسه.</p> : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {closedShifts.map(c => {
-              const diff = Number(c.difference);
               return (
                 <div key={c._id} className="flex flex-wrap items-center justify-between gap-2 bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-2.5 text-sm">
                   <span className="text-zinc-300">{fmtDT(c.openedAt || c.from)} ← {fmtDT(c.closedAt)} · {c.closedBy}</span>
                   <span className="text-zinc-400">{c.count} أوردر</span>
                   <span className="text-[#FFB800] font-black">{money(c.total)}</span>
-                  {c.difference !== undefined && c.difference !== null && (
-                    <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${diff === 0 ? 'bg-green-600 text-white' : diff > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-600 text-white'}`}>{diff === 0 ? 'مظبوط' : diff > 0 ? `زيادة ${money(diff)}` : `عجز ${money(-diff)}`}</span>
-                  )}
                   <button type="button" onClick={() => requestPrint(printForClosed(c), 'report')} className="bg-zinc-700 text-white px-3 py-1 rounded-lg text-xs font-bold">🖨️ طباعة</button>
                 </div>
               );
@@ -2128,7 +2123,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
       {closeOpen && shift && (
         <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => !busy && setCloseOpen(false)}>
           <div dir="rtl" className="bg-[#100609] border border-red-500/60 rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-black text-red-400">🔒 تقفيل الوردية</h3>
+            <h3 className="text-xl font-black text-red-400">🔒 تقفيل وتسليم الوردية</h3>
             {activeCount > 0 && <p className="bg-yellow-500/15 text-yellow-400 border border-yellow-500/40 rounded-xl p-3 text-xs font-bold">⚠️ فيه {activeCount} أوردر لسه شغال (مش مكتمل). مش هيتحسب في الوردية دي، هيتحسب في اللي بعدها لما يتسلّم.</p>}
             <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-sm space-y-2">
               <div className="flex justify-between"><span className="text-zinc-400">صافي المبيعات</span><span className="font-black text-white">{money(rep?.total)}</span></div>
@@ -2139,19 +2134,17 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
             <div>
               <label className="block text-sm font-bold text-zinc-300 mb-1">عدّ كل الفلوس الموجودة فعليًا في درج الكاشير *</label>
               <input autoFocus type="number" min="0" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder="اكتب إجمالي النقدية بعد العد" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-xl text-center" dir="ltr" />
-              {isAdmin && diffLive !== null && (
-                <p className={`text-center text-sm font-black mt-2 ${diffLive === 0 ? 'text-green-400' : diffLive > 0 ? 'text-yellow-400' : 'text-red-400'}`}>{diffLive === 0 ? '✅ الدرج مظبوط' : diffLive > 0 ? `زيادة ${money(diffLive)}` : `عجز ${money(-diffLive)}`}</p>
-              )}
+              <p className="text-xs text-zinc-500 mt-2">اكتب المبلغ اللي عدّيته فعلًا، والتقرير هيسجل المبلغ للتسليم.</p>
             </div>
             {counted !== '' && Math.abs(Number(counted) - Number(expected || 0)) > 0.009 && <div className="space-y-1">
-              <label className="block text-sm font-bold text-red-300">سبب العجز أو الزيادة (إجباري)</label>
-              <input value={differenceReason} onChange={(e) => setDifferenceReason(e.target.value)} placeholder="مثال: تم دفع باقي للعميل من الدرج" className="w-full bg-[#050304] border border-red-500/60 rounded-xl px-3 py-3 text-white text-sm" />
+              <label className="block text-sm font-bold text-zinc-300">ملاحظة على مبلغ التسليم (مطلوبة هنا)</label>
+              <input value={differenceReason} onChange={(e) => setDifferenceReason(e.target.value)} placeholder="اكتب توضيحًا مختصرًا" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-3 text-white text-sm" />
             </div>}
             <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ملاحظة إضافية (اختياري)" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-sm" />
             <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 space-y-2">
-              <label className="block text-sm font-bold text-zinc-200">اسم الكاشير اللي هيستلم النقدية (اختياري)</label>
+              <label className="block text-sm font-bold text-zinc-200">اسم الكاشير اللي هيستلم النقدية *</label>
               <input value={handoverTo} onChange={(e) => setHandoverTo(e.target.value)} placeholder="اكتب الاسم المسجل في حساب الكاشير" className="w-full bg-[#100609] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" />
-              <p className="text-xs text-zinc-500">لو كتبت الاسم، الكاشير المستلم هيعدّ الفلوس بنفسه ويؤكد المبلغ عند فتح ورديته. لازم المبلغ يطابق اللي اتسجل في التسليم.</p>
+              <p className="text-xs text-zinc-500">الكاشير المستلم هيعدّ الفلوس بنفسه ويؤكد المبلغ عند فتح ورديته.</p>
             </div>
             <div className="flex gap-3">
               <button type="button" disabled={busy} onClick={doClose} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl">{busy ? '...' : 'تأكيد التقفيل وطباعة الورقة'}</button>
