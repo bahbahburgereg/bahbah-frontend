@@ -1705,6 +1705,27 @@ const Receipt80 = ({ order, type, cashierName }) => {
 
       {type === 'report' ? (
         <ReportBody order={order} />
+      ) : type === 'kitchen-summary' ? (
+        <>
+          <div className="rc-center"><h1 className="rc-title">{RESTAURANT_NAME}</h1><p className="rc-big">تقرير المطبخ - جرد الوردية</p></div>
+          <div className="rc-line" />
+          <div>من: {fmtDT(order.report?.from)}</div>
+          <div>إلى: {fmtDT(order.report?.to)}</div>
+          <div>الكاشير: {order.meta?.closedBy || order.report?.openedBy || '-'}</div>
+          <div className="rc-line" />
+          <div className="rc-row rc-big"><span>عدد الأوردرات</span><span>{order.report?.count || 0}</span></div>
+          <div className="rc-row rc-total"><span>Net Sales</span><span>{money(order.report?.netSales ?? order.report?.total ?? 0)}</span></div>
+          <div className="rc-line" />
+          <div className="rc-center rc-big">الأصناف المباعة والكميات</div>
+          {(order.report?.categories || []).length === 0 ? <div className="rc-center">مفيش أصناف مباعة في الوردية</div> : (order.report.categories || []).map((c, i) => (
+            <div key={i} style={{ marginTop: 7 }}>
+              <div className="rc-row rc-big"><span>{c.name}</span><span>{c.qty} قطعة</span></div>
+              {(c.items || []).map((it, j) => <div key={j} className="rc-row rc-small"><span>{it.name}</span><span style={{fontWeight:900}}>× {it.qty}</span></div>)}
+            </div>
+          ))}
+          <div className="rc-line" />
+          <div className="rc-center rc-sub">الكميات تخص الوردية دي فقط</div>
+        </>
       ) : type === 'kitchen' ? (
         <>
           <div className="rc-center rc-big">🍳 أوردر المطبخ</div>
@@ -1895,9 +1916,14 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
       if (!r.ok) {
         alert(d.error || 'حصل خطأ أثناء تقفيل الوردية');
       } else {
-        const netSales = Number(d.report?.total ?? d.total ?? rep?.total ?? 0);
+        const closedReport = d.report || d.reportSnapshot || rep || {};
+        const netSales = Number(closedReport.netSales ?? closedReport.total ?? d.total ?? 0);
+        const closedMeta = { closedBy: d.closedBy || user?.name || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: closedReport.expectedCash };
+        // اطبع ورقتين منفصلتين: تقرير تقفيل الكاشير، ثم تقرير المطبخ للأصناف والكميات.
+        requestPrint(makePrint('تقرير تقفيل الكاشير (Z)', closedReport, closedMeta), 'report');
+        requestPrint(makePrint('تقرير المطبخ - جرد الوردية', closedReport, closedMeta), 'kitchen-summary');
         setCloseOpen(false);
-        alert(`تم تقفيل الوردية بنجاح\nصافي المبيعات: ${money(netSales)}`);
+        alert(`تم تقفيل الوردية بنجاح\nصافي المبيعات: ${money(netSales)}\nهيتم طباعة تقرير الكاشير وتقرير المطبخ.`);
         setCounted(''); setNotes(''); setDifferenceReason(''); setHandoverTo('');
         await refreshShift(); await refreshClosed();
       }
