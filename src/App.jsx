@@ -6,7 +6,7 @@ const API_BASE = 'https://bahbah-backend-production-7ef2.up.railway.app';
 const RESTAURANT_NAME = 'بحبح برجر';
 const RESTAURANT_PHONE = '01042281510';
 const WHATSAPP_NUMBER = '201042281510';
-
+//
 // ================= الدخول والجلسات (كاشير / أدمن) =================
 const SESSION_KEY = 'bahbahCashierSession';
 
@@ -381,10 +381,10 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
       </div>
 
       <div ref={menuRef} className="scroll-mt-[78px]"></div>
-      
+
       <section className="relative max-w-[1500px] mx-auto px-5 md:px-10 py-16 md:py-20">
         <div className="absolute left-0 top-10 w-40 h-80 bg-[#ef321b]/10 blur-3xl pointer-events-none" />
-        
+
         <div className="flex flex-col gap-10">
           <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-[#ef321b]/20 pb-8">
             <div>
@@ -1700,6 +1700,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
           #receipt-print .rc-kid { font-size: 28px; font-weight: 900; text-align: center; margin: 4px 0; }
           #receipt-print .rc-kitem { display: flex; gap: 8px; font-size: 18px; font-weight: 900; padding: 4px 0; border-bottom: 1px dotted #000; }
           #receipt-print .rc-kqty { min-width: 30px; }
+          #receipt-print .rc-note { border: 2px solid #000; padding: 4px 6px; margin: 6px 0; font-size: 16px; font-weight: 900; }
         }
       `}</style>
 
@@ -1739,6 +1740,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
               <span>{it.name}<ItemExtras it={it} big /></span>
             </div>
           ))}
+          {order.orderNote && <div className="rc-note">💬 {order.orderNote}</div>}
           <div className="rc-line" />
           <div className="rc-center rc-sub">{dateText}</div>
         </>
@@ -1770,6 +1772,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
               ))}
             </tbody>
           </table>
+          {order.orderNote && <div className="rc-note">💬 {order.orderNote}</div>}
           <div className="rc-line" />
           <div className="rc-row"><span>المجموع</span><span>{subtotal} ج</span></div>
           {discount > 0 && <div className="rc-row"><span>خصم {order.discountPercent}%</span><span>- {discount} ج</span></div>}
@@ -1920,7 +1923,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
       } else {
         const closedReport = d.report || d.reportSnapshot || rep || {};
         const netSales = Number(closedReport.netSales ?? closedReport.total ?? d.total ?? 0);
-        const closedMeta = { closedBy: d.closedBy || user?.name || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: closedReport.expectedCash };
+        const closedMeta = { closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: closedReport.expectedCash };
         // اطبع ورقتين منفصلتين: تقرير تقفيل الكاشير، ثم تقرير المطبخ للأصناف والكميات.
         requestPrint(makePrint('تقرير تقفيل الكاشير (Z)', closedReport, closedMeta), 'report');
         requestPrint(makePrint('تقرير المطبخ - جرد الوردية', closedReport, closedMeta), 'kitchen-summary');
@@ -2145,7 +2148,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
         </div>
       )}
 
-      {/* نافذة تقفيل بسيطة: صافي المبيعات فقط */}
+      {/* نافذة تقفيل بسيطة: صافي المبيعات والخصومات */}
       {closeOpen && shift && (
         <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => !busy && setCloseOpen(false)}>
           <div dir="rtl" className="bg-[#100609] border border-red-500/60 rounded-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
@@ -2153,6 +2156,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
             <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-5 text-center space-y-2">
               <div className="text-sm text-zinc-400">صافي المبيعات (Net Sales)</div>
               <div className="text-3xl font-black text-[#FFB800]">{money(rep?.total || 0)}</div>
+              {Number(rep?.discounts) > 0 && <div className="text-sm text-orange-300 font-bold">خصومات الوردية: {money(rep.discounts)}</div>}
             </div>
             <p className="text-xs text-zinc-400 text-center">اضغط تقفيل لحفظ تقرير الوردية وإنهائها.</p>
             <div className="flex gap-3">
@@ -2168,7 +2172,6 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
 
 // ================= شاشة البيع (POS) داخل الكاشير =================
 const POS_PAYS = [['cash', '💵 كاش'], ['visa', '💳 فيزا'], ['instapay', '📱 انستا باي'], ['wallet', '👛 محفظة']];
-const POS_MAX_CASHIER_DISCOUNT = 15;
 
 const readPosPresets = () => {
   try {
@@ -2208,7 +2211,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
   const [talabatNo, setTalabatNo] = useState('');
   const [discount, setDiscount] = useState(0);
   const [discountReason, setDiscountReason] = useState('');
-  const [discountPin, setDiscountPin] = useState('');
+  const [orderNote, setOrderNote] = useState('');
+  const [showNote, setShowNote] = useState(false);
   const [presets, setPresets] = useState(readPosPresets);
   const [custName, setCustName] = useState('');
   const [custPhone, setCustPhone] = useState('');
@@ -2363,12 +2367,11 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
     if (orderType === 'talabat' && !talabatNo.trim()) return alert('اكتب رقم أوردر طلبات');
     if (orderType === 'delivery' && !address.trim()) return alert('اكتب عنوان التوصيل');
     if (discount > 0 && discountReason.trim().length < 2) return alert('اكتب سبب الخصم');
-    if (!isAdmin && discount > POS_MAX_CASHIER_DISCOUNT && !discountPin.trim()) return alert('خصم أعلى من 15% يحتاج PIN الأدمن');
     setBusy(true);
     try {
       const payload = {
         orderType, paymentMethod: pay, talabatNo: talabatNo.trim(), discountPercent: discount,
-        discountReason: discountReason.trim(), adminPin: discountPin.trim(),
+        discountReason: discountReason.trim(), orderNote: orderNote.trim(),
         customerName: custName.trim(), customerPhone: custPhone.trim(), customerAddress: address.trim(),
         zoneName: zone ? zone.name : (orderType === 'delivery' ? 'توصيل' : ''), deliveryFee: fee,
         items: cart.map(l => ({ itemId: l._id, name: l.name, quantity: l.qty, selections: Array.isArray(l.modifierSelections) ? l.modifierSelections : undefined, modifiers: l.modifiersInfo, notes: l.notes }))
@@ -2380,7 +2383,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
       } else {
         onCreated(data);
         setToast(`✅ أوردر #${data.orderId} اتبعت للمطبخ`);
-        setCart([]); setDiscount(0); setDiscountReason(''); setDiscountPin(''); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setPay('cash');
+        setCart([]); setDiscount(0); setDiscountReason(''); setOrderNote(''); setShowNote(false); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setPay('cash');
       }
     } catch (e) {
       alert('النت قاطع، الأوردر ما اتسجلش. استخدم الكاشير الأوفلاين لحد ما النت يرجع.');
@@ -2494,6 +2497,13 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
           </div>
 
           <div>
+            <button type="button" onClick={() => setShowNote(s => !s)} className={`w-full py-2.5 rounded-xl text-xs font-black border transition ${orderNote.trim() ? 'bg-[#FFB800] text-black border-[#FFB800]' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E] hover:border-[#FF4500]'}`}>💬 كومنت على الأوردر {orderNote.trim() ? '(مكتوب)' : ''}</button>
+            {showNote && (
+              <textarea rows="2" value={orderNote} onChange={(e) => setOrderNote(e.target.value)} placeholder="مثال: من غير طماطم، سوس زيادة..." className={inp + ' mt-2'} />
+            )}
+          </div>
+
+          <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-zinc-400 font-bold">خصم يدوي على أوردر الكاشير</span>
               {isAdmin && <button type="button" onClick={editPresets} className="text-[11px] text-zinc-500 underline">✏️ تعديل القيم</button>}
@@ -2507,9 +2517,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened }) 
             </div>
             {discount > 0 && (
               <div className="mt-2 space-y-2">
-                <p className="text-[11px] text-zinc-500">ده خصم منفصل عن خصم الموقع، ومش بيتطبق إلا لما تختار نسبة هنا.</p>
+                <p className="text-[11px] text-zinc-500">ده خصم منفصل عن خصم الموقع، وبيظهر في تقرير تقفيل الوردية.</p>
                 <input value={discountReason} onChange={(e) => setDiscountReason(e.target.value)} placeholder="سبب الخصم (إجباري)" className={inp} />
-                {!isAdmin && discount > POS_MAX_CASHIER_DISCOUNT && <input type="password" inputMode="numeric" value={discountPin} onChange={(e) => setDiscountPin(e.target.value)} placeholder="PIN الأدمن للخصم فوق 15%" className={inp} dir="ltr" />}
               </div>
             )}
           </div>
@@ -2631,8 +2640,6 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
   const token = session?.token;
   const user = session?.user;
   const isAdmin = user?.role === 'admin';
-
-  useEffect(() => { if (!isAdmin && cashierTab === 'archive') setCashierTab('active'); }, [isAdmin, cashierTab]);
 
   // ===== الطباعة =====
   const [shiftClosings, setShiftClosings] = useState([]);
@@ -3061,6 +3068,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
             </div>
           ))}
         </div>
+        {ord.orderNote && <div className="bg-[#FFB800]/15 border border-[#FFB800]/50 text-[#FFB800] rounded-xl p-2 mb-3 text-xs font-bold">💬 {ord.orderNote}</div>}
       </div>
 
       <div>
@@ -3133,7 +3141,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
         {tabBtn('pos', '🧾 كاشير (POS)')}
         {tabBtn('active', `🔥 الأوردرات النشطة (${activeOrders.length})`)}
         {tabBtn('shift', '🕒 الوردية والتقفيل')}
-        {isAdmin && tabBtn('archive', `📦 الأرشيف (${doneOrders.length + cancelledOrders.length})`)}
+        {tabBtn('archive', `📦 الأرشيف (${doneOrders.length + cancelledOrders.length})`)}
         {tabBtn('stock', '🍽️ الأصناف المتاحة')}
         {isAdmin && tabBtn('staff', '👥 إدارة الكاشيرات')}
       </div>
@@ -3155,9 +3163,9 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
         />
       )}
 
-      {isAdmin && cashierTab === 'archive' && (
+      {cashierTab === 'archive' && (
         <div className="space-y-6">
-          <p className="text-zinc-400 text-sm bg-[#100609] border border-[#1F0A0E] rounded-2xl p-4">📌 أرشيف الأوردرات المكتملة حسب اليوم. حسابات الوردية والدرج والتقفيل في تبويب <strong className="text-white">🕒 الوردية والتقفيل</strong>.</p>
+          <p className="text-zinc-400 text-sm bg-[#100609] border border-[#1F0A0E] rounded-2xl p-4">📌 أرشيف الأوردرات المكتملة حسب اليوم (للعرض والطباعة فقط). حسابات الوردية والدرج والتقفيل في تبويب <strong className="text-white">🕒 الوردية والتقفيل</strong>.</p>
           {dayGroups.length === 0 ? (
             <p className="text-zinc-500 text-center py-20 text-xl bg-[#100609] border border-[#1F0A0E] rounded-2xl">لا توجد أوردرات منتهية بعد.</p>
           ) : (
@@ -3169,8 +3177,8 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
                     <span className="font-black text-white text-lg">📅 {g.label}</span>
                     <span className="flex items-center gap-4 text-sm">
                       <span className="text-zinc-300">{g.count} أوردر</span>
-                      <span className="text-zinc-400">توصيل {g.delivery} ج</span>
-                      <span className="text-[#FFB800] text-xl font-black">{g.total} ج</span>
+                      {isAdmin && <span className="text-zinc-400">توصيل {g.delivery} ج</span>}
+                      {isAdmin && <span className="text-[#FFB800] text-xl font-black">{g.total} ج</span>}
                       <span className="text-zinc-400">{isOpen ? '▲' : '▼'}</span>
                     </span>
                   </button>
