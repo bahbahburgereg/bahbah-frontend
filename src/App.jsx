@@ -120,6 +120,41 @@ const getDiscountedPrice = (price, discountPercent) => {
   return Math.round(price * (1 - discountPercent / 100));
 };
 
+
+// ================= تتبع مصدر الزيارة (UTM) =================
+const ATTR_KEY = 'bahbahAttribution';
+const captureAttribution = () => {
+  try {
+    const p = window.location.pathname;
+    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports') return;
+    const q = new URLSearchParams(window.location.search);
+    const get = (k) => (q.get(k) || '').trim();
+    const hasUtm = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].some(k => get(k));
+    let ref = '';
+    try { if (document.referrer && new URL(document.referrer).host !== window.location.host) ref = new URL(document.referrer).host; } catch (e) {}
+    let old = null;
+    try { old = JSON.parse(localStorage.getItem(ATTR_KEY)); } catch (e) {}
+    const fresh = old && old.at && (Date.now() - old.at) < 30 * 86400000;
+    if (hasUtm) {
+      const rec = {
+        source: get('utm_source') || (get('fbclid') ? 'facebook' : ''), medium: get('utm_medium'), campaign: get('utm_campaign'),
+        content: get('utm_content'), term: get('utm_term'), fbclid: get('fbclid'), landingPage: p, referrer: ref, at: Date.now()
+      };
+      localStorage.setItem(ATTR_KEY, JSON.stringify(rec));
+    } else if (!fresh) {
+      localStorage.setItem(ATTR_KEY, JSON.stringify({ source: ref ? 'referral' : 'direct', landingPage: p, referrer: ref, at: Date.now() }));
+    }
+  } catch (e) {}
+};
+const readAttribution = () => {
+  try {
+    const a = JSON.parse(localStorage.getItem(ATTR_KEY));
+    if (!a) return undefined;
+    const { at, ...rest } = a;
+    return rest;
+  } catch (e) { return undefined; }
+};
+
 // ================= Meta Pixel: تتبع الأحداث =================
 // بيبعت الحدث لفيسبوك (لو البكسل متحمل). مفيش أي بيانات شخصية بتتبعت (لا اسم ولا تليفون ولا عنوان).
 const track = (event, data, eventId) => {
@@ -1267,6 +1302,176 @@ const AdminDashboard = (props) => {
   return <AdminPanel {...props} token={session.token} onUnauthorized={handleLogout} onLogout={handleLogout} />;
 };
 
+
+// ================= صفحة تقارير الحملات الإعلانية (للأدمن) =================
+const pad2 = (n) => String(n).padStart(2, '0');
+const dateKeyOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+const CampaignReportsPage = () => {
+  const [session, setSession] = useState(readSession);
+  const logout = () => { clearSession(); setSession(null); };
+  if (!session?.token || session.user?.role !== 'admin') {
+    return <StaffLogin title="🔒 تقارير الحملات (أدمن)" requireAdmin onLogin={(data) => { saveSession(data); setSession(data); }} />;
+  }
+  return <CampaignReports token={session.token} onLogout={logout} />;
+};
+
+const CampaignReports = ({ token, onLogout }) => {
+  const today = new Date();
+  const [from, setFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 6); return dateKeyOf(d); });
+  const [to, setTo] = useState(dateKeyOf(today));
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [campName, setCampName] = useState('');
+  const [adName, setAdName] = useState('');
+  const [copied, setCopied] = useState('');
+  const authFetch = (path, options = {}) => authRequest(token, path, options, onLogout);
+
+  const load = async () => {
+    setLoading(true); setErr('');
+    try {
+      const [fy, fm, fd] = from.split('-').map(Number), [ty, tm, td] = to.split('-').map(Number);
+      const f = new Date(fy, fm - 1, fd), t = new Date(ty, tm - 1, td + 1);
+      const res = await authFetch(`/api/reports/campaigns?from=${encodeURIComponent(f.toISOString())}&to=${encodeURIComponent(t.toISOString())}&fromKey=${from}&toKey=${to}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'تعذر تحميل التقرير');
+      setRows(data.rows || []);
+    } catch (e) { if (e.message !== 'unauthorized') setErr(e.message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [from, to]);
+
+  const preset = (days) => { const d = new Date(); d.setDate(d.getDate() - (days - 1)); setFrom(dateKeyOf(d)); setTo(dateKeyOf(new Date())); };
+  const thisMonth = () => { const d = new Date(); setFrom(dateKeyOf(new Date(d.getFullYear(), d.getMonth(), 1))); setTo(dateKeyOf(d)); };
+
+  const saveSpend = async (r, value) => {
+    const amount = Number(String(value).replace(/[^\d.]/g, '')) || 0;
+    if (amount === (r.spend || 0)) return;
+    try {
+      await authFetch('/api/ad-spend', { method: 'PUT', body: JSON.stringify({ campaign: r.campaign, content: r.content, from, to, amount }) });
+      load();
+    } catch (e) {}
+  };
+
+  const totals = rows.reduce((a, r) => ({ orders: a.orders + r.orders, sales: a.sales + r.sales, spend: a.spend + (r.spend || 0), cancelled: a.cancelled + r.cancelled }), { orders: 0, sales: 0, spend: 0, cancelled: 0 });
+  const fmt = (n) => Math.round(n).toLocaleString('en-US');
+  const cac = (r) => (r.spend > 0 && r.orders > 0 ? Math.round(r.spend / r.orders) : null);
+  const roas = (r) => (r.spend > 0 ? (r.sales / r.spend).toFixed(1) : null);
+  const label = (v, d) => v || d;
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const enc = (v) => encodeURIComponent(v.trim());
+  const oneLink = campName.trim() ? `${origin}/?utm_source=facebook&utm_medium=paid&utm_campaign=${enc(campName)}${adName.trim() ? `&utm_content=${enc(adName)}` : ''}` : '';
+  const metaParams = 'utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}';
+  const copy = async (text, id) => { try { await navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(''), 1800); } catch (e) { window.prompt('انسخ الرابط:', text); } };
+
+  const exportCsv = () => {
+    const head = ['الحملة', 'الإعلان', 'أوردرات', 'ملغي', 'مبيعات', 'متوسط الأوردر', 'التكلفة', 'تكلفة الأوردر', 'ROAS'];
+    const lines = rows.map(r => [label(r.campaign, 'مباشر / بدون حملة'), r.content, r.orders, r.cancelled, Math.round(r.sales), r.orders ? Math.round(r.sales / r.orders) : 0, r.spend || 0, cac(r) ?? '', roas(r) ?? '']);
+    const csv = '﻿' + [head, ...lines].map(l => l.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `campaigns-${from}_${to}.csv`; a.click();
+  };
+
+  const inp = 'bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm';
+  const chip = 'px-3 py-2 rounded-xl text-xs font-black border border-[#1F0A0E] bg-[#100609] text-zinc-300 hover:border-[#FF4500]';
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-[#050304] text-white p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl md:text-3xl font-black text-[#FFB800]">📈 تقرير الحملات الإعلانية</h1>
+          <div className="flex gap-2">
+            <button onClick={exportCsv} className={chip}>⬇️ تصدير Excel</button>
+            <button onClick={onLogout} className={chip}>🚪 خروج</button>
+          </div>
+        </div>
+
+        <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-4 space-y-3">
+          <div className="flex flex-wrap gap-2 items-center">
+            <button onClick={() => preset(1)} className={chip}>اليوم</button>
+            <button onClick={() => preset(7)} className={chip}>آخر 7 أيام</button>
+            <button onClick={() => preset(30)} className={chip}>آخر 30 يوم</button>
+            <button onClick={thisMonth} className={chip}>الشهر ده</button>
+            <span className="text-zinc-500 text-xs mx-1">أو</span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inp} />
+            <span className="text-zinc-500">←</span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={inp} />
+            <button onClick={load} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-black">{loading ? '...' : '🔄 تحديث'}</button>
+          </div>
+          {err && <p className="text-red-400 text-sm">{err}</p>}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[['أوردرات الموقع', fmt(totals.orders)], ['المبيعات', `${fmt(totals.sales)} ج`], ['تكلفة الإعلانات', `${fmt(totals.spend)} ج`], ['تكلفة الأوردر (المتوسط)', totals.spend > 0 && totals.orders > 0 ? `${fmt(totals.spend / totals.orders)} ج` : '—']].map(([k, v]) => (
+            <div key={k} className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-4">
+              <p className="text-zinc-400 text-xs">{k}</p>
+              <p className="text-[#FFB800] text-2xl font-black mt-1">{v}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl overflow-x-auto">
+          <table className="w-full text-sm min-w-[820px]">
+            <thead>
+              <tr className="text-zinc-400 text-xs border-b border-[#1F0A0E]">
+                <th className="p-3 text-right">الحملة</th><th className="p-3 text-right">الإعلان</th><th className="p-3">أوردرات</th><th className="p-3">ملغي</th>
+                <th className="p-3">المبيعات</th><th className="p-3">متوسط الأوردر</th><th className="p-3">تكلفة الإعلان (اكتبها)</th><th className="p-3">تكلفة الأوردر</th><th className="p-3">ROAS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && <tr><td colSpan="9" className="p-8 text-center text-zinc-500">{loading ? 'جاري التحميل...' : 'مفيش أوردرات في الفترة دي'}</td></tr>}
+              {rows.map((r, i) => (
+                <tr key={`${r.campaign}|${r.content}|${i}`} className="border-b border-[#1F0A0E]/60 text-center">
+                  <td className="p-3 text-right font-bold">{label(r.campaign, <span className="text-zinc-400">مباشر / بدون حملة</span>)}</td>
+                  <td className="p-3 text-right text-zinc-300">{r.content || '—'}</td>
+                  <td className="p-3 font-black">{r.orders}</td>
+                  <td className="p-3 text-zinc-500">{r.cancelled || ''}</td>
+                  <td className="p-3 text-[#FFB800] font-black">{fmt(r.sales)} ج</td>
+                  <td className="p-3">{r.orders ? `${fmt(r.sales / r.orders)} ج` : '—'}</td>
+                  <td className="p-3">
+                    {(r.campaign || r.content) ? (
+                      <input defaultValue={r.spend || ''} key={`${from}${to}${r.spend}`} onBlur={(e) => saveSpend(r, e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }} inputMode="decimal" placeholder="0" className={inp + ' w-24 text-center'} dir="ltr" />
+                    ) : <span className="text-zinc-600">—</span>}
+                  </td>
+                  <td className="p-3 font-black text-green-400">{cac(r) ? `${cac(r)} ج` : '—'}</td>
+                  <td className="p-3">{roas(r) ? `${roas(r)}x` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-zinc-500 text-xs leading-6">• التقرير بيحسب أوردرات الموقع بس (مش أوردرات الكاشير)، والملغي مش داخل في المبيعات. • "مباشر / بدون حملة" = عميل جه من غير رابط إعلان. • اكتب تكلفة كل إعلان من Meta للفترة المختارة، والتكلفة بتتحفظ للفترة دي بالظبط. • قارن "أوردرات" هنا بعدد الـ Purchases في Meta: لو Meta أكتر، يبقى فيه أوردرات متنسبة لإعلانات مش واصلة للموقع.</p>
+
+        <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-4 space-y-4">
+          <h2 className="font-black text-lg text-white">🔗 روابط الإعلانات (UTM)</h2>
+          <div>
+            <p className="text-sm text-zinc-300 font-bold mb-1">الطريقة الأسهل: مرة واحدة لكل الإعلانات</p>
+            <p className="text-xs text-zinc-500 mb-2">في Meta داخل الإعلان: Website URL = <span dir="ltr">{origin}</span>، وفي خانة <b>URL parameters</b> الصق السطر ده. Meta بتملّي اسم الحملة والإعلان لوحدها.</p>
+            <div className="flex gap-2">
+              <input readOnly value={metaParams} className={inp + ' flex-1 text-xs'} dir="ltr" />
+              <button onClick={() => copy(metaParams, 'meta')} className="bg-[#FF4500] px-4 rounded-xl text-sm font-black shrink-0">{copied === 'meta' ? '✅ اتنسخ' : 'نسخ'}</button>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-zinc-300 font-bold mb-2">أو اعمل رابط لإعلان معيّن</p>
+            <div className="grid md:grid-cols-2 gap-2">
+              <input value={campName} onChange={(e) => setCampName(e.target.value)} placeholder="اسم الحملة (مثال: عرض الجمعة)" className={inp} />
+              <input value={adName} onChange={(e) => setAdName(e.target.value)} placeholder="اسم الإعلان (اختياري، مثال: فيديو 1)" className={inp} />
+            </div>
+            {oneLink && (
+              <div className="flex gap-2 mt-2">
+                <input readOnly value={oneLink} className={inp + ' flex-1 text-xs'} dir="ltr" />
+                <button onClick={() => copy(oneLink, 'one')} className="bg-[#FF4500] px-4 rounded-xl text-sm font-black shrink-0">{copied === 'one' ? '✅ اتنسخ' : 'نسخ'}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ================= 4. صفحة السلة =================
 const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const t = translations[lang];
@@ -1351,7 +1556,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         selections: Array.isArray(g.item.modifierSelections) ? g.item.modifierSelections : undefined,
         modifiers: g.item.modifiersInfo || [], notes: g.item.notes || ''
       })),
-      itemsTotal, grandTotal
+      itemsTotal, grandTotal,
+      attribution: readAttribution()
     };
 
     let savedOrder = null;
@@ -3365,7 +3571,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   // صفحات الكاشير/الـPOS: من غير هيدر وفوتر الموقع عشان الشاشة كلها للشغل
-  const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier';
+  const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier' || location.pathname === '/reports';
   const menuRef = useRef(null);
   const [cart, setCart] = useState([]);
   const menuCache = (() => { try { const c = JSON.parse(localStorage.getItem('bahbahMenuCache')); return c && Array.isArray(c.items) && c.items.length ? c : null; } catch (e) { return null; } })();
@@ -3403,9 +3609,12 @@ function App() {
   // Meta Pixel: PageView مع كل تنقل بين الصفحات (من غير صفحات الكاشير والأدمن)
   useEffect(() => {
     const p = location.pathname;
-    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard') return;
+    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports') return;
     track('PageView');
   }, [location.pathname]);
+
+  // مصدر الزيارة (UTM) — بيتحفظ ويتبعت مع الأوردر
+  useEffect(() => { captureAttribution(); }, [location.pathname]);
 
   const handleSecretLogoClick = () => {
     setLogoClicks(prev => {
@@ -3516,6 +3725,7 @@ function App() {
           <Route path="/secret-admin-dashboard" element={<AdminDashboard menuItems={menuItems} categories={categories} siteSettings={siteSettings} lang={lang} fetchItems={fetchItems} fetchCategories={fetchCategories} fetchSettings={fetchSettings} />} />
           <Route path="/cashier" element={<CashierDashboard />} />
           <Route path="/pos" element={<CashierDashboard initialTab="pos" />} />
+          <Route path="/reports" element={<CampaignReportsPage />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} storeStatus={storeStatus} />} />
         </Routes>
       </div>
