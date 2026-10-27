@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
@@ -787,6 +787,139 @@ const BulkDiscountPanel = ({ menuItems, categories, adminFetch, fetchItems }) =>
   );
 };
 
+
+// ================= جدول أسعار طلبات (للأدمن) =================
+const TalabatPricesEditor = ({ menuItems, categories, adminFetch, fetchItems }) => {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState({});
+  const [pct, setPct] = useState('20');
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const baseKey = (it) => `b|${it._id}`;
+  const optKey = (it, kind, gi, oi) => `o|${it._id}|${kind}|${gi}|${oi}`;
+  const groupsOf = (it) => {
+    if (Array.isArray(it.modifierGroups) && it.modifierGroups.length > 0) return it.modifierGroups.map((g, gi) => ({ kind: 'm', gi, name: g.name, options: g.options || [] }));
+    const out = [];
+    if (it.sizes?.length > 0) out.push({ kind: 's', gi: 0, name: 'الأحجام', options: it.sizes });
+    if (it.addons?.length > 0) out.push({ kind: 'a', gi: 0, name: 'الإضافات', options: it.addons });
+    return out;
+  };
+  const saved = (v) => (Number(v) > 0 ? String(v) : '');
+  const val = (key, savedValue) => (key in draft ? draft[key] : saved(savedValue));
+  const setVal = (key, v) => setDraft(d => ({ ...d, [key]: String(v).replace(/[^\d.]/g, '') }));
+
+  const fillEmpty = () => {
+    const f = 1 + (Number(pct) || 0) / 100;
+    const next = { ...draft };
+    menuItems.forEach(it => {
+      if (Number(it.price) > 0 && !(Number(it.talabatPrice) > 0) && !(baseKey(it) in next)) next[baseKey(it)] = String(Math.round(it.price * f));
+      groupsOf(it).forEach(g => g.options.forEach((o, oi) => {
+        const k = optKey(it, g.kind, g.gi, oi);
+        if (Number(o.price) > 0 && !(Number(o.talabatPrice) > 0) && !(k in next)) next[k] = String(Math.round(o.price * f));
+      }));
+    });
+    setDraft(next);
+  };
+
+  const dirtyCount = Object.keys(draft).length;
+  const saveAll = async () => {
+    setBusy(true); setMsg('');
+    try {
+      const payload = menuItems.map(it => {
+        const entry = { _id: it._id, options: [] };
+        let touched = false;
+        if (baseKey(it) in draft) { entry.talabatPrice = draft[baseKey(it)]; touched = true; }
+        groupsOf(it).forEach(g => g.options.forEach((o, oi) => {
+          const k = optKey(it, g.kind, g.gi, oi);
+          if (k in draft) { entry.options.push({ kind: g.kind, gi: g.gi, oi, talabatPrice: draft[k] }); touched = true; }
+        }));
+        return touched ? entry : null;
+      }).filter(Boolean);
+      const res = await adminFetch('/api/items/talabat-prices', { method: 'PUT', body: JSON.stringify({ items: payload }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'تعذر الحفظ');
+      setDraft({}); await fetchItems(); setMsg(`✅ اتحفظ (${data.updated} صنف)`);
+    } catch (e) { if (e.message !== 'unauthorized') setMsg(`❌ ${e.message}`); }
+    setBusy(false);
+  };
+
+  const inp = 'bg-[#050304] border border-[#1F0A0E] rounded-lg px-2 py-1.5 text-white text-sm w-24 text-center';
+  const q = search.trim().toLowerCase();
+  const cats = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  return (
+    <div className="bg-[#100609] p-6 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
+      <button type="button" onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between text-right">
+        <h3 className="text-xl font-black text-[#FFB800]">🛍️ أسعار طلبات (الأصناف والإضافات)</h3>
+        <span className="text-zinc-400">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="mt-4 space-y-4">
+          <p className="text-sm text-zinc-400 leading-6">اكتب سعر طلبات قدام كل صنف أو إضافة. اللي تسيبه فاضي هيتحسب بسعر المطعم. الكاشير بيختار نوع الأوردر "طلبات" والأسعار دي تظهر لوحدها.</p>
+          <div className="flex flex-wrap gap-2 items-center bg-[#050304] border border-[#1F0A0E] rounded-2xl p-3">
+            <span className="text-sm text-zinc-300 font-bold">تعبئة سريعة:</span>
+            <span className="text-sm text-zinc-400">املأ الفاضي بزيادة</span>
+            <input value={pct} onChange={(e) => setPct(e.target.value.replace(/[^\d.]/g, ''))} className={inp + ' !w-16'} dir="ltr" />
+            <span className="text-sm text-zinc-400">%</span>
+            <button type="button" onClick={fillEmpty} className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold">املأ</button>
+            <span className="text-xs text-zinc-500">(بعد كده عدّل الأسعار اللي مش على النسبة دي)</span>
+          </div>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 دوّر على صنف" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" />
+
+          <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
+            {cats.map(cat => {
+              const list = menuItems.filter(it => it.category === cat.name && (!q || it.name.toLowerCase().includes(q)));
+              if (list.length === 0) return null;
+              return (
+                <div key={cat._id}>
+                  <h4 className="font-black text-white mb-2">{cat.name}</h4>
+                  <div className="space-y-2">
+                    {list.map(it => {
+                      const groups = groupsOf(it);
+                      return (
+                        <div key={it._id} className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-bold text-white text-sm flex-1">{it.name}</span>
+                            <span className="text-xs text-zinc-500 whitespace-nowrap">المطعم: {it.price} ج</span>
+                            <input value={val(baseKey(it), it.talabatPrice)} onChange={(e) => setVal(baseKey(it), e.target.value)} placeholder={it.price > 0 ? 'طلبات' : '—'} disabled={!(Number(it.price) > 0)} className={inp + (baseKey(it) in draft ? ' !border-[#FFB800]' : '')} dir="ltr" inputMode="decimal" />
+                          </div>
+                          {groups.map(g => (
+                            <div key={`${g.kind}${g.gi}`} className="mt-2 mr-4">
+                              <p className="text-[11px] text-zinc-500 font-bold mb-1">{g.name}</p>
+                              {g.options.map((o, oi) => {
+                                const k = optKey(it, g.kind, g.gi, oi);
+                                return (
+                                  <div key={oi} className="flex items-center justify-between gap-3 py-1 border-t border-[#1F0A0E]/60">
+                                    <span className="text-xs text-zinc-300 flex-1">{o.name}</span>
+                                    <span className="text-xs text-zinc-500 whitespace-nowrap">المطعم: {Number(o.price) || 0} ج</span>
+                                    <input value={val(k, o.talabatPrice)} onChange={(e) => setVal(k, e.target.value)} placeholder="طلبات" className={inp + (k in draft ? ' !border-[#FFB800]' : '')} dir="ltr" inputMode="decimal" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={saveAll} disabled={busy || dirtyCount === 0} className={`px-6 py-3 rounded-xl font-black ${busy || dirtyCount === 0 ? 'bg-zinc-700 text-zinc-400' : 'bg-green-600 hover:bg-green-700 text-white'}`}>{busy ? '...' : `💾 حفظ أسعار طلبات${dirtyCount ? ` (${dirtyCount})` : ''}`}</button>
+            {dirtyCount > 0 && <button type="button" onClick={() => setDraft({})} className="text-sm text-zinc-400 underline">تراجع</button>}
+            {msg && <span className="text-sm font-bold">{msg}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fetchCategories, fetchSettings, token, onUnauthorized, onLogout }) => {
   const t = translations[lang];
   const adminFetch = (path, options = {}) => authRequest(token, path, options, onUnauthorized);
@@ -944,7 +1077,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const saveEditedOption = () => {
     if (!editingOpt.name.trim()) return;
     const updated = [...modifierGroups];
-    updated[editingOpt.gIndex].options[editingOpt.oIndex] = { name: editingOpt.name, price: Number(editingOpt.price) };
+    updated[editingOpt.gIndex].options[editingOpt.oIndex] = { ...updated[editingOpt.gIndex].options[editingOpt.oIndex], name: editingOpt.name, price: Number(editingOpt.price) };
     setModifierGroups(updated);
     setEditingOpt({ gIndex: -1, oIndex: -1, name: '', price: 0 });
   };
@@ -1142,6 +1275,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
           ))}
         </div>
       </div>
+
+      <TalabatPricesEditor menuItems={menuItems} categories={categories} adminFetch={adminFetch} fetchItems={fetchItems} />
 
       <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
         <h3 className="md:col-span-2 text-2xl font-black text-[#FFB800] mb-2 border-b border-[#1F0A0E] pb-4">{t.itemManage}</h3>
@@ -2397,7 +2532,7 @@ const posGroupsOf = (item) => {
 };
 
 const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, editOrder, onEditFinished, onEditSaved }) => {
-  const [items, setItems] = useState([]);
+  const [rawItems, setRawItems] = useState([]);
   const [cats, setCats] = useState([]);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2413,6 +2548,19 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   const [modalQty, setModalQty] = useState(1);
 
   const [orderType, setOrderType] = useState('pickup'); // pickup | delivery | talabat
+
+  // أسعار طلبات: لو الأوردر "طلبات" بنبدّل سعر الصنف وسعر كل اختيار بسعر طلبات (لو متسجل)
+  const items = useMemo(() => {
+    if (orderType !== 'talabat') return rawItems;
+    const tp = (o) => (Number(o?.talabatPrice) > 0 ? { ...o, price: Number(o.talabatPrice) } : o);
+    return rawItems.map(it => ({
+      ...it,
+      price: Number(it.talabatPrice) > 0 ? Number(it.talabatPrice) : it.price,
+      sizes: (it.sizes || []).map(tp),
+      addons: (it.addons || []).map(tp),
+      modifierGroups: (it.modifierGroups || []).map(g => ({ ...g, options: (g.options || []).map(tp) }))
+    }));
+  }, [rawItems, orderType]);
   const [pay, setPay] = useState('cash');
   const [talabatNo, setTalabatNo] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -2458,7 +2606,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
     try {
       const [ri, rc, rz] = await Promise.all([fetch(`${API_BASE}/api/items`), fetch(`${API_BASE}/api/categories`), fetch(`${API_BASE}/api/zones`)]);
       const di = await ri.json(); const dc = await rc.json(); const dz = await rz.json();
-      if (Array.isArray(di)) setItems(di);
+      if (Array.isArray(di)) setRawItems(di);
       if (Array.isArray(dc)) setCats(dc);
       if (Array.isArray(dz)) setZones(dz);
     } catch (e) {}
@@ -2474,9 +2622,9 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   const posCartRepriced = useRef(false);
 
   useEffect(() => {
-    if (!items.length || posCartRepriced.current) return;
-    posCartRepriced.current = true;
+    if (!items.length) return;
     setCart((current) => current.map((line) => {
+      if (line.keepIndex !== undefined) return line;
       const item = items.find((candidate) => String(candidate._id) === String(line._id));
       if (!item) return line;
       const groups = posGroupsOf(item);
@@ -2751,6 +2899,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
             {typeBtn('talabat', '🛍️ طلبات')}
           </div>
 
+          {orderType === 'talabat' && <p className="text-[11px] text-orange-300 font-bold">🛍️ الأسعار دلوقتي هي أسعار طلبات</p>}
           {orderType === 'talabat' && (
             <input disabled={!!editOrder} value={talabatNo} onChange={(e) => setTalabatNo(e.target.value)} placeholder="رقم أوردر طلبات (اكتبه بإيدك)" className={inp} dir="ltr" />
           )}
