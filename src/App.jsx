@@ -1642,22 +1642,26 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   // لو الرقم ده عميل سابق: نجيب اسمه وعنوانه وموقعه المحفوظ
   useEffect(() => {
     setPhoneInfo(null);
+    // رقم جديد؟ امسح بيانات الرقم السابق قبل البحث حتى لا تختلط بيانات عميل بآخر.
+    setCustomerName('');
+    setCustomerAddress('');
+    setLoc(null);
     if (!isEgMobile(customerPhone) || isFakeEgPhone(customerPhone)) return;
     let cancelled = false;
     fetch(`${API_BASE}/api/customers/lookup?phone=${customerPhone}`).then(r => r.json()).then(d => {
       if (cancelled || !d) return;
       if (!d.known) { setPhoneInfo(d.needsCallVerification ? d : null); return; }
       setPhoneInfo(d);
-      setCustomerName(cur => cur.trim() ? cur : (d.name || cur));
+      setCustomerName(d.name || '');
       if (orderType === 'delivery') {
-        setCustomerAddress(cur => cur.trim() ? cur : (d.address || cur));
+        setCustomerAddress(d.address || '');
         const z = d.zoneName ? deliveryZones.find(x => x.name === d.zoneName) : null;
         if (z) setSelectedZone(z);
-        if (d.location && d.location.lat) setLoc(cur => cur || d.location);
+        setLoc(d.location && d.location.lat ? d.location : null);
       }
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [customerPhone, deliveryZones]);
+  }, [customerPhone, deliveryZones, orderType]);
 
   const shareLocation = () => {
     if (!navigator.geolocation) return alert('المتصفح ده مش بيدعم تحديد الموقع.');
@@ -1867,13 +1871,13 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                 <button type="button" onClick={() => setOrderType('delivery')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🛵 توصيل دليفري</button>
                 <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
               </div>
-              <div><label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
-              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" inputMode="numeric" maxLength="11" value={customerPhone} onChange={(e) => setCustomerPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" />
+              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" inputMode="numeric" maxLength="11" autoComplete="tel" value={customerPhone} onChange={(e) => setCustomerPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" />
                 {customerPhone.length === 11 && isFakeEgPhone(customerPhone) && <p className="text-xs text-red-400 mt-1">الرقم ده شكله مش حقيقي، اكتب رقمك الصح.</p>}
                 {customerPhone.length === 11 && !isEgMobile(customerPhone) && <p className="text-xs text-red-400 mt-1">لازم يبدأ بـ 010 أو 011 أو 012 أو 015.</p>}
                 {customerPhone.length === 11 && isEgMobile(customerPhone) && !isFakeEgPhone(customerPhone) && phoneInfo?.needsCallVerification && <p className="text-xs text-amber-300 mt-1">أول مرة؟ الكاشير هيتصل لتأكيد الرقم، وبعدها بياناتك هتتحفظ للطلبات الجاية.</p>}
                 {phoneInfo && <p className="text-xs text-green-400 mt-1">✅ أهلاً بيك تاني{phoneInfo.name ? ` يا ${phoneInfo.name}` : ''}! جبنالك بياناتك المحفوظة.</p>}
               </div>
+              <div><label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label><input type="text" autoComplete="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
               {orderType === 'delivery' && (
                 <>
                   <div><label className="block text-xs text-zinc-300 mb-1">منطقة التوصيل *</label><select value={selectedZone?._id || ''} onChange={(e) => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer">{deliveryZones.map(z => (<option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>))}</select></div>
@@ -2981,15 +2985,19 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   // لو العميل ده اتسلّمله أوردر قبل كده: نملّي اسمه وعنوانه ومنطقته لوحدنا
   useEffect(() => {
     setPhoneHint(null);
+    // امسح بيانات العميل السابق عند تغيير الرقم؛ لو الرقم محفوظ هترجع البيانات بعد البحث.
+    setCustName('');
+    setAddress('');
+    setLocUrl('');
     const p = normalizePhoneDigits(custPhone);
     if (orderType !== 'delivery' || editOrder || !isEgMobile(p) || isFakeEgPhone(p)) return;
     let cancelled = false;
     fetch(`${API_BASE}/api/customers/lookup?phone=${p}`).then(r => r.json()).then(d => {
       if (cancelled || !d || !d.known) return;
       setPhoneHint(d);
-      setCustName(cur => cur.trim() ? cur : (d.name || cur));
-      setAddress(cur => cur.trim() ? cur : (d.address || cur));
-      setLocUrl(cur => cur.trim() ? cur : (d.locationUrl || cur));
+      setCustName(d.name || '');
+      setAddress(d.address || '');
+      setLocUrl(d.locationUrl || '');
       const z = d.zoneName ? zones.find(x => x.name === d.zoneName) : null;
       if (z) setZoneId(z._id);
     }).catch(() => {});
@@ -3195,8 +3203,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
           {!editOrder && orderType === 'delivery' && (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <input value={custName} onChange={(e) => setCustName(e.target.value)} placeholder="اسم العميل (اختياري)" className={inp} />
-                <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="التليفون" className={inp} dir="ltr" />
+                <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="رقم التليفون أولاً" autoComplete="tel" className={inp} dir="ltr" />
+                <input value={custName} onChange={(e) => setCustName(e.target.value)} placeholder="اسم العميل" autoComplete="name" className={inp} />
               </div>
               {phoneHint && <p className="text-[11px] text-green-400 font-bold">✅ عميل سابق ({phoneHint.orders} أوردر) — اتملّت بياناته</p>}
               <div className="flex gap-2">
@@ -3741,7 +3749,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
             </div>
           )}
           {ord.orderType === 'delivery' && !orderMapUrl(ord) && <p className="text-amber-400 text-xs">⚠️ العميل لم يرسل موقعًا؛ لن يظهر QR إلا بعد إضافة رابط الموقع.</p>}
-          {ord.source !== 'pos' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && <p className="bg-orange-500/15 border border-orange-500/50 text-orange-300 rounded-lg px-2 py-1 text-xs font-bold">🆕 رقم غير موثّق — اتصل بالعميل، وبعد التأكيد اضغط زر توثيق الرقم</p>}
+          {ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && <p className="bg-orange-500/15 border border-orange-500/50 text-orange-300 rounded-lg px-2 py-1 text-xs font-bold">🆕 رقم غير موثّق — اتصل بالعميل، وبعد التأكيد اضغط زر توثيق الرقم</p>}
           {(ord.phoneStatus === 'verified' || ord.phoneStatus === 'known') && <p className="text-green-400 text-xs font-bold">✅ رقم موثّق ({ord.phoneOrders || 0} أوردر مكتمل)</p>}
           {ord.createdAt && <p>🕒 <span className="text-zinc-400 text-xs">{new Date(ord.createdAt).toLocaleString('ar-EG')}</span></p>}
           {ord.acceptedBy && <p>✅ <span className="text-zinc-400 text-xs">قبله: {ord.acceptedBy}</span></p>}
@@ -3771,7 +3779,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {ord.source !== 'pos' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && ord.status !== 'cancelled' && (
+          {ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && ord.status !== 'cancelled' && (
             <button onClick={async () => {
               const confirmed = window.confirm(`هل اتصلت فعلاً بالعميل ${ord.customerPhone} وتأكدت إن الرقم يخصه؟`);
               if (!confirmed) return;
@@ -3785,7 +3793,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
             }} className="w-full bg-emerald-700 hover:bg-emerald-600 text-white py-2 rounded-xl text-xs font-black">📞 اتصلت بالعميل — توثيق الرقم</button>
           )}
           {ord.status === 'pending' && (
-            <button disabled={ord.source !== 'pos' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known'} title={ord.source !== 'pos' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' ? 'اتصل بالعميل وأكّد الرقم الأول' : 'قبول الأوردر'} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'accepted')} className="flex-1 disabled:opacity-40 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg">✅ قبول الأوردر (إيقاف الصوت)</button>
+            <button disabled={ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known'} title={ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' ? 'اتصل بالعميل وأكّد الرقم الأول' : 'قبول الأوردر'} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'accepted')} className="flex-1 disabled:opacity-40 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg">✅ قبول الأوردر (إيقاف الصوت)</button>
           )}
           {ord.status === 'accepted' && (
             <button onClick={() => finishOrder(ord)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold transition">{ord.orderType === 'delivery' ? '🛵 جاهز للتوصيل' : '🏁 تم التسليم'}</button>
