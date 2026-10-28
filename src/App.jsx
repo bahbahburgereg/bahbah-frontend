@@ -2204,6 +2204,15 @@ const qrEncode = (text, eccName = 'M') => {
   return mod;
 };
 
+// تحويل رابط/إحداثيات اللوكيشن لرابط مباشر يفتح Google Maps
+const orderMapUrl = (order) => {
+  const direct = String(order?.locationUrl || '').trim();
+  if (direct && /^https?:\/\//i.test(direct)) return direct;
+  const lat = Number(order?.location?.lat), lng = Number(order?.location?.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return `https://www.google.com/maps?q=${lat},${lng}`;
+  return '';
+};
+
 // رسم الـ QR كـ SVG (بيتطبع بوضوح على الرول الحراري)
 const QrSvg = ({ value, mm = 38 }) => {
   const m = useMemo(() => { try { return qrEncode(value, 'M') || qrEncode(value, 'L'); } catch (e) { return null; } }, [value]);
@@ -2230,6 +2239,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
   const dateText = dt.toLocaleDateString('ar-EG');
   const timeText = dt.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   const isDelivery = order.orderType === 'delivery';
+  const mapUrl = orderMapUrl(order);
 
   return createPortal(
     <div id="receipt-print" dir="rtl">
@@ -2318,9 +2328,9 @@ const Receipt80 = ({ order, type, cashierName }) => {
           {isDelivery && order.zoneName && <div>المنطقة: {order.zoneName}</div>}
           {isDelivery && order.customerAddress && <div>العنوان: {order.customerAddress}</div>}
           {isDelivery && order.driverName && <div>السواق: {order.driverName}</div>}
-          {isDelivery && order.locationUrl && (
+          {isDelivery && mapUrl && (
             <div className="rc-center" style={{ margin: '6px 0' }}>
-              <QrSvg value={order.locationUrl} mm={38} />
+              <QrSvg value={mapUrl} mm={38} />
               <div className="rc-small">📍 امسح الكود لفتح موقع العميل</div>
             </div>
           )}
@@ -3723,7 +3733,14 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.driverName && <p>🛵 <span className="text-zinc-300 text-xs">السواق: {ord.driverName}</span></p>}
           {ord.status === 'cancelled' && <p>✖ <span className="text-red-400 text-xs">سبب الإلغاء: {ord.cancelReason} ({ord.cancelledBy})</span></p>}
           {ord.orderType === 'delivery' && <p>📍 <span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
-          {ord.locationUrl && <p>🗺️ <a href={ord.locationUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline text-xs">الموقع على الخريطة</a></p>}
+          {ord.orderType === 'delivery' && orderMapUrl(ord) && (
+            <div className="mt-3 mb-3 rounded-xl border border-zinc-700 bg-white p-3 text-center">
+              <p className="text-black font-bold text-xs mb-2">📍 QR موقع العميل — امسحه لفتح Google Maps</p>
+              <div className="flex justify-center"><QrSvg value={orderMapUrl(ord)} mm={42} /></div>
+              <a href={orderMapUrl(ord)} target="_blank" rel="noreferrer" className="mt-2 inline-block text-blue-700 underline text-xs">فتح الموقع على الخريطة</a>
+            </div>
+          )}
+          {ord.orderType === 'delivery' && !orderMapUrl(ord) && <p className="text-amber-400 text-xs">⚠️ العميل لم يرسل موقعًا؛ لن يظهر QR إلا بعد إضافة رابط الموقع.</p>}
           {ord.source !== 'pos' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && <p className="bg-orange-500/15 border border-orange-500/50 text-orange-300 rounded-lg px-2 py-1 text-xs font-bold">🆕 رقم غير موثّق — اتصل بالعميل، وبعد التأكيد اضغط زر توثيق الرقم</p>}
           {(ord.phoneStatus === 'verified' || ord.phoneStatus === 'known') && <p className="text-green-400 text-xs font-bold">✅ رقم موثّق ({ord.phoneOrders || 0} أوردر مكتمل)</p>}
           {ord.createdAt && <p>🕒 <span className="text-zinc-400 text-xs">{new Date(ord.createdAt).toLocaleString('ar-EG')}</span></p>}
