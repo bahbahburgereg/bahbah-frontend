@@ -155,6 +155,17 @@ const readAttribution = () => {
   } catch (e) { return undefined; }
 };
 
+
+// ================= رقم التليفون: تنضيف + كشف الأرقام الوهمية =================
+const normalizePhoneDigits = (v) => String(v || '').replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
+const isEgMobile = (p) => /^01[0125]\d{8}$/.test(p);
+const isFakeEgPhone = (p) => {
+  if (!isEgMobile(p)) return false;
+  const tail = p.slice(3);
+  return /^(\d)\1+$/.test(tail) || /(\d)\1{6,}/.test(p) || '01234567890123456789'.includes(tail) || '98765432109876543210'.includes(tail) || /^(\d{2})\1{3}$/.test(tail) || /^(\d{4})\1$/.test(tail);
+};
+const mapsLinkOf = (loc) => `https://www.google.com/maps?q=${Number(loc.lat).toFixed(6)},${Number(loc.lng).toFixed(6)}`;
+
 // ================= Meta Pixel: تتبع الأحداث =================
 // بيبعت الحدث لفيسبوك (لو البكسل متحمل). مفيش أي بيانات شخصية بتتبعت (لا اسم ولا تليفون ولا عنوان).
 const track = (event, data, eventId) => {
@@ -1618,11 +1629,54 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [placedOrderId, setPlacedOrderId] = useState(null);
+  const [phoneInfo, setPhoneInfo] = useState(null);
+  const [loc, setLoc] = useState(null);
+  const [locBusy, setLocBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const storeClosed = !!(storeStatus && storeStatus.isOpen === false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); }).catch(err => {});
   }, []);
+
+  // لو الرقم ده عميل سابق: نجيب اسمه وعنوانه وموقعه المحفوظ
+  useEffect(() => {
+    setPhoneInfo(null);
+    if (!isEgMobile(customerPhone) || isFakeEgPhone(customerPhone)) return;
+    let cancelled = false;
+    fetch(`${API_BASE}/api/customers/lookup?phone=${customerPhone}`).then(r => r.json()).then(d => {
+      if (cancelled || !d || !d.known) return;
+      setPhoneInfo(d);
+      setCustomerName(cur => cur.trim() ? cur : (d.name || cur));
+      if (orderType === 'delivery') {
+        setCustomerAddress(cur => cur.trim() ? cur : (d.address || cur));
+        const z = d.zoneName ? deliveryZones.find(x => x.name === d.zoneName) : null;
+        if (z) setSelectedZone(z);
+        if (d.location && d.location.lat) setLoc(cur => cur || d.location);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [customerPhone, deliveryZones]);
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) return alert('المتصفح ده مش بيدعم تحديد الموقع.');
+    setLocBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocBusy(false); },
+      () => { setLocBusy(false); alert('ماقدرناش نحدد موقعك. اسمح للموقع بالوصول للّوكيشن، أو كمّل من غير ما تضيفه (اختياري).'); },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  // قبل الإرسال: نراجع البيانات ونطلب من العميل يتأكد من رقمه
+  const requestSend = () => {
+    if (cart.length === 0) return alert("السلة فارغة!");
+    if (!customerName.trim()) return alert("من فضلك اكتب اسمك الكامل.");
+    if (!isEgMobile(customerPhone)) return alert("من فضلك اكتب رقم موبايل صحيح مكون من 11 رقم بيبدأ بـ 01.");
+    if (isFakeEgPhone(customerPhone)) return alert("الرقم ده شكله مش حقيقي. اكتب رقمك الصح عشان نقدر نتواصل معاك.");
+    if (orderType === 'delivery' && !customerAddress.trim()) return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
+    setConfirmOpen(true);
+  };
 
   // Meta Pixel: العميل فتح السلة وفيها أصناف
   useEffect(() => {
@@ -1654,7 +1708,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const sendOrderToWhatsApp = async () => {
     if (cart.length === 0) return alert("السلة فارغة!");
     if (!customerName.trim()) return alert("من فضلك اكتب اسمك الكامل.");
-    if (!customerPhone.trim() || customerPhone.length !== 11 || isNaN(customerPhone)) return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
+    if (!isEgMobile(customerPhone) || isFakeEgPhone(customerPhone)) return alert("من فضلك اكتب رقم تليفون صحيح مكون من 11 رقم.");
     if (orderType === 'delivery' && !customerAddress.trim()) return alert("من فضلك اكتب عنوان الاستلام بالتفصيل.");
 
     const waWindow = window.open('', '_blank');
@@ -1692,7 +1746,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         modifiers: g.item.modifiersInfo || [], notes: g.item.notes || ''
       })),
       itemsTotal, grandTotal,
-      attribution: readAttribution()
+      attribution: readAttribution(),
+      location: orderType === 'delivery' && loc ? { lat: Number(loc.lat), lng: Number(loc.lng) } : undefined
     };
 
     let savedOrder = null;
@@ -1725,6 +1780,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     let message = `🍔 أهلاً (بحبح برجر)، عندي أوردر جديد!\n🆔 *رقم الأوردر:* #${savedOrderId}\n\n👤 *الاسم:* ${savedOrder.customerName || customerName}\n📞 *التليفون:* ${savedOrder.customerPhone || customerPhone}\n📦 *نوع الاستلام:* ${savedOrder.orderType === 'delivery' ? 'توصيل دليفري 🛵' : 'استلام من الفرع 🏪'}\n`;
     if (savedOrder.orderType === 'delivery') {
       message += `📍 *العنوان:* ${savedOrder.customerAddress || customerAddress}\n`;
+      if (savedOrder.locationUrl) message += `🗺️ *الموقع على الخريطة:* ${savedOrder.locationUrl}\n`;
       message += `🚚 *منطقة التوصيل:* ${savedOrder.zoneName || selectedZone?.name || 'توصيل'} (${savedDeliveryFee} ج)\n`;
     }
     message += `\n🛒 *الأصناف المطلوبة:*\n`;
@@ -1811,18 +1867,47 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                 <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
               </div>
               <div><label className="block text-xs text-zinc-300 mb-1">الاسم الكامل *</label><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
-              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" maxLength="11" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
+              <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" inputMode="numeric" maxLength="11" value={customerPhone} onChange={(e) => setCustomerPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" />
+                {customerPhone.length === 11 && isFakeEgPhone(customerPhone) && <p className="text-xs text-red-400 mt-1">الرقم ده شكله مش حقيقي، اكتب رقمك الصح.</p>}
+                {customerPhone.length === 11 && !isEgMobile(customerPhone) && <p className="text-xs text-red-400 mt-1">لازم يبدأ بـ 010 أو 011 أو 012 أو 015.</p>}
+                {phoneInfo && <p className="text-xs text-green-400 mt-1">✅ أهلاً بيك تاني{phoneInfo.name ? ` يا ${phoneInfo.name}` : ''}! جبنالك بياناتك المحفوظة.</p>}
+              </div>
               {orderType === 'delivery' && (
                 <>
                   <div><label className="block text-xs text-zinc-300 mb-1">منطقة التوصيل *</label><select value={selectedZone?._id || ''} onChange={(e) => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer">{deliveryZones.map(z => (<option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>))}</select></div>
                   <div><label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label><textarea value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
+                  <div>
+                    {loc ? (
+                      <div className="flex items-center justify-between gap-3 bg-green-500/10 border border-green-500/40 rounded-2xl p-3 text-sm">
+                        <a href={mapsLinkOf(loc)} target="_blank" rel="noreferrer" className="text-green-300 font-bold">📍 تم تحديد موقعك ✅ (اضغط للمعاينة)</a>
+                        <button type="button" onClick={() => setLoc(null)} className="text-xs text-zinc-400 underline shrink-0">مسح</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={shareLocation} disabled={locBusy} className="w-full bg-[#050304] border border-dashed border-[#FF4500]/60 text-[#FFB800] rounded-2xl p-3 text-sm font-bold hover:bg-[#FF4500]/10">{locBusy ? '⏳ بنحدد موقعك...' : '📍 ضيف موقعي على الخريطة (اختياري)'}</button>
+                    )}
+                    <p className="text-[11px] text-zinc-500 mt-1">بيساعد السواق يوصلك أسرع، ومش لازم.</p>
+                  </div>
                 </>
               )}
             </div>
+            {confirmOpen && (
+              <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={() => setConfirmOpen(false)}>
+                <div dir="rtl" className="bg-[#100609] border border-[#FF4500]/60 rounded-3xl w-full max-w-sm p-6 text-center space-y-4" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-xl font-black text-[#FFB800]">تأكيد رقم التليفون</h3>
+                  <p className="text-zinc-300 text-sm">هنتواصل معاك على الرقم ده لتأكيد الأوردر. اتأكد إنه صح:</p>
+                  <div className="text-3xl font-black text-white tracking-widest" dir="ltr">{customerPhone}</div>
+                  <p className="text-xs text-zinc-400">{customerName}{orderType === 'delivery' ? ` — ${customerAddress}` : ' — استلام من الفرع'}</p>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setConfirmOpen(false)} className="flex-1 py-3 rounded-xl bg-zinc-700 text-white font-bold">✏️ تعديل</button>
+                    <button type="button" onClick={() => { setConfirmOpen(false); sendOrderToWhatsApp(); }} className="flex-1 py-3 rounded-xl bg-[#25D366] text-black font-black">✅ الرقم صح، ابعت</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {storeClosed && (
               <div className="mt-6 bg-red-500/10 border border-red-500/40 text-red-300 rounded-2xl p-4 text-sm font-bold text-center leading-relaxed">🌙 {storeStatus.message}</div>
             )}
-            <button onClick={sendOrderToWhatsApp} disabled={storeClosed} className={`w-full font-black text-lg py-4 rounded-2xl mt-4 ${storeClosed ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-[#25D366] text-black'}`}>{storeClosed ? '🌙 الطلب مقفول دلوقتي' : t.whatsappOrder}</button>
+            <button onClick={requestSend} disabled={storeClosed} className={`w-full font-black text-lg py-4 rounded-2xl mt-4 ${storeClosed ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-[#25D366] text-black'}`}>{storeClosed ? '🌙 الطلب مقفول دلوقتي' : t.whatsappOrder}</button>
           </div>
         </div>
       )}
@@ -2001,6 +2086,137 @@ const ReportBody = ({ order }) => {
   );
 };
 
+// ===== QR Code (byte mode, versions 1-10, ECC L/M) — مكتوب من الصفر، من غير أي مكتبة خارجية =====
+const qrEncode = (text, eccName = 'M') => {
+  const ECC = { L: { fmt: 1, i: 0 }, M: { fmt: 0, i: 1 } }[eccName] || { fmt: 0, i: 1 };
+  const ECC_PER_BLOCK = [[-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18], [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26]][ECC.i];
+  const NUM_BLOCKS = [[-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4], [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5]][ECC.i];
+  const bytes = Array.from(new TextEncoder().encode(String(text)));
+  const rawModules = (v) => {
+    let r = (16 * v + 128) * v + 64;
+    if (v >= 2) { const n = Math.floor(v / 7) + 2; r -= (25 * n - 10) * n - 55; if (v >= 7) r -= 36; }
+    return r;
+  };
+  const dataCap = (v) => Math.floor(rawModules(v) / 8) - ECC_PER_BLOCK[v] * NUM_BLOCKS[v];
+  let ver = 0;
+  for (let v = 1; v <= 10; v++) { const need = 4 + (v < 10 ? 8 : 16) + bytes.length * 8; if (Math.ceil(need / 8) <= dataCap(v)) { ver = v; break; } }
+  if (!ver) return null;
+
+  // ---- بيانات البتات ----
+  const bits = [];
+  const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  put(4, 4); put(bytes.length, ver < 10 ? 8 : 16); bytes.forEach(b => put(b, 8));
+  const capBits = dataCap(ver) * 8;
+  put(0, Math.min(4, capBits - bits.length));
+  while (bits.length % 8) bits.push(0);
+  for (let pad = 0xEC; bits.length < capBits; pad ^= 0xEC ^ 0x11) put(pad, 8);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+
+  // ---- Reed-Solomon ----
+  const exp = new Array(512), log = new Array(256);
+  for (let i = 0, x = 1; i < 255; i++) { exp[i] = x; log[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) exp[i] = exp[i - 255];
+  const gmul = (a, b) => (a && b ? exp[log[a] + log[b]] : 0);
+  const rsGen = (deg) => { let g = [1]; for (let i = 0; i < deg; i++) { const n = new Array(g.length + 1).fill(0); for (let j = 0; j < g.length; j++) { n[j] ^= g[j]; n[j + 1] ^= gmul(g[j], exp[i]); } g = n; } return g; };
+  const rsRem = (d, deg) => { const g = rsGen(deg); const r = new Array(deg).fill(0); for (const b of d) { const f = b ^ r.shift(); r.push(0); for (let i = 0; i < deg; i++) r[i] ^= gmul(g[i + 1], f); } return r; };
+
+  const nb = NUM_BLOCKS[ver], eccLen = ECC_PER_BLOCK[ver];
+  const rawCw = Math.floor(rawModules(ver) / 8);
+  const shortBlocks = nb - (rawCw % nb), shortLen = Math.floor(rawCw / nb);
+  const blocks = []; let k = 0;
+  for (let i = 0; i < nb; i++) {
+    const len = shortLen - eccLen + (i < shortBlocks ? 0 : 1);
+    const d = data.slice(k, k + len); k += len;
+    blocks.push({ d, e: rsRem(d, eccLen) });
+  }
+  const all = [];
+  for (let i = 0; i <= shortLen - eccLen; i++) blocks.forEach(b => { if (i < b.d.length) all.push(b.d[i]); });
+  for (let i = 0; i < eccLen; i++) blocks.forEach(b => all.push(b.e[i]));
+
+  // ---- المصفوفة ----
+  const size = ver * 4 + 17;
+  const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+  const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+  const setF = (x, y, dark) => { if (x >= 0 && x < size && y >= 0 && y < size) { mod[y][x] = dark; fn[y][x] = true; } };
+  for (let i = 0; i < size; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+  const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)); setF(cx + dx, cy + dy, d !== 2 && d !== 4); } };
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  if (ver > 1) {
+    const n = Math.floor(ver / 7) + 2;
+    const step = Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2;
+    const pos = [6]; for (let p = size - 7; pos.length < n; p -= step) pos.splice(1, 0, p);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      if ((i === 0 && j === 0) || (i === 0 && j === n - 1) || (i === n - 1 && j === 0)) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(pos[i] + dx, pos[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+  }
+  const drawFormat = (mask) => {
+    const d = (ECC.fmt << 3) | mask; let r = d;
+    for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const f = ((d << 10) | r) ^ 0x5412;
+    const bit = (i) => ((f >>> i) & 1) !== 0;
+    for (let i = 0; i <= 5; i++) setF(8, i, bit(i));
+    setF(8, 7, bit(6)); setF(8, 8, bit(7)); setF(7, 8, bit(8));
+    for (let i = 9; i < 15; i++) setF(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i++) setF(8, size - 15 + i, bit(i));
+    setF(8, size - 8, true);
+  };
+  drawFormat(0);
+  if (ver >= 7) {
+    let r = ver; for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+    const v = (ver << 12) | r;
+    for (let i = 0; i < 18; i++) { const dark = ((v >>> i) & 1) !== 0; const a = size - 11 + (i % 3), b = Math.floor(i / 3); setF(a, b, dark); setF(b, a, dark); }
+  }
+  // ---- توزيع البتات ----
+  let bi = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+      const x = right - j, upward = ((right + 1) & 2) === 0, y = upward ? size - 1 - vert : vert;
+      if (!fn[y][x] && bi < all.length * 8) { mod[y][x] = ((all[bi >>> 3] >>> (7 - (bi & 7))) & 1) !== 0; bi++; }
+    }
+  }
+  const maskFn = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0, (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0];
+  const applyMask = (m) => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && maskFn[m](x, y)) mod[y][x] = !mod[y][x]; };
+  const penalty = () => {
+    let p = 0;
+    for (let pass = 0; pass < 2; pass++) for (let a = 0; a < size; a++) {
+      let run = 1;
+      for (let b = 1; b < size; b++) {
+        const cur = pass ? mod[b][a] : mod[a][b], prev = pass ? mod[b - 1][a] : mod[a][b - 1];
+        if (cur === prev) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1;
+      }
+    }
+    for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = mod[y][x]; if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3; }
+    let dark = 0; for (const row of mod) for (const c of row) if (c) dark++;
+    p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+    return p;
+  };
+  let best = 0, bestP = Infinity;
+  for (let m = 0; m < 8; m++) { applyMask(m); drawFormat(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+  applyMask(best); drawFormat(best);
+  return mod;
+};
+
+// رسم الـ QR كـ SVG (بيتطبع بوضوح على الرول الحراري)
+const QrSvg = ({ value, mm = 38 }) => {
+  const m = useMemo(() => { try { return qrEncode(value, 'M') || qrEncode(value, 'L'); } catch (e) { return null; } }, [value]);
+  if (!m) return null;
+  const n = m.length;
+  let d = '';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += `M${x + 4} ${y + 4}h1v1h-1z`;
+  return (
+    <svg viewBox={`0 0 ${n + 8} ${n + 8}`} width={`${mm}mm`} height={`${mm}mm`} shapeRendering="crispEdges" style={{ display: 'block', margin: '0 auto', width: `${mm}mm`, height: `${mm}mm` }}>
+      <rect width={n + 8} height={n + 8} fill="#fff" />
+      <path d={d} fill="#000" />
+    </svg>
+  );
+};
+
 const Receipt80 = ({ order, type, cashierName }) => {
   if (!order) return null;
   const items = order.items || [];
@@ -2100,6 +2316,12 @@ const Receipt80 = ({ order, type, cashierName }) => {
           {isDelivery && order.zoneName && <div>المنطقة: {order.zoneName}</div>}
           {isDelivery && order.customerAddress && <div>العنوان: {order.customerAddress}</div>}
           {isDelivery && order.driverName && <div>السواق: {order.driverName}</div>}
+          {isDelivery && order.locationUrl && (
+            <div className="rc-center" style={{ margin: '6px 0' }}>
+              <QrSvg value={order.locationUrl} mm={38} />
+              <div className="rc-small">📍 امسح الكود لفتح موقع العميل</div>
+            </div>
+          )}
           <div className="rc-line" />
           <table>
             <thead><tr><th>الصنف</th><th style={{ textAlign: 'center' }}>كمية</th><th className="rc-num">السعر</th></tr></thead>
@@ -2570,6 +2792,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   const [presets, setPresets] = useState(readPosPresets);
   const [custName, setCustName] = useState('');
   const [custPhone, setCustPhone] = useState('');
+  const [locUrl, setLocUrl] = useState('');
+  const [phoneHint, setPhoneHint] = useState(null);
   const [address, setAddress] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [manualFee, setManualFee] = useState('');
@@ -2595,7 +2819,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   }, [editOrder && editOrder._id]);
 
   const resetForm = () => {
-    setDiscount(0); setDiscountReason(''); setOrderNote(''); setShowNote(false); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setPay('cash'); setOrderType('pickup');
+    setDiscount(0); setDiscountReason(''); setOrderNote(''); setShowNote(false); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setLocUrl(''); setPhoneHint(null); setPay('cash'); setOrderType('pickup');
   };
   const cancelEdit = () => {
     setCart(stashRef.current || []); stashRef.current = null; resetForm();
@@ -2742,6 +2966,24 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
     setDiscount(n);
   };
 
+  // لو العميل ده اتسلّمله أوردر قبل كده: نملّي اسمه وعنوانه ومنطقته لوحدنا
+  useEffect(() => {
+    setPhoneHint(null);
+    const p = normalizePhoneDigits(custPhone);
+    if (orderType !== 'delivery' || editOrder || !isEgMobile(p) || isFakeEgPhone(p)) return;
+    let cancelled = false;
+    fetch(`${API_BASE}/api/customers/lookup?phone=${p}`).then(r => r.json()).then(d => {
+      if (cancelled || !d || !d.known) return;
+      setPhoneHint(d);
+      setCustName(cur => cur.trim() ? cur : (d.name || cur));
+      setAddress(cur => cur.trim() ? cur : (d.address || cur));
+      setLocUrl(cur => cur.trim() ? cur : (d.locationUrl || cur));
+      const z = d.zoneName ? zones.find(x => x.name === d.zoneName) : null;
+      if (z) setZoneId(z._id);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [custPhone, orderType, zones.length]);
+
   const submitEdit = async () => {
     if (busy) return;
     if (cart.length === 0) return alert('الأوردر لازم يفضل فيه صنف. لو عايز تلغيه استخدم زرار الإلغاء');
@@ -2783,7 +3025,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
       const payload = {
         orderType, paymentMethod: pay, talabatNo: talabatNo.trim(), discountPercent: discount,
         discountReason: discountReason.trim(), orderNote: orderNote.trim(),
-        customerName: custName.trim(), customerPhone: custPhone.trim(), customerAddress: address.trim(),
+        customerName: custName.trim(), customerPhone: custPhone.trim(), customerAddress: address.trim(), locationUrl: locUrl.trim(),
         zoneName: zone ? zone.name : (orderType === 'delivery' ? 'توصيل' : ''), deliveryFee: fee,
         items: cart.map(l => ({ itemId: l._id, name: l.name, quantity: l.qty, selections: Array.isArray(l.modifierSelections) ? l.modifierSelections : undefined, modifiers: l.modifiersInfo, notes: l.notes }))
       };
@@ -2794,7 +3036,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
       } else {
         onCreated(data);
         setToast(`✅ أوردر #${data.orderId} اتبعت للمطبخ`);
-        setCart([]); setDiscount(0); setDiscountReason(''); setOrderNote(''); setShowNote(false); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setPay('cash');
+        setCart([]); setDiscount(0); setDiscountReason(''); setOrderNote(''); setShowNote(false); setTalabatNo(''); setCustName(''); setCustPhone(''); setAddress(''); setManualFee(''); setLocUrl(''); setPhoneHint(null); setPay('cash');
       }
     } catch (e) {
       alert('النت قاطع، الأوردر ما اتسجلش. استخدم الكاشير الأوفلاين لحد ما النت يرجع.');
@@ -2942,8 +3184,9 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input value={custName} onChange={(e) => setCustName(e.target.value)} placeholder="اسم العميل (اختياري)" className={inp} />
-                <input value={custPhone} onChange={(e) => setCustPhone(e.target.value.replace(/[^\d+]/g, ''))} placeholder="التليفون" className={inp} dir="ltr" />
+                <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="التليفون" className={inp} dir="ltr" />
               </div>
+              {phoneHint && <p className="text-[11px] text-green-400 font-bold">✅ عميل سابق ({phoneHint.orders} أوردر) — اتملّت بياناته</p>}
               <div className="flex gap-2">
                 <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={inp + ' !w-[42%]'}>
                   <option value="">رسوم يدوي</option>
@@ -2952,6 +3195,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
                 {!zone ? <input value={manualFee} onChange={(e) => setManualFee(e.target.value.replace(/\D/g, ''))} placeholder="رسوم التوصيل" className={inp} dir="ltr" /> : null}
               </div>
               <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان بالتفصيل *" className={inp} />
+              <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="🗺️ رابط الموقع (اختياري — الصق لينك جوجل ماب)" className={inp} dir="ltr" />
             </div>
           )}
         </div>
@@ -3477,6 +3721,9 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.driverName && <p>🛵 <span className="text-zinc-300 text-xs">السواق: {ord.driverName}</span></p>}
           {ord.status === 'cancelled' && <p>✖ <span className="text-red-400 text-xs">سبب الإلغاء: {ord.cancelReason} ({ord.cancelledBy})</span></p>}
           {ord.orderType === 'delivery' && <p>📍 <span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
+          {ord.locationUrl && <p>🗺️ <a href={ord.locationUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline text-xs">الموقع على الخريطة</a></p>}
+          {ord.source !== 'pos' && ord.phoneStatus === 'new' && <p className="bg-orange-500/15 border border-orange-500/50 text-orange-300 rounded-lg px-2 py-1 text-xs font-bold">🆕 رقم جديد (أول أوردر) — اتصل بيه وأكّد قبل التحضير</p>}
+          {ord.phoneStatus === 'known' && <p className="text-green-400 text-xs font-bold">✅ عميل سابق ({ord.phoneOrders} أوردر اتسلّم)</p>}
           {ord.createdAt && <p>🕒 <span className="text-zinc-400 text-xs">{new Date(ord.createdAt).toLocaleString('ar-EG')}</span></p>}
           {ord.acceptedBy && <p>✅ <span className="text-zinc-400 text-xs">قبله: {ord.acceptedBy}</span></p>}
           {ord.completedBy && <p>🏁 <span className="text-zinc-400 text-xs">أنهاه: {ord.completedBy}</span></p>}
