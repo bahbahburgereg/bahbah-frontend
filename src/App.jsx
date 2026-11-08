@@ -2009,7 +2009,7 @@ const ReportBody = ({ order }) => {
   const talabatCash = num(r.talabatCash);
   const talabatVisa = r.talabatVisa !== undefined ? num(r.talabatVisa) : Math.max(0, num(r.talabat) - talabatCash);
   const hasTalabatSplit = r.talabatCash !== undefined || r.talabatVisa !== undefined;
-  const net = r.netSales ?? r.total;
+  const net = r.grossSales ?? r.total; // التقارير القديمة كان netSales فيها مطروح منه المصروفات، فبنتجاهله
   const hasDrawer = r.openingCash !== undefined;
   const expected = m.expectedCash ?? r.expectedCash;
   const hasCounted = m.countedCash !== undefined && m.countedCash !== null;
@@ -2296,7 +2296,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
           <div>الكاشير: {order.meta?.closedBy || order.report?.openedBy || '-'}</div>
           <div className="rc-line" />
           <div className="rc-row rc-big"><span>عدد الأوردرات</span><span>{order.report?.count || 0}</span></div>
-          <div className="rc-row rc-total"><span>إجمالي المبيعات</span><span>{money(order.report?.netSales ?? order.report?.total ?? 0)}</span></div>
+          <div className="rc-row rc-total"><span>إجمالي المبيعات</span><span>{money(order.report?.grossSales ?? order.report?.total ?? 0)}</span></div>
           <div className="rc-line" />
           <div className="rc-center rc-big">الأصناف المباعة والكميات</div>
           {(order.report?.categories || []).length === 0 ? <div className="rc-center">مفيش أصناف مباعة في الوردية</div> : (order.report.categories || []).map((c, i) => (
@@ -2502,7 +2502,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   const printNet = () => {
     if (!rep) return;
     if (isAdmin) requestPrint(makePrint('تقرير الوردية (X) - لحظي', rep, { expectedCash: rep.expectedCash }), 'report');
-    else requestPrint(makePrint('ملخص المبيعات (Net Sales) - لحظي', rep, {}), 'report');
+    else requestPrint(makePrint('ملخص المبيعات - لحظي', rep, {}), 'report');
   };
 
   const doClose = async () => {
@@ -2514,7 +2514,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
         alert(d.error || 'حصل خطأ أثناء تقفيل الوردية');
       } else {
         const closedReport = d.report || d.reportSnapshot || rep || {};
-        const netSales = Number(closedReport.netSales ?? closedReport.total ?? d.total ?? 0);
+        const netSales = Number(closedReport.grossSales ?? closedReport.total ?? d.total ?? 0);
         const closedMeta = { closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: d.expectedCash ?? closedReport.expectedCash, notes: d.notes };
         // ورقتين: تقرير تقفيل الكاشير (Z) ثم تقرير المطبخ (الأصناف والكميات)
         requestPrint(makePrint('تقرير تقفيل الوردية (Z)', closedReport, closedMeta), 'report');
@@ -2590,7 +2590,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2 bg-[#100609] border border-[#FFB800]/40 rounded-2xl p-5">
                   <p className="text-sm text-zinc-400 font-bold">إجمالي المبيعات (بعد الخصم)</p>
-                  <p className="text-4xl font-black text-[#FFB800] mt-1">{money(rep.netSales ?? rep.total)}</p>
+                  <p className="text-4xl font-black text-[#FFB800] mt-1">{money(rep.grossSales ?? rep.total)}</p>
                   <p className="text-[11px] text-zinc-500 mt-1">شامل التوصيل، بعد الخصم، من غير الملغي. المصروفات بتتخصم من كاش الدرج مش من المبيعات.</p>
                 </div>
                 <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5 flex flex-col justify-center text-center">
@@ -2740,7 +2740,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                 <div key={c._id} className="flex flex-wrap items-center justify-between gap-2 bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-2.5 text-sm">
                   <span className="text-zinc-300">{fmtDT(c.openedAt || c.from)} ← {fmtDT(c.closedAt)} · {c.closedBy}</span>
                   <span className="text-zinc-400">{c.count} أوردر</span>
-                  <span className="text-[#FFB800] font-black">{money(c.report?.netSales ?? c.total)}</span>
+                  <span className="text-[#FFB800] font-black">{money(c.report?.grossSales ?? c.total)}</span>
                   <button type="button" onClick={() => requestPrint(printForClosed(c), 'report')} className="bg-zinc-700 text-white px-3 py-1 rounded-lg text-xs font-bold">🖨️ طباعة</button>
                 </div>
               );
@@ -2793,7 +2793,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
             <h3 className="text-xl font-black text-red-400">🔒 تقفيل الوردية</h3>
             <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-4 text-center space-y-1">
               <div className="text-sm text-zinc-400">إجمالي المبيعات (بعد الخصم)</div>
-              <div className="text-3xl font-black text-[#FFB800]">{money(rep?.netSales ?? rep?.total ?? 0)}</div>
+              <div className="text-3xl font-black text-[#FFB800]">{money(rep?.grossSales ?? rep?.total ?? 0)}</div>
               <div className="text-xs text-zinc-400">{rep?.count || 0} أوردر{Number(rep?.discounts) > 0 ? ` · خصومات ${money(rep.discounts)}` : ''}</div>
             </div>
             {isAdmin && <div className="text-xs bg-[#050304] border border-[#1F0A0E] rounded-lg p-2 text-zinc-400">المتوقع في الدرج: <b className="text-white">{money(expected)}</b></div>}
