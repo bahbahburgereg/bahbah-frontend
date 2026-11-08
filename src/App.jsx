@@ -2454,7 +2454,6 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   const [settleAmount, setSettleAmount] = useState('');
   const [closeOpen, setCloseOpen] = useState(false);
   const [notes, setNotes] = useState('');
-  const [counted, setCounted] = useState('');
   const [busy, setBusy] = useState(false);
 
   const defRange = () => {
@@ -2508,23 +2507,22 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   };
 
   const doClose = async () => {
-    if (counted === '' || Number(counted) < 0) return alert('اكتب الكاش اللي عدّيته في الدرج (لو مفيش اكتب 0)');
     setBusy(true);
     try {
-      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ notes: notes.trim(), countedCash: counted }) });
+      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ notes: notes.trim() }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
         alert(d.error || 'حصل خطأ أثناء تقفيل الوردية');
       } else {
         const closedReport = d.report || d.reportSnapshot || rep || {};
         const netSales = Number(closedReport.netSales ?? closedReport.total ?? d.total ?? 0);
-        const closedMeta = { countedCash: d.countedCash, difference: d.difference, closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: d.expectedCash ?? closedReport.expectedCash, notes: d.notes };
+        const closedMeta = { closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: d.expectedCash ?? closedReport.expectedCash, notes: d.notes };
         // ورقتين: تقرير تقفيل الكاشير (Z) ثم تقرير المطبخ (الأصناف والكميات)
         requestPrint(makePrint('تقرير تقفيل الوردية (Z)', closedReport, closedMeta), 'report');
         requestPrint(makePrint('تقرير المطبخ - جرد الوردية', closedReport, closedMeta), 'kitchen-summary');
         setCloseOpen(false);
-        alert(`تم تقفيل الوردية\nصافي المبيعات: ${money(netSales)}\nالكاش المعدود: ${money(d.countedCash)}\nالفرق: ${diffLabel(d.difference)}`);
-        setNotes(''); setCounted('');
+        alert(`تم تقفيل الوردية\nصافي المبيعات: ${money(netSales)}`);
+        setNotes('');
         await refreshShift(); await refreshClosed();
       }
     } catch (e) {
@@ -2797,11 +2795,6 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
               <div className="text-sm text-zinc-400">صافي المبيعات (Net Sales)</div>
               <div className="text-3xl font-black text-[#FFB800]">{money(rep?.netSales ?? rep?.total ?? 0)}</div>
               <div className="text-xs text-zinc-400">{rep?.count || 0} أوردر{Number(rep?.discounts) > 0 ? ` · خصومات ${money(rep.discounts)}` : ''}</div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-black text-white">💵 عدّ الكاش اللي في الدرج دلوقتي *</label>
-              <input type="number" min="0" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder="اكتب المبلغ اللي عدّيته (لو مفيش اكتب 0)" className={inp + ' text-center text-lg'} dir="ltr" />
-              {isAdmin && counted !== '' && <p className="text-xs font-black text-center text-[#FFB800]">الفرق: {diffLabel(Number(counted) - expected)}</p>}
             </div>
             {isAdmin && <div className="text-xs bg-[#050304] border border-[#1F0A0E] rounded-lg p-2 text-zinc-400">المتوقع في الدرج: <b className="text-white">{money(expected)}</b></div>}
             <div className="space-y-2">
@@ -4454,4 +4447,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
