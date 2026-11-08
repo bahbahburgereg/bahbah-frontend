@@ -1955,6 +1955,7 @@ const sumOrders = (list) => ({
 
 // ================= أدوات الورديات والتقارير =================
 const money = (n) => `${Math.round((Number(n) || 0) * 100) / 100} ج`;
+const diffLabel = (v) => { const n = Number(v) || 0; return Math.abs(n) < 0.005 ? 'مظبوط ✓' : n < 0 ? `عجز ${money(-n)}` : `زيادة ${money(n)}`; };
 const fmtDT = (v) => (v ? new Date(v).toLocaleString('ar-EG') : '-');
 const TYPE_LABELS = { pickup: 'استلام', delivery: 'توصيل', talabat: 'طلبات' };
 
@@ -2024,13 +2025,19 @@ const ReportBody = ({ order }) => {
       {r.openedBy && <div>الكاشير: {r.openedBy}{m.closedBy && m.closedBy !== r.openedBy ? ` (قفلها ${m.closedBy})` : ''}</div>}
 
       <div className="rc-line" />
-      <div className="rc-center rc-sub">صافي المبيعات (بعد الخصم، شامل التوصيل)</div>
+      <div className="rc-center rc-sub">صافي المبيعات = المبيعات − المصروفات</div>
       <div className="rc-center rc-kid">{money(net)}</div>
       {row('عدد الأوردرات', r.count || 0, 'rc-big')}
+      {r.grossSales !== undefined && row('إجمالي المبيعات', money(r.grossSales))}
       {row('منها رسوم توصيل', money(r.delivery))}
       {num(r.discounts) > 0 && row('خصومات اتحسبت فعلاً', money(r.discounts))}
       {num(r.cancelled) > 0 && row(`ملغي (${r.cancelled}) مش محسوب`, money(r.cancelledTotal))}
 
+      {(r.expenses || []).length > 0 && (<>
+        {section('المصروفات')}
+        {r.expenses.map((e, i) => <div key={i} className="rc-row rc-small"><span>- {e.reason} ({e.by})</span><span>{money(e.amount)}</span></div>)}
+        {row('إجمالي المصروفات', money(r.expensesTotal), 'rc-big')}
+      </>)}
       {section('طرق الدفع')}
       {pays.cash !== undefined && row('كاش', money(pays.cash))}
       {pays.cash !== undefined && hasTalabatSplit && talabatCash > 0 && <div className="rc-row rc-small"><span>· منه طلبات كاش</span><span>{money(talabatCash)}</span></div>}
@@ -2447,6 +2454,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   const [settleAmount, setSettleAmount] = useState('');
   const [closeOpen, setCloseOpen] = useState(false);
   const [notes, setNotes] = useState('');
+  const [counted, setCounted] = useState('');
   const [busy, setBusy] = useState(false);
 
   const defRange = () => {
@@ -2500,22 +2508,23 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
   };
 
   const doClose = async () => {
+    if (counted === '' || Number(counted) < 0) return alert('اكتب الكاش اللي عدّيته في الدرج (لو مفيش اكتب 0)');
     setBusy(true);
     try {
-      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ notes: notes.trim() }) });
+      const r = await authFetch('/api/shifts/close', { method: 'POST', body: JSON.stringify({ notes: notes.trim(), countedCash: counted }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
         alert(d.error || 'حصل خطأ أثناء تقفيل الوردية');
       } else {
         const closedReport = d.report || d.reportSnapshot || rep || {};
         const netSales = Number(closedReport.netSales ?? closedReport.total ?? d.total ?? 0);
-        const closedMeta = { closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: d.expectedCash ?? closedReport.expectedCash, notes: d.notes };
+        const closedMeta = { countedCash: d.countedCash, difference: d.difference, closedBy: d.closedBy || '', closedAt: d.closedAt || new Date().toISOString(), expectedCash: d.expectedCash ?? closedReport.expectedCash, notes: d.notes };
         // ورقتين: تقرير تقفيل الكاشير (Z) ثم تقرير المطبخ (الأصناف والكميات)
         requestPrint(makePrint('تقرير تقفيل الوردية (Z)', closedReport, closedMeta), 'report');
         requestPrint(makePrint('تقرير المطبخ - جرد الوردية', closedReport, closedMeta), 'kitchen-summary');
         setCloseOpen(false);
-        alert(`تم تقفيل الوردية\nصافي المبيعات: ${money(netSales)}`);
-        setNotes('');
+        alert(`تم تقفيل الوردية\nصافي المبيعات: ${money(netSales)}\nالكاش المعدود: ${money(d.countedCash)}\nالفرق: ${diffLabel(d.difference)}`);
+        setNotes(''); setCounted('');
         await refreshShift(); await refreshClosed();
       }
     } catch (e) {
@@ -2585,7 +2594,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                 <div className="col-span-2 bg-[#100609] border border-[#FFB800]/40 rounded-2xl p-5">
                   <p className="text-sm text-zinc-400 font-bold">صافي المبيعات (Net Sales)</p>
                   <p className="text-4xl font-black text-[#FFB800] mt-1">{money(rep.netSales ?? rep.total)}</p>
-                  <p className="text-[11px] text-zinc-500 mt-1">بعد الخصم وشامل رسوم التوصيل، من غير الأوردرات الملغية</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">إجمالي المبيعات {money(rep.grossSales ?? rep.total)} − مصروفات {money(rep.expensesTotal)} (شامل التوصيل، بعد الخصم، من غير الملغي)</p>
                 </div>
                 <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5 flex flex-col justify-center text-center">
                   <p className="text-sm text-zinc-400 font-bold">الأوردرات</p>
@@ -2628,6 +2637,8 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
 
                   <div className={`${isAdmin ? 'border-t border-[#1F0A0E] pt-3' : ''} space-y-2`}>
                     <p className="text-xs font-bold text-zinc-400">تسجيل مصروف أو إيداع</p>
+                    <div className="flex flex-wrap gap-1.5 items-center"><span className="text-[11px] text-zinc-500">مصروف سريع:</span>{['ثلج', 'غاز', 'خضار', 'بقشيش', 'صيانة', 'مواصلات', 'أخرى'].map(x => <button key={x} type="button" onClick={() => setMv({ ...mv, type: 'out', reason: x })} className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-red-500/40 text-red-300">{x}</button>)}</div>
+
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setMv({ ...mv, type: 'out' })} className={`flex-1 py-2 rounded-lg text-xs font-black border ${mv.type === 'out' ? 'bg-red-600 text-white border-red-400' : 'bg-[#050304] text-zinc-400 border-[#1F0A0E]'}`}>➖ مصروف / سحب</button>
                       <button type="button" onClick={() => setMv({ ...mv, type: 'in' })} className={`flex-1 py-2 rounded-lg text-xs font-black border ${mv.type === 'in' ? 'bg-green-600 text-white border-green-400' : 'bg-[#050304] text-zinc-400 border-[#1F0A0E]'}`}>➕ إيداع</button>
@@ -2652,6 +2663,15 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                 </div>
               </div>
 
+              {(rep.expenses || []).length > 0 && (
+                <div className="bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5 space-y-2">
+                  <h4 className="font-black text-[#FFB800] text-lg">💸 مصروفات الوردية — {money(rep.expensesTotal)}</h4>
+                  {rep.expenses.map((e, i) => (
+                    <div key={i} className="flex justify-between text-sm py-1 border-b border-[#1F0A0E] last:border-0"><span className="text-zinc-300">{e.reason} <span className="text-zinc-500 text-xs">({e.by} · {new Date(e.at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })})</span></span><span className="font-black text-red-400">- {money(e.amount)}</span></div>
+                  ))}
+                  <p className="text-[11px] text-zinc-500">بتتخصم من صافي المبيعات.</p>
+                </div>
+              )}
               {(rep.driverBalances || []).length > 0 && (
                 <div className="bg-[#100609] border border-orange-500/30 rounded-2xl p-5 space-y-3">
                   <h4 className="font-black text-[#FFB800] text-lg">🛵 عهدة السواقين (كاش أوردرات الدليفري غير المُسوّى)</h4>
@@ -2722,7 +2742,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                 <div key={c._id} className="flex flex-wrap items-center justify-between gap-2 bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-2.5 text-sm">
                   <span className="text-zinc-300">{fmtDT(c.openedAt || c.from)} ← {fmtDT(c.closedAt)} · {c.closedBy}</span>
                   <span className="text-zinc-400">{c.count} أوردر</span>
-                  <span className="text-[#FFB800] font-black">{money(c.total)}</span>
+                  <span className="text-[#FFB800] font-black">{money(c.report?.netSales ?? c.total)}</span>
                   <button type="button" onClick={() => requestPrint(printForClosed(c), 'report')} className="bg-zinc-700 text-white px-3 py-1 rounded-lg text-xs font-bold">🖨️ طباعة</button>
                 </div>
               );
@@ -2747,7 +2767,7 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
             <div className="space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {kpi('عدد الأوردرات', rangeRep.count)}
-                {kpi('إجمالي المبيعات', money(rangeRep.total))}
+                {kpi('إجمالي المبيعات', money(rangeRep.grossSales ?? rangeRep.total))}{kpi('💸 مصروفات', money(rangeRep.expensesTotal))}{kpi('صافي المبيعات', money(rangeRep.netSales ?? rangeRep.total))}
                 {kpi('💵 كاش', money(rangeRep.payments?.cash || 0))}
                 {kpi('💳 فيزا', money(rangeRep.payments?.visa || 0))}
                 {kpi('📱 انستا باي', money(rangeRep.payments?.instapay || 0))}
@@ -2777,6 +2797,11 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
               <div className="text-sm text-zinc-400">صافي المبيعات (Net Sales)</div>
               <div className="text-3xl font-black text-[#FFB800]">{money(rep?.netSales ?? rep?.total ?? 0)}</div>
               <div className="text-xs text-zinc-400">{rep?.count || 0} أوردر{Number(rep?.discounts) > 0 ? ` · خصومات ${money(rep.discounts)}` : ''}</div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-black text-white">💵 عدّ الكاش اللي في الدرج دلوقتي *</label>
+              <input type="number" min="0" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder="اكتب المبلغ اللي عدّيته (لو مفيش اكتب 0)" className={inp + ' text-center text-lg'} dir="ltr" />
+              {isAdmin && counted !== '' && <p className="text-xs font-black text-center text-[#FFB800]">الفرق: {diffLabel(Number(counted) - expected)}</p>}
             </div>
             {isAdmin && <div className="text-xs bg-[#050304] border border-[#1F0A0E] rounded-lg p-2 text-zinc-400">المتوقع في الدرج: <b className="text-white">{money(expected)}</b></div>}
             <div className="space-y-2">
@@ -3356,6 +3381,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelPin, setCancelPin] = useState('');
+  const [payModal, setPayModal] = useState(null);
 
   const [staff, setStaff] = useState([]);
   const [newName, setNewName] = useState('');
@@ -3675,6 +3701,17 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
     setCancelPin('');
   };
 
+  const changePayment = async (ord, method) => {
+    setPayModal(null);
+    if (!method || method === ord.paymentMethod) return;
+    try {
+      const res = await authFetch(`/api/pos/orders/${ord._id || ord.orderId}`, { method: 'PUT', body: JSON.stringify({ paymentMethod: method }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(d.error || 'تعذر تغيير طريقة الدفع');
+      fetchOrders(); refreshShift();
+    } catch (err) { if (err.message !== 'unauthorized') alert('تعذر الاتصال بالسيرفر'); }
+  };
+
   // أوردر اتعمل من شاشة الـPOS: نطبع المطبخ على طول ونعلّمه متطبوع عشان الاستعلام ما يطبعوش تاني
   const handlePosCreated = (ord) => {
     const printed = loadPrinted();
@@ -3848,7 +3885,10 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.status === 'completed' && <span className="flex-1 text-center text-green-400 text-xs font-bold py-2">تم تسليم الأوردر</span>}
           {(ord.status === 'pending' || ord.status === 'accepted') && <button onClick={() => startCancel(ord)} title="إلغاء الأوردر" className="text-red-300 bg-red-500/15 hover:bg-red-500/30 px-3 rounded-xl text-xs font-bold">✖ إلغاء</button>}
           {ord.source === 'pos' && ord.status !== 'cancelled' && shiftData?.shift && String(ord.shiftId) === String(shiftData.shift._id) && (
-            <button onClick={() => { setEditingOrder(ord); setCashierTab('pos'); }} title="تعديل الأوردر (أصناف / دفع)" className="text-yellow-300 bg-yellow-500/15 hover:bg-yellow-500/30 px-3 rounded-xl text-xs font-bold">✏️</button>
+            <button onClick={() => { setEditingOrder(ord); setCashierTab('pos'); }} title="تعديل الأوردر (أصناف / دفع)" className="text-yellow-300 bg-yellow-500/15 hover:bg-yellow-500/30 px-3 rounded-xl text-xs font-bold">✏️ تعديل</button>
+          )}
+          {ord.source === 'pos' && ord.status !== 'cancelled' && shiftData?.shift && String(ord.shiftId) === String(shiftData.shift._id) && (
+            <button onClick={() => setPayModal(ord)} title="تغيير طريقة الدفع" className="text-green-300 bg-green-500/15 hover:bg-green-500/30 px-3 rounded-xl text-xs font-bold">💳 الدفع</button>
           )}
           <button onClick={() => requestPrint(ord, 'kitchen')} title="طباعة ورقة المطبخ" className="text-white bg-zinc-700 hover:bg-zinc-600 px-3 rounded-xl text-sm font-bold">🍳</button>
           <button onClick={() => requestPrint(ord, 'customer')} title="طباعة فاتورة العميل" className="text-white bg-zinc-700 hover:bg-zinc-600 px-3 rounded-xl text-sm font-bold">🧾</button>
@@ -4083,6 +4123,21 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
               <button type="button" onClick={submitCancel} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl">تأكيد الإلغاء</button>
               <button type="button" onClick={() => setCancelModal(null)} className="px-5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {payModal && (
+        <div className="fixed inset-0 z-[130] bg-black/75 flex items-center justify-center p-4" onClick={() => setPayModal(null)}>
+          <div dir="rtl" className="bg-[#100609] border border-green-500/60 rounded-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-green-400">💳 تغيير طريقة الدفع — أوردر #{payModal.shiftReceiptNo || payModal.orderId}</h3>
+            <p className="text-xs text-zinc-400">الحالية: {PAY_LABELS[payModal.paymentMethod] || '-'} · الإجمالي {payModal.grandTotal} ج</p>
+            <div className="grid grid-cols-2 gap-2">
+              {POS_PAYS.filter(([k]) => payModal.orderType !== 'talabat' || ['cash', 'visa'].includes(k)).map(([k, label]) => (
+                <button key={k} type="button" onClick={() => changePayment(payModal, k)} className={`py-3 rounded-xl text-sm font-black border ${payModal.paymentMethod === k ? 'bg-green-600 text-white border-green-400' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E]'}`}>{label}</button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setPayModal(null)} className="w-full py-2.5 bg-zinc-700 text-white font-bold rounded-xl">رجوع</button>
           </div>
         </div>
       )}
