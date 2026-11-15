@@ -3520,7 +3520,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
 
           {editOrder && orderType === 'delivery' && <p className="text-[11px] text-zinc-400">📍 {editOrder.customerAddress} — بيانات التوصيل مش بتتعدّل</p>}
           {!editOrder && orderType !== 'delivery' && (
-            <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="📞 رقم العميل (اختياري — للإعلانات)" autoComplete="tel" className={inp} dir="ltr" />
+            <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="📞 رقم العميل" autoComplete="tel" className={inp} dir="ltr" />
           )}
           {!editOrder && orderType === 'delivery' && (
             <div className="space-y-2">
