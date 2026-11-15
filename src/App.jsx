@@ -2064,9 +2064,9 @@ const ReportBody = ({ order }) => {
           {section('حساب الدرج (كاش)')}
           {row('رصيد الافتتاح', money(r.openingCash))}
           {row('+ كاش المبيعات', money(pays.cash || 0))}
-          {num(r.cashIn) > 0 && row('+ إيداعات / تسويات سواقين', money(r.cashIn))}
+          {num(r.cashIn) > 0 && row('+ إيداعات', money(r.cashIn))}
           {num(r.cashOut) > 0 && row('- مصروفات وسحب', money(r.cashOut))}
-          {num(r.driverCash) > 0 && row('- كاش مع السواقين', money(r.driverCash))}
+          {num(r.driverCash) > 0 && row('- أجرة التوصيل مع السواقين', money(r.driverCash))}
           <div className="rc-line" />
           {row('المتوقع في الدرج', money(expected), 'rc-big')}
           {hasCounted && row('اللي اتعدّ فعلاً', money(m.countedCash), 'rc-big')}
@@ -2548,6 +2548,13 @@ const Receipt80 = ({ order, type, cashierName }) => {
               {(c.items || []).map((it, j) => <div key={j} className="rc-row rc-small"><span>{it.name}</span><span style={{fontWeight:900}}>× {it.qty}</span></div>)}
             </div>
           ))}
+          {(order.report?.burgerLevels || []).length > 0 && (
+            <>
+              <div className="rc-line" />
+              <div className="rc-center rc-big">البرجر حسب الحجم</div>
+              {order.report.burgerLevels.map((l, i) => <div key={i} className="rc-row rc-big"><span>{l.name}</span><span>× {l.qty}</span></div>)}
+            </>
+          )}
           <div className="rc-line" />
           <div className="rc-center rc-sub">الكميات تخص الوردية دي فقط</div>
         </>
@@ -2877,9 +2884,9 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                     <div className="space-y-1.5 text-sm">
                       <div className="flex justify-between"><span className="text-zinc-400">رصيد الافتتاح</span><span className="font-bold text-white">{money(rep.openingCash)}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-400">+ كاش المبيعات</span><span className="font-bold text-white">{money(pays.cash || 0)}</span></div>
-                      <div className="flex justify-between"><span className="text-zinc-400">+ إيداعات / تسويات سواقين</span><span className="font-bold text-green-400">{money(rep.cashIn)}</span></div>
+                      <div className="flex justify-between"><span className="text-zinc-400">+ إيداعات</span><span className="font-bold text-green-400">{money(rep.cashIn)}</span></div>
                       <div className="flex justify-between"><span className="text-zinc-400">- مصروفات وسحب</span><span className="font-bold text-red-400">{money(rep.cashOut)}</span></div>
-                      {num(rep.driverCash) > 0 && <div className="flex justify-between"><span className="text-zinc-400">- كاش مع السواقين</span><span className="font-bold text-orange-300">{money(rep.driverCash)}</span></div>}
+                      {num(rep.driverCash) > 0 && <div className="flex justify-between"><span className="text-zinc-400">- أجرة التوصيل مع السواقين</span><span className="font-bold text-orange-300">{money(rep.driverCash)}</span></div>}
                       <div className="flex justify-between border-t border-[#1F0A0E] pt-2 text-base"><span className="font-black text-white">المتوقع في الدرج</span><span className="font-black text-[#FFB800]">{money(rep.expectedCash)}</span></div>
                     </div>
                   ) : <p className="text-xs text-zinc-500">أي مصروف أو إيداع من الدرج سجّله هنا عشان الحساب يتظبط وقت التقفيل.</p>}
@@ -2922,24 +2929,11 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                   <p className="text-[11px] text-zinc-500">بتتخصم من كاش الدرج بس، مش من المبيعات.</p>
                 </div>
               )}
-              {(rep.driverBalances || []).length > 0 && (
-                <div className="bg-[#100609] border border-orange-500/30 rounded-2xl p-5 space-y-3">
-                  <h4 className="font-black text-[#FFB800] text-lg">🛵 فلوس مع السواقين (لسه ماسلّموهاش للدرج)</h4>
-                  <p className="text-[11px] text-zinc-400 leading-5">السواق بيحصّل من العميل الفاتورة كلها (شامل التوصيل)، ويسلّمك سعر الأكل بعد الخصم بس ويخلّي أجرته. المبلغ المتبقي هنا هو اللي المفروض يسلّمهولك. دوس "استلمت كله" أول ما يديك الفلوس.</p>
-                  {isAdmin && <button type="button" disabled={busy} onClick={clearOldDrivers} className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-xs font-black">🧹 امسح العهد القديمة (قبل النهارده)</button>}
-                  <div className="space-y-2">
-                    {rep.driverBalances.map((d) => (
-                      <div key={d.driverName} className="flex flex-wrap items-center justify-between gap-3 bg-[#050304] border border-[#1F0A0E] rounded-xl p-3">
-                        <div><p className="font-black text-white">{d.driverName}</p><p className="text-xs text-zinc-400">{d.orders} أوردر · مستحق {money(d.due)} · متسدد {money(d.settled)}</p></div>
-                        <div className="flex items-center gap-2"><strong className="text-orange-300">متبقي {money(d.balance)}</strong><button type="button" onClick={() => { setSettleDriver(d.driverName); setSettleAmount(String(d.balance)); }} className="px-3 py-2 rounded-lg bg-orange-600 text-white text-xs font-black">استلمت كله</button></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input value={settleDriver} onChange={(e) => setSettleDriver(e.target.value)} placeholder="اسم السواق" className={inp} />
-                    <input type="number" min="0.01" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} placeholder="مبلغ التسوية" className={inp} dir="ltr" />
-                    <button type="button" disabled={busy} onClick={submitDriverSettlement} className="bg-green-600 text-white rounded-xl py-2 font-black disabled:opacity-50">تسجيل استلام الفلوس</button>
-                  </div>
+              {(rep.waitingDriverCash || []).length > 0 && (
+                <div className="bg-red-950/40 border-2 border-red-500 rounded-2xl p-5 space-y-2">
+                  <h4 className="font-black text-red-300 text-lg">🛵 فيه {rep.waitingDriverCash.length} أوردر دليفري لسه النقدية ماوصلتش</h4>
+                  <p className="text-xs text-zinc-300 leading-5">روح على <strong className="text-white">الأوردرات النشطة</strong> ودوس "💵 استلمت النقدية" على كل أوردر أول ما السواق يسلّمك الفلوس. مش هتقدر تقفل الوردية قبل كده.</p>
+                  {rep.waitingDriverCash.map((w) => <div key={w.orderId} className="flex justify-between text-sm bg-[#050304] rounded-xl px-3 py-2"><span className="text-white font-black">#{w.receiptNo || w.orderId} · {w.driverName}</span><span className="text-orange-300 font-black">{money(w.due)}</span></div>)}
                 </div>
               )}
 
@@ -3030,9 +3024,10 @@ const ShiftPanel = ({ authFetch, isAdmin, shiftData, refreshShift, closedShifts,
                 {kpi('🛍️ طلبات', money(rangeRep.talabat))}
                 {kpi('🏷️ خصومات', money(rangeRep.discounts))}
               </div>
+              {(rangeRep.burgerLevels || []).length > 0 && <div className="bg-[#050304] border border-[#FFB800]/40 rounded-xl p-3 text-sm text-white font-black">🍔 البرجر حسب الحجم: {rangeRep.burgerLevels.map(l => `${l.name} × ${l.qty}`).join(' · ')}</div>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(rangeRep.categories || []).map((c, i) => (
-                  <details key={i} className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3">
+                  <details open key={i} className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3">
                     <summary className="cursor-pointer flex justify-between font-black text-white text-sm"><span>{c.name}</span><span className="text-[#FFB800]">{c.qty} قطعة · {money(c.total)}</span></summary>
                     <div className="mt-2 space-y-1">{(c.items || []).map((it, j) => <div key={j} className="flex justify-between text-xs text-zinc-300"><span>{it.name}</span><span className="font-black text-white">× {it.qty}</span></div>)}</div>
                   </details>
@@ -3306,14 +3301,15 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
   // لو العميل ده اتسلّمله أوردر قبل كده: نملّي اسمه وعنوانه ومنطقته لوحدنا
   useEffect(() => {
     setPhoneHint(null);
+    if (orderType !== 'delivery' || editOrder) return;
     // امسح بيانات العميل السابق عند تغيير الرقم؛ لو الرقم محفوظ هترجع البيانات بعد البحث.
     setCustName('');
     setAddress('');
     setLocUrl('');
     const p = normalizePhoneDigits(custPhone);
-    if (orderType !== 'delivery' || editOrder || !isEgMobile(p) || isFakeEgPhone(p)) return;
+    if (!isEgMobile(p)) return;
     let cancelled = false;
-    fetch(`${API_BASE}/api/customers/lookup?phone=${p}`).then(r => r.json()).then(d => {
+    authFetch(`/api/pos/customers/lookup?phone=${p}`).then(r => r.json()).then(d => {
       if (cancelled || !d || !d.known) return;
       setPhoneHint(d);
       setCustName(d.name || '');
@@ -3359,6 +3355,8 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
     if (shiftOpen === false) return alert('افتح وردية الأول');
     if (cart.length === 0) return alert('السلة فاضية');
     if (orderType === 'talabat' && !talabatNo.trim()) return alert('اكتب رقم أوردر طلبات');
+    if (orderType === 'delivery' && !isEgMobile(normalizePhoneDigits(custPhone))) return alert('اكتب رقم تليفون العميل الأول (11 رقم بيبدأ بـ 01)');
+    if (orderType !== 'delivery' && custPhone.trim() && !isEgMobile(normalizePhoneDigits(custPhone))) return alert('رقم العميل غلط (11 رقم بيبدأ بـ 01) أو سيبه فاضي');
     if (orderType === 'delivery' && !address.trim()) return alert('اكتب عنوان التوصيل');
     if (discount > 0 && discountReason.trim().length < 2) return alert('اكتب سبب الخصم');
     setBusy(true);
@@ -3366,7 +3364,7 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
       const payload = {
         orderType, paymentMethod: pay, talabatNo: talabatNo.trim(), discountPercent: discount,
         discountReason: discountReason.trim(), orderNote: orderNote.trim(),
-        customerName: custName.trim(), customerPhone: custPhone.trim(), customerAddress: address.trim(), locationUrl: locUrl.trim(),
+        customerName: custName.trim(), customerPhone: normalizePhoneDigits(custPhone), customerAddress: address.trim(), locationUrl: locUrl.trim(),
         zoneName: zone ? zone.name : (orderType === 'delivery' ? 'توصيل' : ''), deliveryFee: fee,
         items: cart.map(l => ({ itemId: l._id, name: l.name, quantity: l.qty, selections: Array.isArray(l.modifierSelections) ? l.modifierSelections : undefined, modifiers: l.modifiersInfo, notes: l.notes }))
       };
@@ -3521,13 +3519,16 @@ const PosScreen = ({ authFetch, isAdmin, onCreated, shiftOpen, onShiftOpened, ed
           </div>
 
           {editOrder && orderType === 'delivery' && <p className="text-[11px] text-zinc-400">📍 {editOrder.customerAddress} — بيانات التوصيل مش بتتعدّل</p>}
+          {!editOrder && orderType !== 'delivery' && (
+            <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="📞 رقم العميل (اختياري — للإعلانات)" autoComplete="tel" className={inp} dir="ltr" />
+          )}
           {!editOrder && orderType === 'delivery' && (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="رقم التليفون أولاً" autoComplete="tel" className={inp} dir="ltr" />
+                <input value={custPhone} onChange={(e) => setCustPhone(normalizePhoneDigits(e.target.value).slice(0, 11))} placeholder="📞 رقم التليفون أولاً (إجباري) *" autoComplete="tel" className={inp} dir="ltr" />
                 <input value={custName} onChange={(e) => setCustName(e.target.value)} placeholder="اسم العميل" autoComplete="name" className={inp} />
               </div>
-              {phoneHint && <p className="text-[11px] text-green-400 font-bold">✅ عميل سابق ({phoneHint.orders} أوردر) — اتملّت بياناته</p>}
+              {phoneHint && <p className="text-[11px] text-green-400 font-bold">✅ عميل سابق{phoneHint.orders ? ` (${phoneHint.orders} أوردر)` : ''} — اتملّت بياناته</p>}
               <div className="flex gap-2">
                 <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={inp + ' !w-[42%]'}>
                   <option value="">رسوم يدوي</option>
@@ -3886,7 +3887,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
 
   const updateOrderStatus = async (orderId, newStatus, extra = {}) => {
     try {
-      const res = await authFetch(`/api/orders/${orderId}`, { method: 'PUT', body: JSON.stringify({ status: newStatus, ...extra }) });
+      const res = await authFetch(`/api/orders/${orderId}`, { method: 'PUT', body: JSON.stringify(newStatus ? { status: newStatus, ...extra } : extra) });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         alert(d.error || 'حصل خطأ، حاول تاني');
@@ -3933,7 +3934,17 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
       extra.paymentMethod = completionPay;
     }
     setDriverModal(null);
+    // دليفيري كاش: الأوردر يفضل مفتوح لحد ما الكاشير يؤكد استلام النقدية من السواق
+    if (ord.orderType === 'delivery' && (ord.paymentMethod || extra.paymentMethod) === 'cash') {
+      await updateOrderStatus(`${ord._id || ord.orderId}/out-for-delivery`, null, { driverName: extra.driverName, paymentMethod: extra.paymentMethod });
+      return;
+    }
     await doFinish(ord, extra);
+  };
+  const receiveDriverCash = async (ord) => {
+    const due = Math.max(0, (Number(ord.grandTotal) || 0) - (Number(ord.deliveryFee) || 0));
+    if (!window.confirm(`تأكيد: استلمت ${due} ج من السواق ${ord.driverName || ''}؟`)) return;
+    await doFinish(ord);
   };
   const knownDrivers = Array.from(new Set([...readDrivers(), ...orders.map(o => o.driverName).filter(Boolean)])).slice(0, 8);
 
@@ -4039,7 +4050,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
     return () => clearInterval(ringInterval);
   }, [token, soundReady, hasNewOrders]);
 
-  const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+  const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').sort((x, y) => (y.outForDeliveryAt ? 1 : 0) - (x.outForDeliveryAt ? 1 : 0));
   const doneOrders = orders.filter(o => o.status === 'completed');
   const cancelledOrders = orders.filter(o => o.status === 'cancelled');
 
@@ -4061,8 +4072,8 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
       <div>
         <div className="flex justify-between items-center mb-3 border-b border-[#1F0A0E] pb-2">
           <span className="font-black text-[#FFB800] text-lg">#{ord.orderId}</span>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'cancelled' ? 'bg-zinc-700 text-zinc-300' : ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-            {ord.status === 'cancelled' && ord.cancelledAfterPrint ? '⚠️ ملغي بعد الطباعة' : ord.status === 'cancelled' ? 'ملغي ✖' : ord.status === 'completed' ? 'مكتمل ✅' : ord.status === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔'}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'cancelled' ? 'bg-zinc-700 text-zinc-300' : ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' && ord.outForDeliveryAt ? 'bg-orange-500/30 text-orange-300' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+            {ord.status === 'cancelled' && ord.cancelledAfterPrint ? '⚠️ ملغي بعد الطباعة' : ord.status === 'cancelled' ? 'ملغي ✖' : ord.status === 'completed' ? 'مكتمل ✅' : ord.status === 'accepted' && ord.outForDeliveryAt ? '🛵 مع السواق — مستني النقدية' : ord.status === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔'}
           </span>
         </div>
 
@@ -4128,7 +4139,10 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.status === 'pending' && (
             <button disabled={ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known'} title={ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' ? 'اتصل بالعميل وأكّد الرقم الأول' : 'قبول الأوردر'} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'accepted')} className="flex-1 disabled:opacity-40 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg">✅ قبول الأوردر (إيقاف الصوت)</button>
           )}
-          {ord.status === 'accepted' && (
+          {ord.status === 'accepted' && ord.outForDeliveryAt && (
+            <button onClick={() => receiveDriverCash(ord)} className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg animate-pulse">💵 استلمت النقدية من السواق ({Math.max(0, (Number(ord.grandTotal) || 0) - (Number(ord.deliveryFee) || 0))} ج)</button>
+          )}
+          {ord.status === 'accepted' && !ord.outForDeliveryAt && (
             <button onClick={() => finishOrder(ord)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold transition">{ord.orderType === 'delivery' ? '🛵 جاهز للتوصيل' : '🏁 تم التسليم'}</button>
           )}
           {ord.status === 'cancelled' && <span className="flex-1 text-center text-zinc-400 text-xs font-bold py-2">الأوردر ملغي</span>}
