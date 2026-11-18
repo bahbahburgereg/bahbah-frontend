@@ -51,7 +51,7 @@ const isWeakCustomerPin = (p) => {
   return ['1234', '4321', '0000', '12345', '54321', '123456', '654321'].includes(s);
 };
 
-// صوت تنبيه شات العميل (WebAudio — بيشتغل بعد أول تفاعل من العميل مع الصفحة)
+// صوت رسايل الشات (WebAudio — نغمة مختلفة تماماً عن جرس الأوردرات، وتشتغل بعد أول تفاعل مع الصفحة)
 let chatAudioCtx = null;
 const unlockChatAudio = () => {
   try {
@@ -61,14 +61,14 @@ const unlockChatAudio = () => {
     if (chatAudioCtx.state === 'suspended') chatAudioCtx.resume();
   } catch {}
 };
-const playChatBeep = () => {
+const playChatSound = () => {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     if (!chatAudioCtx) chatAudioCtx = new AudioCtx();
     if (chatAudioCtx.state === 'suspended') chatAudioCtx.resume();
     const ctx = chatAudioCtx;
-    const beep = (start, freq) => {
+    const chime = (start, freq, dur) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -77,12 +77,13 @@ const playChatBeep = () => {
       gain.connect(ctx.destination);
       const t0 = ctx.currentTime + start;
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       osc.start(t0);
-      osc.stop(t0 + 0.4);
+      osc.stop(t0 + dur + 0.05);
     };
-    beep(0, 880); beep(0.3, 1174);
+    // نغمتان سريعتان عاليتان (1319 ثم 1760 هرتز) — مختلفة تماماً عن جرس الأوردرات
+    chime(0, 1319, 0.16); chime(0.15, 1760, 0.26);
   } catch {}
 };
 
@@ -415,7 +416,7 @@ const CardQty = ({ item, cart, setCart, soldOut }) => {
   if (hasOptions) {
     return (
       <span className="flex items-center gap-1.5 shrink-0" title="موجود في السلة">
-        <span className="bg-[#ef321b] text-white font-black text-xs sm:text-sm px-2 h-7 sm:h-9 flex items-center justify-center min-w-[2.2rem]">✓ {count}</span>
+        <span key={count} className="anim-pop bg-[#ef321b] text-white font-black text-xs sm:text-sm px-2 h-7 sm:h-9 flex items-center justify-center min-w-[2.2rem]">✓ {count}</span>
       </span>
     );
   }
@@ -435,9 +436,9 @@ const CardQty = ({ item, cart, setCart, soldOut }) => {
 
   return (
     <span className="flex items-center border border-[#ef321b] bg-[#ef321b]/10 shrink-0" onClick={stop}>
-      <span role="button" tabIndex={0} onClick={dec} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none">−</span>
-      <span className="min-w-[1.6rem] sm:min-w-[2rem] text-center font-black text-sm sm:text-lg">{count}</span>
-      <span role="button" tabIndex={0} onClick={inc} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none">+</span>
+      <span role="button" tabIndex={0} onClick={dec} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none transition active:scale-90">−</span>
+      <span key={count} className="min-w-[1.6rem] sm:min-w-[2rem] text-center font-black text-sm sm:text-lg anim-pop">{count}</span>
+      <span role="button" tabIndex={0} onClick={inc} className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-lg sm:text-xl font-black hover:bg-[#ef321b] cursor-pointer select-none transition active:scale-90">+</span>
     </span>
   );
 };
@@ -481,7 +482,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
             <p className="mt-3 md:mt-5 text-white/90 text-sm sm:text-base md:text-xl font-bold max-w-md leading-relaxed" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               {lang === 'ar' ? 'مش مجرد برجر.. ده بحبح! 🔥' : "Not just a burger... This is Bahbah! 🔥"}
             </p>
-            <button onClick={scrollToMenu} dir={lang === 'ar' ? 'rtl' : 'ltr'} className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)] cursor-pointer" style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}>
+            <button onClick={scrollToMenu} dir={lang === 'ar' ? 'rtl' : 'ltr'} className="inline-flex items-center justify-center gap-5 mt-4 md:mt-7 bg-[#ed321c] hover:bg-[#ff4528] text-white px-8 md:px-10 py-3.5 md:py-4 font-black text-base md:text-lg transition-all duration-300 shadow-[0_12px_40px_rgba(237,50,28,.28)] cursor-pointer active:scale-[0.98]" style={{ clipPath: 'polygon(3% 0, 97% 0, 100% 18%, 98% 84%, 94% 100%, 4% 100%, 0 78%, 2% 14%)' }}>
               {t.orderNow}<span className="text-xl leading-none">→</span>
             </button>
           </div>
@@ -521,18 +522,18 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
           <div className="w-full">
             <div className="flex gap-2 overflow-x-auto pb-5 mb-4 scrollbar-none">
               {categories.map((cat) => (
-                <button key={cat._id} onClick={() => setSelectedHomeCat(cat.name)} className={`shrink-0 px-7 py-3 font-bold border transition-all ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`} style={selectedHomeCat === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>
+                <button key={cat._id} onClick={() => setSelectedHomeCat(cat.name)} className={`shrink-0 px-7 py-3 font-bold border transition-all active:scale-[0.97] ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`} style={selectedHomeCat === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>
                   {cat.name}
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            <div className="anim-menu-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {filteredHomeItems.length > 0 ? filteredHomeItems.map((item) => {
                 const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
                 const price = getDiscountedPrice(basePrice, item.discount);
                 const soldOut = item.available === false;
                 return (
-                  <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group flex flex-col overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
+                  <article key={item._id} className={`anim-rise hover:-translate-y-1 bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b]/80 transition group flex flex-col overflow-hidden ${soldOut ? 'opacity-60' : ''}`}>
                     <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                       <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
                         {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
@@ -565,7 +566,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
             </div>
 
             <div className="mt-8 text-center lg:text-left">
-              <Link to="/menu" className="inline-block border border-[#ef321b] text-white px-8 py-3 font-black hover:bg-[#ef321b] transition">{t.seeMore}</Link>
+              <Link to="/menu" className="inline-block border border-[#ef321b] text-white px-8 py-3 font-black hover:bg-[#ef321b] transition active:scale-[0.98]">{t.seeMore}</Link>
             </div>
           </div>
         </div>
@@ -603,7 +604,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
 
         <div className="flex gap-2 overflow-x-auto py-7 scrollbar-none border-b border-white/5">
           {categories.map(cat => (
-            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black transition-all ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10 hover:border-white/30'}`} style={selectedCategory === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>{cat.name}</button>
+            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black transition-all active:scale-[0.97] ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10 hover:border-white/30'}`} style={selectedCategory === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>{cat.name}</button>
           ))}
         </div>
 
@@ -620,13 +621,13 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
                     <h2 className="text-4xl md:text-5xl font-black italic uppercase">{cat.name}</h2>
                     <div className="h-px flex-1 bg-gradient-to-r from-[#ef321b]/60 to-transparent" />
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+                  <div className="anim-menu-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
                     {catItems.map(item => {
                       const basePrice = item.price > 0 ? item.price : (item.modifierGroups?.[1]?.options?.[0]?.price || 0);
                       const price = getDiscountedPrice(basePrice, item.discount);
                       const soldOut = item.available === false;
                       return (
-                        <article key={item._id} className={`bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition flex flex-col overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
+                        <article key={item._id} className={`anim-rise hover:-translate-y-1 bg-[#0d0d0d] border border-white/10 hover:border-[#ef321b] transition flex flex-col overflow-hidden group ${soldOut ? 'opacity-60' : ''}`}>
                           <button onClick={() => handleOpenItemDetails(item)} disabled={soldOut} className={`w-full text-left flex flex-col h-full ${soldOut ? 'cursor-not-allowed' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                             <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
                               {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
@@ -1918,13 +1919,13 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   if (placedOrderId) {
     return (
       <section className="px-6 py-12 max-w-4xl mx-auto min-h-[60vh] bg-[#050304] text-white flex flex-col items-center justify-center">
-        <div className="bg-[#100609] border border-[#25D366] rounded-[2.5rem] p-12 text-center shadow-[0_0_35px_rgba(37,211,102,0.2)] w-full">
+        <div className="anim-sheet-in bg-[#100609] border border-[#25D366] rounded-[2.5rem] p-12 text-center shadow-[0_0_35px_rgba(37,211,102,0.2)] w-full">
           <div className="text-7xl mb-4">✅</div><h2 className="text-3xl font-black text-[#25D366] mb-4">تم إرسال طلبك بنجاح!</h2>
           <div className="bg-[#050304] border-2 border-[#FFB800] text-[#FFB800] text-4xl font-black py-4 px-8 rounded-2xl inline-block mb-8">{placedOrderId}</div>
           <p className="text-sm text-zinc-400 mb-4">تم تحويلك للواتساب لإرسال الطلب للمطعم.</p>
           {pinSavedMsg && <p className="text-sm text-green-400 font-bold mb-4">✅ بياناتك وطلباتك اتحفظت — المرة الجاية ادخل من صفحة «طلباتي» برقمك والرقم السري وهتلاقي كل حاجة جاهزة.</p>}
           {pinSavedMsg && <Link to="/my-orders" className="inline-block text-[#FFB800] underline hover:text-white text-sm font-bold mb-8">📋 روح لصفحة طلباتي</Link>}
-          <button onClick={() => setPlacedOrderId(null)} className="text-white bg-[#FF4500] px-8 py-4 rounded-2xl font-bold transition">رجوع للسلة</button>
+          <button onClick={() => setPlacedOrderId(null)} className="text-white bg-[#FF4500] px-8 py-4 rounded-2xl font-bold transition active:scale-[0.98]">رجوع للسلة</button>
         </div>
       </section>
     );
@@ -1955,9 +1956,9 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                         {item.price * g.qty} ج{g.qty > 1 && <span className="text-zinc-500 font-normal text-xs"> ({item.price} ج للواحد)</span>}
                       </p>
                       <div className="inline-flex items-center border border-[#FF4500]/60 mt-2 rounded-lg overflow-hidden">
-                        <button type="button" onClick={() => removeOne(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500]">−</button>
+                        <button type="button" onClick={() => removeOne(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500] transition active:scale-90">−</button>
                         <span className="min-w-[2rem] text-center font-black text-sm">{g.qty}</span>
-                        <button type="button" onClick={() => addOneMore(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500]">+</button>
+                        <button type="button" onClick={() => addOneMore(g)} className="w-8 h-8 text-lg font-black hover:bg-[#FF4500] transition active:scale-90">+</button>
                       </div>
                     </div>
                     <button onClick={() => removeGroup(g)} className="text-red-400 bg-red-500/10 px-3 py-2 rounded-xl text-xs font-bold ml-3">❌</button>
@@ -1975,8 +1976,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-[#FFB800] mb-2">بيانات التوصيل والاستلام</h3>
               <div className="grid grid-cols-2 gap-3 mb-2">
-                <button type="button" onClick={() => setOrderType('delivery')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🛵 توصيل دليفري</button>
-                <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
+                <button type="button" onClick={() => setOrderType('delivery')} className={`py-4 rounded-2xl font-bold text-sm transition active:scale-[0.98] ${orderType === 'delivery' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🛵 توصيل دليفري</button>
+                <button type="button" onClick={() => setOrderType('pickup')} className={`py-4 rounded-2xl font-bold text-sm transition active:scale-[0.98] ${orderType === 'pickup' ? 'bg-[#FF4500] text-white border border-[#FF4500]' : 'bg-[#050304] text-zinc-400 border border-[#1F0A0E]'}`}>🏪 استلام من الفرع</button>
               </div>
               <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم) *</label><input type="text" inputMode="numeric" maxLength="11" autoComplete="tel" value={customerPhone} onChange={(e) => setCustomerPhone(normalizeEgPhoneInput(e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" />
                 {customerPhone.length === 11 && isFakeEgPhone(customerPhone) && <p className="text-xs text-red-400 mt-1">الرقم ده شكله مش حقيقي، اكتب رقمك الصح.</p>}
@@ -2002,7 +2003,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                         <button type="button" onClick={() => setLoc(null)} className="text-xs text-zinc-400 underline shrink-0">مسح</button>
                       </div>
                     ) : (
-                      <button type="button" onClick={shareLocation} disabled={locBusy} className="w-full bg-[#050304] border border-dashed border-[#FF4500]/60 text-[#FFB800] rounded-2xl p-3 text-sm font-bold hover:bg-[#FF4500]/10">{locBusy ? '⏳ بنحدد موقعك...' : '📍 ضيف موقعي على الخريطة (اختياري)'}</button>
+                      <button type="button" onClick={shareLocation} disabled={locBusy} className="w-full bg-[#050304] border border-dashed border-[#FF4500]/60 text-[#FFB800] rounded-2xl p-3 text-sm font-bold hover:bg-[#FF4500]/10 transition active:scale-[0.98]">{locBusy ? '⏳ بنحدد موقعك...' : '📍 ضيف موقعي على الخريطة (اختياري)'}</button>
                     )}
                     <p className="text-[11px] text-zinc-500 mt-1">بيساعد السواق يوصلك أسرع، ومش لازم.</p>
                   </div>
@@ -2010,15 +2011,15 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
               )}
             </div>
             {confirmOpen && (
-              <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={() => setConfirmOpen(false)}>
-                <div dir="rtl" className="bg-[#100609] border border-[#FF4500]/60 rounded-3xl w-full max-w-sm p-6 text-center space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="anim-fade-in fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={() => setConfirmOpen(false)}>
+                <div dir="rtl" className="anim-sheet-in bg-[#100609] border border-[#FF4500]/60 rounded-3xl w-full max-w-sm p-6 text-center space-y-4" onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-xl font-black text-[#FFB800]">تأكيد رقم التليفون</h3>
                   <p className="text-zinc-300 text-sm">هنتواصل معاك على الرقم ده لتأكيد الأوردر. اتأكد إنه صح:</p>
                   <div className="text-3xl font-black text-white tracking-widest" dir="ltr">{customerPhone}</div>
                   <p className="text-xs text-zinc-400">{customerName}{orderType === 'delivery' ? ` — ${customerAddress}` : ' — استلام من الفرع'}</p>
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => setConfirmOpen(false)} className="flex-1 py-3 rounded-xl bg-zinc-700 text-white font-bold">✏️ تعديل</button>
-                    <button type="button" onClick={() => { setConfirmOpen(false); sendOrderToWhatsApp(); }} className="flex-1 py-3 rounded-xl bg-[#25D366] text-black font-black">✅ الرقم صح، ابعت</button>
+                    <button type="button" onClick={() => setConfirmOpen(false)} className="flex-1 py-3 rounded-xl bg-zinc-700 text-white font-bold transition active:scale-[0.98]">✏️ تعديل</button>
+                    <button type="button" onClick={() => { setConfirmOpen(false); sendOrderToWhatsApp(); }} className="flex-1 py-3 rounded-xl bg-[#25D366] text-black font-black transition active:scale-[0.98]">✅ الرقم صح، ابعت</button>
                   </div>
                 </div>
               </div>
@@ -2026,7 +2027,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
             {storeClosed && (
               <div className="mt-6 bg-red-500/10 border border-red-500/40 text-red-300 rounded-2xl p-4 text-sm font-bold text-center leading-relaxed">🌙 {storeStatus.message}</div>
             )}
-            <button onClick={requestSend} disabled={storeClosed} className={`w-full font-black text-lg py-4 rounded-2xl mt-4 ${storeClosed ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-[#25D366] text-black'}`}>{storeClosed ? '🌙 الطلب مقفول دلوقتي' : t.whatsappOrder}</button>
+            <button onClick={requestSend} disabled={storeClosed} className={`w-full font-black text-lg py-4 rounded-2xl mt-4 transition active:scale-[0.98] ${storeClosed ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : 'bg-[#25D366] text-black'}`}>{storeClosed ? '🌙 الطلب مقفول دلوقتي' : t.whatsappOrder}</button>
           </div>
         </div>
       )}
@@ -2181,11 +2182,11 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
       <section className="px-6 py-12 max-w-xl mx-auto min-h-[60vh] bg-[#050304] text-white">
         <h2 className="text-3xl font-black text-[#FFB800] mb-4 border-b border-[#1A0B0E] pb-4">📋 طلباتي</h2>
         <p className="text-sm text-zinc-400 mb-6 leading-relaxed">ادخل برقم تليفونك والرقم السري عشان تشوف بياناتك المحفوظة وطلباتك اللي فاتت، وتطلبها تاني بضغطة واحدة، وتقيّم الأوردرات.</p>
-        <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] space-y-4">
+        <div className="anim-sheet-in bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] space-y-4">
           <div><label className="block text-xs text-zinc-300 mb-1">رقم التليفون (11 رقم)</label><input type="text" inputMode="numeric" maxLength="11" value={loginPhone} onChange={(e) => setLoginPhone(normalizeEgPhoneInput(e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" /></div>
           <div><label className="block text-xs text-zinc-300 mb-1">الرقم السري</label><input type="password" inputMode="numeric" maxLength="6" value={loginPin} onChange={(e) => setLoginPin(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" /></div>
           {loginError && <p className="text-sm text-red-400 font-bold">{loginError}</p>}
-          <button onClick={handleLogin} disabled={loginBusy} className="w-full bg-[#FF4500] text-white font-black text-lg py-4 rounded-2xl disabled:opacity-60">{loginBusy ? '⏳ ...' : 'دخول'}</button>
+          <button onClick={handleLogin} disabled={loginBusy} className="w-full bg-[#FF4500] text-white font-black text-lg py-4 rounded-2xl disabled:opacity-60 transition active:scale-[0.98]">{loginBusy ? '⏳ ...' : 'دخول'}</button>
           <p className="text-[11px] text-zinc-500 leading-relaxed">لسه معندكش رقم سري؟ اكتبه وانت بتطلب أوردرك الجاي من السلة (اختياري)، وبعدها هتقدر تدخل بيه هنا. ولو نسيته، كلّم المطعم على {RESTAURANT_PHONE}.</p>
         </div>
       </section>
@@ -2196,7 +2197,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
     <section className="px-6 py-12 max-w-4xl mx-auto min-h-screen bg-[#050304] text-white">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-black text-[#FFB800]">📋 طلباتي</h2>
-        <button onClick={handleLogout} className="text-xs font-bold border border-white/20 px-4 py-2 rounded-xl hover:border-red-400">تسجيل الخروج</button>
+        <button onClick={handleLogout} className="text-xs font-bold border border-white/20 px-4 py-2 rounded-xl hover:border-red-400 transition active:scale-95">تسجيل الخروج</button>
       </div>
       {notice && <p className="text-sm text-amber-300 mb-4">{notice}</p>}
       {loading ? (
@@ -2204,7 +2205,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
       ) : (
         <>
           {profile && (
-            <div className="bg-[#100609] rounded-[2.5rem] p-6 border border-[#1F0A0E] mb-8">
+            <div className="anim-rise bg-[#100609] rounded-[2.5rem] p-6 border border-[#1F0A0E] mb-8">
               <h3 className="text-lg font-bold text-[#FFB800] mb-3">بياناتي المحفوظة</h3>
               <p className="text-sm text-zinc-300">👤 {profile.name || '—'} · 📞 <span dir="ltr">{profile.phone}</span></p>
               {profile.address && <p className="text-sm text-zinc-300 mt-1">📍 {profile.address}{profile.zoneName ? ` (${profile.zoneName})` : ''}</p>}
@@ -2217,7 +2218,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
                   <input type="password" inputMode="numeric" maxLength="6" placeholder="أكّد الجديد" value={newPin2} onChange={(e) => setNewPin2(e.target.value.replace(/\D/g, '').slice(0, 6))} className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-sm" dir="ltr" />
                 </div>
                 {pinMsg && <p className="text-xs mt-2 text-amber-300">{pinMsg}</p>}
-                <button onClick={handleChangePin} className="mt-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl">تغيير الرقم السري</button>
+                <button onClick={handleChangePin} className="mt-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl transition active:scale-95">تغيير الرقم السري</button>
               </div>
             </div>
           )}
@@ -2229,7 +2230,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
               {orders.map((o) => {
                 const draft = ratingDraft[o.orderId] || { stars: o.rating?.stars || 0, comment: o.rating?.comment || '' };
                 return (
-                  <div key={o.orderId} className="bg-[#100609] rounded-[2rem] p-6 border border-[#1F0A0E]">
+                  <div key={o.orderId} className="anim-rise bg-[#100609] rounded-[2rem] p-6 border border-[#1F0A0E]">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-black text-[#FFB800]">#{o.orderId}</span>
                       <span className="text-xs font-bold text-zinc-300">{statusLabel(o.status)}</span>
@@ -2249,18 +2250,18 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
                       <span>الإجمالي:</span><span className="text-[#FFB800] text-lg font-black">{o.grandTotal} ج</span>
                     </div>
                     <div className="flex gap-2 mt-4 flex-wrap">
-                      <button onClick={() => reorder(o)} className="flex-1 min-w-[140px] bg-[#FF4500] text-white font-bold py-3 rounded-xl text-sm">🔁 اطلب تاني</button>
+                      <button onClick={() => reorder(o)} className="flex-1 min-w-[140px] bg-[#FF4500] text-white font-bold py-3 rounded-xl text-sm transition active:scale-[0.98]">🔁 اطلب تاني</button>
                     </div>
                     {o.status === 'completed' && (
                       <div className="mt-4 pt-4 border-t border-[#1F0A0E]">
                         <p className="text-sm font-bold mb-2">{o.rating ? 'تقييمك للأوردر:' : 'قيّم الأوردر:'}</p>
                         <div className="flex gap-1 mb-2">
                           {[1, 2, 3, 4, 5].map(n => (
-                            <button key={n} type="button" onClick={() => setRatingDraft(prev => ({ ...prev, [o.orderId]: { ...draft, stars: n } }))} className="text-3xl leading-none">{n <= (draft.stars || 0) ? '⭐' : '☆'}</button>
+                            <button key={n} type="button" onClick={() => setRatingDraft(prev => ({ ...prev, [o.orderId]: { ...draft, stars: n } }))} className="text-3xl leading-none transition active:scale-125">{n <= (draft.stars || 0) ? '⭐' : '☆'}</button>
                           ))}
                         </div>
                         <textarea value={draft.comment || ''} onChange={(e) => setRatingDraft(prev => ({ ...prev, [o.orderId]: { ...draft, comment: e.target.value.slice(0, 300) } }))} placeholder="قولنا رأيك (اختياري)..." className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-sm mb-2" />
-                        <button onClick={() => submitRating(o)} disabled={ratingBusy === o.orderId} className="text-xs font-bold bg-[#FFB800] text-black px-4 py-2 rounded-xl disabled:opacity-60">{o.rating ? 'تعديل التقييم' : 'إرسال التقييم'}</button>
+                        <button onClick={() => submitRating(o)} disabled={ratingBusy === o.orderId} className="text-xs font-bold bg-[#FFB800] text-black px-4 py-2 rounded-xl disabled:opacity-60 transition active:scale-95">{o.rating ? 'تعديل التقييم' : 'إرسال التقييم'}</button>
                       </div>
                     )}
                   </div>
@@ -4728,7 +4729,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
         if (alreadyLoaded && c.lastFrom === 'customer' && c.unread > 0 && (!prev || new Date(c.lastAt) > new Date(prev))) hasNew = true;
         chatLastSeenRef.current[c.phone] = c.lastAt;
       });
-      if (hasNew) playBeep();
+      if (hasNew) playChatSound();
       chatLoadedRef.current = true;
       setChatConvs(data.conversations);
     } catch (err) {}
@@ -5442,7 +5443,7 @@ const CustomerChatWidget = () => {
       if (!Array.isArray(data.messages)) return;
       const fresh = data.messages.filter((m) => m.from === 'staff' && !seenIdsRef.current.has(m.id));
       if (loadedRef.current && fresh.length > 0) {
-        playChatBeep();
+        playChatSound();
         if (!openRef.current) setUnread((u) => u + fresh.length);
       }
       data.messages.forEach((m) => seenIdsRef.current.add(m.id));
@@ -5509,7 +5510,7 @@ const CustomerChatWidget = () => {
   return (
     <div dir="rtl" className="fixed bottom-4 left-4 z-[70] flex flex-col items-start gap-3">
       {open && (
-        <div className="w-[92vw] max-w-sm h-[62vh] max-h-[540px] bg-[#100609] border border-[#FF4500]/50 rounded-3xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden">
+        <div className="anim-panel-in w-[92vw] max-w-sm h-[62vh] max-h-[540px] bg-[#100609] border border-[#FF4500]/50 rounded-3xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden">
           <div className="bg-[#FF4500] px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-2xl">💬</span>
@@ -5527,7 +5528,7 @@ const CustomerChatWidget = () => {
               <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="الاسم" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FF4500]" />
               <input value={phone} onChange={(e) => setPhone(normalizeEgPhoneInput(e.target.value))} inputMode="numeric" dir="ltr" placeholder="01xxxxxxxxx" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FF4500]" />
               {formError && <p className="text-red-400 text-xs">{formError}</p>}
-              <button type="button" onClick={startChat} className="w-full bg-[#FF4500] hover:bg-[#E03D00] text-white font-black py-3 rounded-xl text-sm">ابدأ الشات 💬</button>
+              <button type="button" onClick={startChat} className="w-full bg-[#FF4500] hover:bg-[#E03D00] text-white font-black py-3 rounded-xl text-sm transition active:scale-[0.98]">ابدأ الشات 💬</button>
               <p className="text-zinc-500 text-[11px] text-center">من غير رقم سري — رقمك بس عشان نعرف نرد عليك.</p>
             </div>
           ) : (
@@ -5535,7 +5536,7 @@ const CustomerChatWidget = () => {
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-[#050304]">
                 {messages.length === 0 && <p className="text-zinc-500 text-xs text-center py-6">أهلاً بيك 👋 اكتب سؤالك والكاشير هترد عليك.</p>}
                 {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.from === 'customer' ? 'justify-start' : 'justify-end'}`}>
+                  <div key={m.id} className={`anim-msg-in flex ${m.from === 'customer' ? 'justify-start' : 'justify-end'}`}>
                     <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${m.from === 'customer' ? 'bg-[#FF4500] text-white rounded-tr-sm' : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'}`}>
                       {m.from === 'staff' && <p className="text-[11px] font-bold text-[#FFB800] mb-0.5">الكاشير{m.staffName ? ` · ${m.staffName}` : ''}</p>}
                       <p>{m.text}</p>
@@ -5547,16 +5548,16 @@ const CustomerChatWidget = () => {
               {sendError && <p className="text-red-400 text-xs px-3 pt-2 bg-[#050304]">{sendError}</p>}
               <div className="p-2.5 border-t border-[#1F0A0E] flex gap-2 bg-[#100609]">
                 <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }} maxLength={500} placeholder="اكتب رسالتك..." className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF4500]" />
-                <button type="button" onClick={sendMessage} disabled={sending || !input.trim()} className="bg-[#FF4500] hover:bg-[#E03D00] disabled:opacity-50 text-white font-black px-4 rounded-xl text-sm">إرسال</button>
+                <button type="button" onClick={sendMessage} disabled={sending || !input.trim()} className="bg-[#FF4500] hover:bg-[#E03D00] disabled:opacity-50 text-white font-black px-4 rounded-xl text-sm transition active:scale-[0.98]">إرسال</button>
               </div>
             </>
           )}
         </div>
       )}
 
-      <button type="button" onClick={toggleOpen} className="relative w-14 h-14 rounded-full bg-[#FF4500] hover:bg-[#E03D00] shadow-lg shadow-orange-500/40 flex items-center justify-center text-2xl transition" title="كلم الكاشير">
+      <button type="button" onClick={toggleOpen} className="anim-chat-bubble relative w-14 h-14 rounded-full bg-[#FF4500] hover:bg-[#E03D00] shadow-lg shadow-orange-500/40 flex items-center justify-center text-2xl transition active:scale-95" title="كلم الكاشير">
         {open ? '✕' : '💬'}
-        {unread > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-black min-w-5 h-5 px-1 flex items-center justify-center rounded-full border-2 border-[#050304]">{unread > 9 ? '9+' : unread}</span>}
+        {unread > 0 && <span key={unread} className="anim-pop absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-black min-w-5 h-5 px-1 flex items-center justify-center rounded-full border-2 border-[#050304]">{unread > 9 ? '9+' : unread}</span>}
       </button>
     </div>
   );
@@ -5694,6 +5695,30 @@ function App() {
 
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#050304] text-white font-sans flex flex-col justify-between relative selection:bg-[#FF4500] selection:text-white">
+      {!isStaffPage && (<style>{`
+        @keyframes anim-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes anim-pop { 0% { transform: scale(.55); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+        @keyframes anim-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes anim-sheet-in { from { opacity: 0; transform: translateY(14px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes anim-panel-in { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes anim-msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes anim-soft-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .anim-rise { animation: anim-rise .35s ease backwards; }
+        .anim-menu-grid > .anim-rise:nth-child(2) { animation-delay: .04s; }
+        .anim-menu-grid > .anim-rise:nth-child(3) { animation-delay: .08s; }
+        .anim-menu-grid > .anim-rise:nth-child(4) { animation-delay: .12s; }
+        .anim-menu-grid > .anim-rise:nth-child(5) { animation-delay: .16s; }
+        .anim-menu-grid > .anim-rise:nth-child(6) { animation-delay: .2s; }
+        .anim-menu-grid > .anim-rise:nth-child(7) { animation-delay: .24s; }
+        .anim-menu-grid > .anim-rise:nth-child(n+8) { animation-delay: .28s; }
+        .anim-pop { animation: anim-pop .3s ease both; }
+        .anim-fade-in { animation: anim-fade-in .25s ease both; }
+        .anim-sheet-in { animation: anim-sheet-in .35s ease both; }
+        .anim-panel-in { animation: anim-panel-in .3s ease both; transform-origin: bottom left; }
+        .anim-msg-in { animation: anim-msg-in .25s ease both; }
+        .anim-chat-bubble { animation: anim-panel-in .35s ease both, anim-soft-pulse 2.8s ease-in-out 1.2s infinite; }
+        @media (prefers-reduced-motion: reduce) { .anim-rise, .anim-pop, .anim-fade-in, .anim-sheet-in, .anim-panel-in, .anim-msg-in, .anim-chat-bubble { animation: none !important; } }
+      `}</style>)}
       {!isStaffPage && <nav className="sticky top-0 z-50 bg-[#050505]/95 backdrop-blur-md border-b border-white/10">
         <div className="max-w-[1500px] mx-auto h-[78px] px-5 md:px-10 flex items-center justify-between">
           <Link to="/" className="shrink-0 flex items-center">
@@ -5705,11 +5730,11 @@ function App() {
             <Link to="/my-orders" className="py-7 hover:text-[#ef321b] transition">طلباتي</Link>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="text-xs font-black border border-white/15 px-3 py-1.5 hover:border-[#ef321b] transition">{lang === 'ar' ? 'EN' : 'عربي'}</button>
-            <Link to="/my-orders" className="text-xs font-black border border-white/15 px-3 py-1.5 hover:border-[#ef321b] transition">📋 طلباتي</Link>
-            <Link to="/cart" className="relative flex items-center gap-2 hover:text-[#ef321b] transition">
+            <button onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="text-xs font-black border border-white/15 px-3 py-1.5 hover:border-[#ef321b] transition active:scale-95">{lang === 'ar' ? 'EN' : 'عربي'}</button>
+            <Link to="/my-orders" className="text-xs font-black border border-white/15 px-3 py-1.5 hover:border-[#ef321b] transition active:scale-95">📋 طلباتي</Link>
+            <Link to="/cart" className="relative flex items-center gap-2 hover:text-[#ef321b] transition active:scale-95">
               <span className="text-2xl">🛒</span>
-              <span className="absolute -top-2 -right-3 bg-[#ef321b] text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">{cart.length}</span>
+              <span key={cart.length} className="anim-pop absolute -top-2 -right-3 bg-[#ef321b] text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">{cart.length}</span>
             </Link>
           </div>
         </div>
@@ -5730,8 +5755,8 @@ function App() {
       </div>
 
       {selectedItemDetail && (
-        <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
-          <div className="bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
+        <div className="anim-fade-in fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
+          <div className="anim-sheet-in bg-[#f4f4f5] w-full max-w-md md:rounded-3xl rounded-t-3xl relative flex flex-col max-h-[90vh] md:max-h-[85vh] shadow-2xl overflow-hidden text-black">
 
             {/* 1. صورة الصنف وزر الإغلاق العائم */}
             <div className="relative w-full h-24 md:h-32 shrink-0 bg-white border-b border-gray-200">
@@ -5825,7 +5850,7 @@ function App() {
 
             {/* 5. زر الإضافة للسلة */}
             <div className="bg-white p-3 border-t border-gray-200 shrink-0">
-              <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3 px-5 rounded-xl transition ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              <button onClick={handleAddCustomizedItemToCart} disabled={!isFormValid()} className={`w-full flex items-center justify-between font-bold py-3 px-5 rounded-xl transition active:scale-[0.98] ${isFormValid() ? 'bg-[#FF4500] text-white hover:bg-[#E03D00] shadow-lg shadow-orange-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                 <span className="text-sm">{modalFinalPrice} ج.م</span>
                 <span className="text-sm">إضافة للسلة</span>
               </button>
