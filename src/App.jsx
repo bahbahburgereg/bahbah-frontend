@@ -185,6 +185,59 @@ const getDiscountedPrice = (price, discountPercent) => {
   if (!discountPercent || discountPercent <= 0) return price;
   return Math.round(price * (1 - discountPercent / 100));
 };
+// ================= الترجمة العربية للمنيو =================
+// الأولوية: حقل عربي مكتوب في قاعدة البيانات (nameAr / descriptionAr) — لو فاضي،
+ // نستخدم القاموس اللي تحت (مترجم من المنيو الحي بتاريخ 2026-11-19 — 55 صنف + 10 أقسام) —
+// لو مفيش ترجمة خالص، نرجع للاسم الإنجليزي الأصلي عشان مفيش حاجة تظهر فاضية.
+// القاموس مفتاحه الاسم الإنجليزي بعد التطبيع (trim + lowercase) لأن الأسماء في
+// قاعدة البيانات فيها مسافات وحروف كبيرة/صغيرة مش ثابتة (مثال: "Mush Bun " و "Cheezy BOOM").
+// دي شاشات العميل بس — الكاشير والمطبخ والأوردرات والواتساب بيفضلوا بالإنجليزي الأصلي.
+const normMenuKey = (v) => String(v || "").trim().toLowerCase();
+const ARABIC_CATEGORY_NAMES = {"smash burger": "سماش برجر", "chicken sandwiches": "ساندوتشات فراخ", "combo": "كومبو", "meals": "وجبات", "chicken tender nashville": "تشيكن تندر ناشفيل", "mac n' cheese": "ماك أند تشيز", "fries": "بطاطس", "appetizers": "مقبلات", "beverages": "مشروبات", "sauces": "صوصات"};
+const ARABIC_ITEM_NAMES = {"secret sauce": "سيكريت صوص", "secret sauce combo": "سيكريت صوص كومبو", "3 pieces tender": "3 قطع تندر", "mac n' cheese": "ماك أند تشيز", "secret sauce meal": "وجبة سيكريت صوص", "fries": "بطاطس", "coleslaw": "كول سلو", "v cola": "في كولا", "mush bun": "مش بَن", "coco x": "كوكو إكس", "5 pieces tender": "5 قطع تندر", "beef mac n' cheese": "ماك أند تشيز باللحم", "cheezy boom combo": "تشيزي بوم كومبو", "cheezy boom meal": "وجبة تشيزي بوم", "cheese fries": "بطاطس بالجبنة", "toast": "توست", "v cola diet": "في كولا دايت", "coco sauce": "صوص كوكو", "cheezy boom": "تشيزي بوم", "coco fire": "كوكو فاير", "8 nashville": "8 قطع تندر ناشفيل", "chicken mac n' cheese": "ماك أند تشيز بالفراخ", "mush bun combo": "مش بَن كومبو", "mush bun meal": "وجبة مش بَن", "pickles": "مخلل", "water": "مياه", "cheese sauce": "صوص جبنة", "beef fries": "بطاطس باللحم", "texas boom": "تكساس بوم", "bahbah roll": "رول بحبح", "texas boom combo": "تكساس بوم كومبو", "texas boom meal": "وجبة تكساس بوم", "mozzarella sticks": "أصابع موتزاريلا", "texas sauce": "صوص تكساس", "coco fries": "بطاطس كوكو", "mini coco": "ميني كوكو", "ranch sauce": "صوص رانش", "cheesy coco": "تشيزي كوكو", "cheesy coco combo": "تشيزي كوكو كومبو", "cheesy coco meal": "وجبة تشيزي كوكو", "coco x meal": "وجبة كوكو إكس", "ketchup sauce": "صوص كاتشب", "كومبو": "كومبو", "coco x combo": "كوكو إكس كومبو", "coco fire meal": "وجبة كوكو فاير", "hot honey sauce": "صوص هوت هوني", "coco fire combo": "كوكو فاير كومبو", "bahbah roll meal": "وجبة رول بحبح", "brown sauce": "صوص بني", "bahbah roll combo": "رول بحبح كومبو", "double meal": "وجبة دبل", "bbq sauce": "صوص باربكيو", "tender meal": "وجبة تندر", "mayonnaise sauce": "صوص مايونيز"};
+const ARABIC_ITEM_DESCRIPTIONS = {"secret sauce|smash burger": "عيش بريوش - لحم سماش - شريحة جبنة - صوص بحبح - مخلل - خس", "secret sauce combo|combo": "سيكريت بحبح + بطاطس + في كولا", "3 pieces tender|chicken tender nashville": "3 قطع تندر جامبو - توست - كول سلو - صوص كوكو", "secret sauce meal|meals": "1 ساندوتش بحبح - 1 تندر - كول سلو - بطاطس - صوص كوكو + في كولا", "mush bun|smash burger": "عيش بريوش - لحم سماش - صوص بني - مشروم طازة - شريحة جبنة - خس", "coco x|chicken sandwiches": "عيش بريوش - صدور فراخ مقلية - صوص بحبح - مخلل - كول سلو", "5 pieces tender|chicken tender nashville": "5 قطع تندر جامبو - صوص كوكو - كول سلو - توست", "cheezy boom combo|combo": "تشيزي بوم + بطاطس + في كولا", "cheezy boom meal|meals": "ساندوتش تشيزي - 1 تندر - كول سلو - بطاطس - صوص كوكو + في كولا", "toast|appetizers": "1 توست", "cheezy boom|smash burger": "عيش بريوش - لحم سماش - شريحة جبنة - صوص جبنة - أصابع موتزاريلا - مخلل - خس", "coco fire|chicken sandwiches": "عيش بريوش - صدور فراخ مقلية - صوص سريراتشا بالمايونيز - مخلل - خس", "8 nashville|chicken tender nashville": "8 قطع تندر جامبو - صوص كوكو - كول سلو - توست", "mush bun combo|combo": "مش بَن + بطاطس + في كولا", "mush bun meal|meals": "ساندوتش مشروم - 1 تندر - كول سلو - بطاطس - صوص كوكو + في كولا", "texas boom|smash burger": "عيش بريوش - لحم سماش - صوص تكساس - خس - شريحة جبنة - مخلل", "texas boom combo|combo": "تكساس بوم + بطاطس + في كولا", "texas boom meal|meals": "ساندوتش تكساس - 1 تندر - كول سلو - بطاطس - صوص كوكو + في كولا", "cheesy coco|chicken sandwiches": "عيش بريوش - صدور فراخ مقلية - صوص جبنة - مخلل - خس", "cheesy coco combo|combo": "تشيزي كوكو + بطاطس + في كولا", "cheesy coco meal|meals": "ساندوتش فراخ تشيزي - 1 تندر - بطاطس - صوص كوكو - كول سلو + في كولا", "coco x meal|meals": "ساندوتش كوكو إكس - 1 تندر جامبو - بطاطس - صوص كوكو - كول سلو + في كولا", "coco x combo|combo": "كوكو إكس + بطاطس + في كولا", "coco fire meal|meals": "ساندوتش كوكو فاير - 1 تندر جامبو - بطاطس - صوص كوكو - كول سلو + في كولا", "coco fire combo|combo": "كوكو فاير + بطاطس + في كولا", "bahbah roll meal|meals": "ساندوتش رول تورتيلا - 1 تندر جامبو - بطاطس - صوص كوكو - كول سلو + في كولا", "bahbah roll combo|combo": "رول بحبح + بطاطس + في كولا", "double meal|meals": "2 ساندوتش (كوكو إكس + سيكريت بحبح) - 2 بطاطس - 2 صوص - 2 كول سلو", "tender meal|meals": "3 قطع تندر جامبو - بطاطس - توست - صوص كوكو - كول سلو + في كولا"};
+const ARABIC_MODIFIER_GROUP_NAMES = {"sandwich": "ساندوتش", "burger level": "حجم البرجر", "with out": "بدون", "spice level": "درجة الحراقة", "nashville oil": "زيت ناشفيل", "nashville": "ناشفيل", "tender": "تندر", "make it": "إضافة"};
+const ARABIC_MODIFIER_OPTION_NAMES = {"original": "عادي", "hot": "حار", "x hot": "حار جداً", "single": "سنجل", "double": "دبل", "triple": "تريبل", "double burger": "برجر دبل", "triple burger": "برجر تريبل", "no cheese": "بدون جبنة", "no pickles": "بدون مخلل", "no lettuce": "بدون خس", "no sauce": "بدون صوص", "no coleslaw": "بدون كول سلو", "mild": "خفيف", "medium": "وسط", "extra hot": "إكسترا حار", "nashville oil": "زيت ناشفيل", "no nashville oil": "بدون زيت ناشفيل", "original tender": "تندر عادي", "spicy tender": "تندر حار", "3 mozzarella sticks": "3 أصابع موتزاريلا"};
+const pickArText = (en, ar, dict) => {
+  const s = String(ar || "").trim();
+  if (s) return s;
+  return (dict && dict[normMenuKey(en)]) || "";
+};
+const itemNameAr = (item, lang) => {
+  if (!item) return "";
+  if (lang !== "ar") return item.name || "";
+  return pickArText(item.name, item.nameAr, ARABIC_ITEM_NAMES) || item.name || "";
+};
+const itemDescAr = (item, lang) => {
+  if (!item) return "";
+  if (lang !== "ar") return item.description || "";
+  const db = String(item.descriptionAr || "").trim();
+  if (db) return db;
+  const byCat = ARABIC_ITEM_DESCRIPTIONS[normMenuKey(item.name) + "|" + normMenuKey(item.category)];
+  return byCat || ARABIC_ITEM_DESCRIPTIONS[normMenuKey(item.name)] || item.description || "";
+};
+const catNameAr = (cat, lang) => {
+  if (!cat) return "";
+  if (lang !== "ar") return cat.name || "";
+  return pickArText(cat.name, cat.nameAr, ARABIC_CATEGORY_NAMES) || cat.name || "";
+};
+const groupNameAr = (group, lang) => {
+  if (!group) return "";
+  if (lang !== "ar") return group.name || "";
+  return pickArText(group.name, group.nameAr, ARABIC_MODIFIER_GROUP_NAMES) || group.name || "";
+};
+const optNameAr = (opt, lang) => {
+  if (!opt) return "";
+  if (lang !== "ar") return opt.name || "";
+  return pickArText(opt.name, opt.nameAr, ARABIC_MODIFIER_OPTION_NAMES) || opt.name || "";
+};
+// نص الاختيارات المحفوظ في الأوردر/السلة إنجليزي ("Group: Option (+5 ج)") —
+// دي للعرض بس: نترجم اسم الخيار (stripMoney بيشيل اسم المجموعة والسعر أصلاً).
+const localizeModifierOption = (text, lang) => {
+  if (lang !== "ar") return stripMoney(text);
+  return optNameAr({ name: stripMoney(text) }, lang);
+};
+
 
 
 // ================= تتبع مصدر الزيارة (UTM) =================
@@ -523,7 +576,7 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
             <div className="flex gap-2 overflow-x-auto pb-5 mb-4 scrollbar-none">
               {categories.map((cat) => (
                 <button key={cat._id} onClick={() => setSelectedHomeCat(cat.name)} className={`shrink-0 px-7 py-3 font-bold border transition-all active:scale-[0.97] ${selectedHomeCat === cat.name ? 'bg-[#ef321b] text-white border-[#ef321b]' : 'bg-[#111] text-white/60 border-white/5 hover:border-white/20'}`} style={selectedHomeCat === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>
-                  {cat.name}
+                  {catNameAr(cat, lang)}
                 </button>
               ))}
             </div>
@@ -538,12 +591,12 @@ const HomePage = ({ lang, siteSettings, menuItems, categories, handleOpenItemDet
                       <div className="relative h-32 sm:h-52 overflow-hidden bg-black shrink-0 w-full">
                         {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
                         {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
-                        <img src={item.image} alt={item.name} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                        <img src={item.image} alt={itemNameAr(item, lang)} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                       </div>
                       <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                         <div>
-                          <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-                          <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || ''}</p>
+                          <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{itemNameAr(item, lang)}</h3>
+                          <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{itemDescAr(item, lang)}</p>
                         </div>
                         <div className="flex items-center justify-between mt-3 sm:mt-6">
                           <div className="text-[#ef321b] text-sm sm:text-xl font-black">
@@ -604,7 +657,7 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
 
         <div className="flex gap-2 overflow-x-auto py-7 scrollbar-none border-b border-white/5">
           {categories.map(cat => (
-            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black transition-all active:scale-[0.97] ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10 hover:border-white/30'}`} style={selectedCategory === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>{cat.name}</button>
+            <button key={cat._id} onClick={() => setSelectedCategory(cat.name)} className={`shrink-0 px-8 py-3 font-black transition-all active:scale-[0.97] ${selectedCategory === cat.name ? 'bg-[#ef321b] text-white' : 'bg-[#111] text-white/55 border border-white/10 hover:border-white/30'}`} style={selectedCategory === cat.name ? { clipPath: 'polygon(4% 0,96% 0,100% 22%,97% 90%,91% 100%,5% 97%,0 80%,2% 12%)' } : {}}>{catNameAr(cat, lang)}</button>
           ))}
         </div>
 
@@ -614,11 +667,11 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
           <div className="space-y-20 pt-10">
             {categoriesToShow.map(cat => {
               const catItems = menuItems.filter(item => item.category === cat.name).sort((a, b) => (a.order || 0) - (b.order || 0));
-              if (!catItems.length) return <div className="text-center text-white/40 py-10" key={cat._id}>لا توجد أصناف في {cat.name}</div>;
+              if (!catItems.length) return <div className="text-center text-white/40 py-10" key={cat._id}>لا توجد أصناف في {catNameAr(cat, lang)}</div>;
               return (
                 <div key={cat._id}>
                   <div className="flex items-center gap-5 mb-7">
-                    <h2 className="text-4xl md:text-5xl font-black italic uppercase">{cat.name}</h2>
+                    <h2 className="text-4xl md:text-5xl font-black italic uppercase">{catNameAr(cat, lang)}</h2>
                     <div className="h-px flex-1 bg-gradient-to-r from-[#ef321b]/60 to-transparent" />
                   </div>
                   <div className="anim-menu-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
@@ -632,12 +685,12 @@ const MenuPage = ({ menuItems, categories, lang, handleOpenItemDetails, cart, se
                             <div className="relative h-32 sm:h-56 bg-black overflow-hidden shrink-0 w-full">
                               {soldOut && <span className="absolute top-2 right-2 z-20 bg-red-600 px-2 py-0.5 text-[10px] sm:text-xs font-black">⛔ غير متاح</span>}
                               {item.discount > 0 && <span className="absolute top-2 left-2 z-10 bg-[#ef321b] px-3 py-1.5 text-xs sm:text-sm md:text-base font-black shadow-lg rounded-sm">خصم {item.discount}%</span>}
-                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={item.name} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
+                              <img src={item.image || "https://via.placeholder.com/400x300/0D0D0D/EF321B?text=Bahbah"} alt={itemNameAr(item, lang)} loading="lazy" decoding="async" className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${soldOut ? 'grayscale' : ''}`} />
                             </div>
                             <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between w-full">
                               <div>
-                                <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{item.name}</h3>
-                                <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{item.description || ''}</p>
+                                <h3 className="text-sm sm:text-xl font-black italic uppercase truncate">{itemNameAr(item, lang)}</h3>
+                                <p className="text-[11px] sm:text-sm text-white/45 mt-1 sm:mt-2 line-clamp-2 min-h-[32px] sm:min-h-[40px]">{itemDescAr(item, lang)}</p>
                               </div>
                               <div className="flex items-center justify-between mt-3 sm:mt-6">
                                 <div className="flex items-center gap-1.5 sm:gap-2" dir="ltr">
@@ -1075,18 +1128,19 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
   const [editCatId, setEditCatId] = useState(null);
   const [catName, setCatName] = useState('');
+  const [catNameAr, setCatNameAr] = useState('');
 
   const handleSaveCategory = async (e) => {
     e.preventDefault();
     if (!catName.trim()) return;
     try {
       const res = editCatId
-        ? await adminFetch(`/api/categories/${editCatId}`, { method: 'PUT', body: JSON.stringify({ name: catName.trim() }) })
-        : await adminFetch('/api/categories', { method: 'POST', body: JSON.stringify({ name: catName.trim() }) });
-      if (res.ok) { setCatName(''); setEditCatId(null); fetchCategories(); }
+        ? await adminFetch(`/api/categories/${editCatId}`, { method: 'PUT', body: JSON.stringify({ name: catName.trim(), nameAr: catNameAr.trim() }) })
+        : await adminFetch('/api/categories', { method: 'POST', body: JSON.stringify({ name: catName.trim(), nameAr: catNameAr.trim() }) });
+      if (res.ok) { setCatName(''); setCatNameAr(''); setEditCatId(null); fetchCategories(); }
     } catch (err) {}
   };
-  const handleEditCategoryClick = (cat) => { setEditCatId(cat._id); setCatName(cat.name); };
+  const handleEditCategoryClick = (cat) => { setEditCatId(cat._id); setCatName(cat.name); setCatNameAr(cat.nameAr || ''); };
   const handleDeleteCategory = async (id) => {
     if (!window.confirm("Delete?")) return;
     try { const res = await adminFetch(`/api/categories/${id}`, { method: 'DELETE' }); if (res.ok) fetchCategories(); } catch (err) {}
@@ -1104,22 +1158,26 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
   const [editId, setEditId] = useState(null);
   const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
   const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
+  const [descriptionAr, setDescriptionAr] = useState('');
   const [category, setCategory] = useState('');
   const [isOffer, setIsOffer] = useState(false);
 
   const [modifierGroups, setModifierGroups] = useState([]);
   const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupNameAr, setNewGroupNameAr] = useState('');
   const [newGroupMin, setNewGroupMin] = useState(1);
   const [newGroupMax, setNewGroupMax] = useState(1);
   const [newOptionNames, setNewOptionNames] = useState({});
+  const [newOptionNamesAr, setNewOptionNamesAr] = useState({});
   const [newOptionPrices, setNewOptionPrices] = useState({});
 
-  const [editingGrp, setEditingGrp] = useState({ gIndex: -1, name: '', min: 0, max: 0 });
-  const [editingOpt, setEditingOpt] = useState({ gIndex: -1, oIndex: -1, name: '', price: 0 });
+  const [editingGrp, setEditingGrp] = useState({ gIndex: -1, name: '', nameAr: '', min: 0, max: 0 });
+  const [editingOpt, setEditingOpt] = useState({ gIndex: -1, oIndex: -1, name: '', nameAr: '', price: 0 });
   const [importFromId, setImportFromId] = useState('');
 
   useEffect(() => {
@@ -1128,8 +1186,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
   const handleAddGroup = () => {
     if (!newGroupName.trim()) return;
-    setModifierGroups([...modifierGroups, { name: newGroupName, min: Number(newGroupMin), max: Number(newGroupMax), options: [] }]);
-    setNewGroupName(''); setNewGroupMin(1); setNewGroupMax(1);
+    setModifierGroups([...modifierGroups, { name: newGroupName, nameAr: newGroupNameAr.trim(), min: Number(newGroupMin), max: Number(newGroupMax), options: [] }]);
+    setNewGroupName(''); setNewGroupNameAr(''); setNewGroupMin(1); setNewGroupMax(1);
   };
 
   const handleAddOption = (gIndex) => {
@@ -1137,9 +1195,10 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
     const optPrice = newOptionPrices[gIndex] || 0;
     if (!optName?.trim()) return;
     const updatedGroups = [...modifierGroups];
-    updatedGroups[gIndex].options.push({ name: optName, price: Number(optPrice) });
+    updatedGroups[gIndex].options.push({ name: optName, nameAr: (newOptionNamesAr[gIndex] || '').trim(), price: Number(optPrice) });
     setModifierGroups(updatedGroups);
     setNewOptionNames({ ...newOptionNames, [gIndex]: '' });
+    setNewOptionNamesAr({ ...newOptionNamesAr, [gIndex]: '' });
     setNewOptionPrices({ ...newOptionPrices, [gIndex]: '' });
   };
 
@@ -1153,17 +1212,17 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const saveEditedGroup = () => {
     if (!editingGrp.name.trim()) return;
     const updated = [...modifierGroups];
-    updated[editingGrp.gIndex] = { ...updated[editingGrp.gIndex], name: editingGrp.name, min: Number(editingGrp.min), max: Number(editingGrp.max) };
+    updated[editingGrp.gIndex] = { ...updated[editingGrp.gIndex], name: editingGrp.name, nameAr: editingGrp.nameAr, min: Number(editingGrp.min), max: Number(editingGrp.max) };
     setModifierGroups(updated);
-    setEditingGrp({ gIndex: -1, name: '', min: 0, max: 0 });
+    setEditingGrp({ gIndex: -1, name: '', nameAr: '', min: 0, max: 0 });
   };
 
   const saveEditedOption = () => {
     if (!editingOpt.name.trim()) return;
     const updated = [...modifierGroups];
-    updated[editingOpt.gIndex].options[editingOpt.oIndex] = { ...updated[editingOpt.gIndex].options[editingOpt.oIndex], name: editingOpt.name, price: Number(editingOpt.price) };
+    updated[editingOpt.gIndex].options[editingOpt.oIndex] = { ...updated[editingOpt.gIndex].options[editingOpt.oIndex], name: editingOpt.name, nameAr: editingOpt.nameAr, price: Number(editingOpt.price) };
     setModifierGroups(updated);
-    setEditingOpt({ gIndex: -1, oIndex: -1, name: '', price: 0 });
+    setEditingOpt({ gIndex: -1, oIndex: -1, name: '', nameAr: '', price: 0 });
   };
 
   const handleImportModifiers = () => {
@@ -1180,9 +1239,9 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const handleSaveItem = async (e) => {
     e.preventDefault();
     const itemData = {
-      name, price: Number(price), discount: Number(discount) || 0,
+      name, nameAr, price: Number(price), discount: Number(discount) || 0,
       image: image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger",
-      description, category: category || (categories.length > 0 ? categories[0].name : 'General'),
+      description, descriptionAr, category: category || (categories.length > 0 ? categories[0].name : 'General'),
       isOffer, modifierGroups
     };
     try {
@@ -1194,8 +1253,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   };
 
   const handleEditItemClick = (item) => {
-    setEditId(item._id); setName(item.name); setPrice(item.price); setDiscount(item.discount || '');
-    setImage(item.image); setDescription(item.description || ''); setCategory(item.category);
+    setEditId(item._id); setName(item.name); setNameAr(item.nameAr || ''); setPrice(item.price); setDiscount(item.discount || '');
+    setImage(item.image); setDescription(item.description || ''); setDescriptionAr(item.descriptionAr || ''); setCategory(item.category);
     setIsOffer(item.isOffer || false);
 
     if (item.modifierGroups && item.modifierGroups.length > 0) {
@@ -1210,7 +1269,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   };
 
   const resetForm = () => {
-    setEditId(null); setName(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setIsOffer(false); setModifierGroups([]); setImportFromId('');
+    setEditId(null); setName(''); setNameAr(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setDescriptionAr(''); setIsOffer(false); setModifierGroups([]); setImportFromId('');
     if (categories.length > 0) setCategory(categories[0].name);
   };
 
@@ -1342,13 +1401,14 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         <h3 className="text-xl font-bold text-[#FFB800] mb-4">{t.catManage}</h3>
         <form onSubmit={handleSaveCategory} className="flex gap-4 mb-6">
           <input type="text" placeholder="Category Name..." value={catName} onChange={(e) => setCatName(e.target.value)} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" />
+          <input type="text" placeholder="اسم القسم بالعربي..." value={catNameAr} onChange={(e) => setCatNameAr(e.target.value)} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" />
           <button type="submit" className="bg-[#FF4500] text-white font-bold px-8 py-4 rounded-2xl hover:bg-[#E03D00] transition shadow">{editCatId ? t.save : t.addCat}</button>
-          {editCatId && <button type="button" onClick={() => { setEditCatId(null); setCatName(''); }} className="bg-zinc-700 text-white px-5 rounded-2xl font-bold">{t.cancel}</button>}
+          {editCatId && <button type="button" onClick={() => { setEditCatId(null); setCatName(''); setCatNameAr(''); }} className="bg-zinc-700 text-white px-5 rounded-2xl font-bold">{t.cancel}</button>}
         </form>
         <div className="space-y-3">
           {categories.map((cat, index) => (
             <div key={cat._id} className="bg-[#050304] border border-[#1F0A0E] px-5 py-4 rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3"><span className="text-zinc-500 font-bold text-sm">#{index + 1}</span><span className="font-bold text-[#FFB800]">{cat.name}</span></div>
+              <div className="flex items-center gap-3"><span className="text-zinc-500 font-bold text-sm">#{index + 1}</span><span className="font-bold text-[#FFB800]">{cat.name}{cat.nameAr ? ` — ${cat.nameAr}` : ''}</span></div>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => handleMoveCategory(index, 'up')} disabled={index === 0} className={`px-3 py-1.5 rounded-xl text-sm font-bold ${index === 0 ? 'bg-[#100609] text-zinc-600' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}>◀</button>
                 <button type="button" onClick={() => handleMoveCategory(index, 'down')} disabled={index === categories.length - 1} className={`px-3 py-1.5 rounded-xl text-sm font-bold ${index === categories.length - 1 ? 'bg-[#100609] text-zinc-600' : 'bg-[#180A0E] text-[#FF4500] hover:bg-[#1F0A0E]'}`}>▶</button>
@@ -1365,6 +1425,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
       <form onSubmit={handleSaveItem} className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-2xl">
         <h3 className="md:col-span-2 text-2xl font-black text-[#FFB800] mb-2 border-b border-[#1F0A0E] pb-4">{t.itemManage}</h3>
         <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: برجر دبل" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف بالعربي</label><input type="text" value={nameAr} onChange={(e) => setNameAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: تشيزي بوم" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">السعر الأساسي *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 150" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">القسم *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
@@ -1396,6 +1457,10 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
               <label className="block text-xs text-zinc-400 mb-1">اسم المجموعة (مثال: Sandwich أو بدون)</label>
               <input type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
             </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs text-zinc-400 mb-1">اسم المجموعة بالعربي</label>
+              <input type="text" value={newGroupNameAr} onChange={(e) => setNewGroupNameAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-sm" />
+            </div>
             <div className="w-24">
               <label className="block text-xs text-[#FFB800] font-bold mb-1">الحد الأدنى (Min)</label>
               <input type="number" min="0" value={newGroupMin} onChange={(e) => setNewGroupMin(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-xl p-3 text-white text-sm font-bold" />
@@ -1411,7 +1476,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
             {modifierGroups.map((group, gIndex) => (
               <div key={gIndex} className="bg-[#100609] p-5 rounded-2xl border border-[#FF4500]/20 relative mt-8">
                 <div className="absolute -top-3 left-4 flex gap-2">
-                  <button type="button" onClick={() => setEditingGrp({ gIndex, name: group.name, min: group.min, max: group.max })} className="bg-[#FFB800] text-black px-3 py-1 rounded-lg text-xs font-bold shadow-lg">✏️ تعديل المجموعة</button>
+                  <button type="button" onClick={() => setEditingGrp({ gIndex, name: group.name, nameAr: group.nameAr || '', min: group.min, max: group.max })} className="bg-[#FFB800] text-black px-3 py-1 rounded-lg text-xs font-bold shadow-lg">✏️ تعديل المجموعة</button>
                   <button type="button" onClick={() => handleRemoveGroup(gIndex)} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-lg">🗑️ حذف المجموعة</button>
                 </div>
 
@@ -1420,6 +1485,10 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
                     <div className="flex-1 min-w-[150px]">
                       <label className="text-xs text-zinc-400 block mb-1">تعديل الاسم</label>
                       <input value={editingGrp.name} onChange={e => setEditingGrp({ ...editingGrp, name: e.target.value })} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm focus:border-[#FFB800] outline-none" />
+                    </div>
+                    <div className="flex-1 min-w-[150px]">
+                      <label className="text-xs text-zinc-400 block mb-1">الاسم بالعربي</label>
+                      <input value={editingGrp.nameAr || ''} onChange={e => setEditingGrp({ ...editingGrp, nameAr: e.target.value })} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm focus:border-[#FFB800] outline-none" />
                     </div>
                     <div className="w-16">
                       <label className="text-xs text-zinc-400 block mb-1">أدنى</label>
@@ -1430,12 +1499,12 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
                       <input type="number" value={editingGrp.max} onChange={e => setEditingGrp({ ...editingGrp, max: e.target.value })} className="w-full bg-[#100609] border border-[#1F0A0E] rounded p-2 text-white text-sm text-center" />
                     </div>
                     <button type="button" onClick={saveEditedGroup} className="bg-[#25D366] text-black px-4 py-2 rounded font-bold text-sm h-[38px]">حفظ</button>
-                    <button type="button" onClick={() => setEditingGrp({ gIndex: -1, name: '', min: 0, max: 0 })} className="bg-zinc-700 text-white px-4 py-2 rounded font-bold text-sm h-[38px]">إلغاء</button>
+                    <button type="button" onClick={() => setEditingGrp({ gIndex: -1, name: '', nameAr: '', min: 0, max: 0 })} className="bg-zinc-700 text-white px-4 py-2 rounded font-bold text-sm h-[38px]">إلغاء</button>
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center gap-3 mb-1 mt-2">
-                      <h5 className="font-bold text-[#FFB800] text-lg">{group.name}</h5>
+                      <h5 className="font-bold text-[#FFB800] text-lg">{group.name}{group.nameAr ? ` — ${group.nameAr}` : ''}</h5>
                       {group.min > 0 ? (
                         <span className="bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded border border-red-500/30">إجباري</span>
                       ) : (
@@ -1448,6 +1517,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
                 <div className="flex gap-2 mb-4 items-end border-b border-[#1F0A0E] pb-4">
                   <input type="text" placeholder="اسم الخيار الجديد (مثال: بدون جبنة)" value={newOptionNames[gIndex] || ''} onChange={(e) => setNewOptionNames({ ...newOptionNames, [gIndex]: e.target.value })} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
+                  <input type="text" placeholder="الخيار بالعربي (اختياري)" value={newOptionNamesAr[gIndex] || ''} onChange={(e) => setNewOptionNamesAr({ ...newOptionNamesAr, [gIndex]: e.target.value })} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
                   <input type="number" placeholder="السعر الإضافي (0 لو مجاني)" value={newOptionPrices[gIndex] || ''} onChange={(e) => setNewOptionPrices({ ...newOptionPrices, [gIndex]: e.target.value })} className="w-32 bg-[#050304] border border-[#1F0A0E] rounded-xl p-2.5 text-white text-sm" />
                   <button type="button" onClick={() => handleAddOption(gIndex)} className="bg-zinc-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-zinc-700">➕ خيار</button>
                 </div>
@@ -1459,15 +1529,16 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
                         {editingOpt.gIndex === gIndex && editingOpt.oIndex === oIndex ? (
                           <div className="flex gap-2 items-center w-full">
                             <input value={editingOpt.name} onChange={e => setEditingOpt({ ...editingOpt, name: e.target.value })} className="flex-1 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800]" placeholder="الاسم" />
+                            <input value={editingOpt.nameAr || ''} onChange={e => setEditingOpt({ ...editingOpt, nameAr: e.target.value })} className="flex-1 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800]" placeholder="الاسم بالعربي" />
                             <input type="number" value={editingOpt.price} onChange={e => setEditingOpt({ ...editingOpt, price: e.target.value })} className="w-16 bg-black border border-[#1F0A0E] rounded p-1 text-white text-xs outline-none focus:border-[#FFB800] text-center" placeholder="السعر" />
                             <button type="button" onClick={saveEditedOption} className="text-[#25D366] font-bold text-xs bg-[#25D366]/10 px-2 py-1 rounded">حفظ</button>
-                            <button type="button" onClick={() => setEditingOpt({ gIndex: -1, oIndex: -1, name: '', price: 0 })} className="text-zinc-500 font-bold text-xs bg-zinc-800 px-2 py-1 rounded">✕</button>
+                            <button type="button" onClick={() => setEditingOpt({ gIndex: -1, oIndex: -1, name: '', nameAr: '', price: 0 })} className="text-zinc-500 font-bold text-xs bg-zinc-800 px-2 py-1 rounded">✕</button>
                           </div>
                         ) : (
                           <div className="flex justify-between items-center w-full">
-                            <span className="font-medium">{opt.name} {opt.price > 0 && <span className="text-[#FFB800]">(+{opt.price} ج)</span>}</span>
+                            <span className="font-medium">{opt.name}{opt.nameAr ? ` (${opt.nameAr})` : ''} {opt.price > 0 && <span className="text-[#FFB800]">(+{opt.price} ج)</span>}</span>
                             <div className="flex gap-1.5">
-                              <button type="button" onClick={() => setEditingOpt({ gIndex, oIndex, name: opt.name, price: opt.price })} className="text-[#FFB800] bg-[#FFB800]/10 hover:bg-[#FFB800]/20 w-7 h-7 rounded flex items-center justify-center transition">✏️</button>
+                              <button type="button" onClick={() => setEditingOpt({ gIndex, oIndex, name: opt.name, nameAr: opt.nameAr || '', price: opt.price })} className="text-[#FFB800] bg-[#FFB800]/10 hover:bg-[#FFB800]/20 w-7 h-7 rounded flex items-center justify-center transition">✏️</button>
                               <button type="button" onClick={() => handleRemoveOption(gIndex, oIndex)} className="text-red-400 bg-red-500/10 hover:bg-red-500/20 w-7 h-7 rounded flex items-center justify-center transition">✕</button>
                             </div>
                           </div>
@@ -1484,6 +1555,10 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         <div className="md:col-span-2">
           <label className="block text-sm mb-2 text-[#FFB800] font-bold">وصف الصنف *</label>
           <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="طعم ولا في الخيال..." />
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm mb-2 text-[#FFB800] font-bold">وصف الصنف بالعربي</label>
+          <textarea rows="3" value={descriptionAr} onChange={(e) => setDescriptionAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: عيش بريوش - لحم سماش - مخلل..." />
         </div>
 
         <div className="md:col-span-2 mt-4 flex gap-4">
@@ -1834,7 +1909,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         const bad = cart.filter(c => offIds.includes(String(c._id)));
         if (bad.length > 0) {
           if (waWindow) waWindow.close();
-          return alert('للأسف الأصناف دي خلصت حالياً: ' + [...new Set(bad.map(b => b.name))].join('، ') + '\nشيلها من السلة وكمّل الطلب.');
+          return alert('للأسف الأصناف دي خلصت حالياً: ' + [...new Set(bad.map(b => itemNameAr(b, lang)))].join('، ') + '\nشيلها من السلة وكمّل الطلب.');
         }
       }
     } catch (err) {}
@@ -1949,8 +2024,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                 return (
                   <div key={g.key} className="flex justify-between items-start border-b border-[#1F0A0E] pb-4">
                     <div className="flex-1">
-                      <h4 className="text-base font-bold text-white">{g.qty > 1 && <span className="text-[#FF4500] font-black ml-1">{g.qty}×</span>} {item.name}</h4>
-                      {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {stripMoney(mod)}</p>))}
+                      <h4 className="text-base font-bold text-white">{g.qty > 1 && <span className="text-[#FF4500] font-black ml-1">{g.qty}×</span>} {itemNameAr(item, lang)}</h4>
+                      {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {localizeModifierOption(mod, lang)}</p>))}
                       {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
                       <p className="text-[#FFB800] font-bold text-sm mt-1">
                         {item.price * g.qty} ج{g.qty > 1 && <span className="text-zinc-500 font-normal text-xs"> ({item.price} ج للواحد)</span>}
@@ -2037,7 +2112,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
 
 
 // ================= صفحة "طلباتي" للعميل: بياناته المحفوظة + سجل أوردراته + إعادة الطلب + التقييم =================
-const MyOrdersPage = ({ cart, setCart, menuItems }) => {
+const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
   const navigate = useNavigate();
   const [session, setSession] = useState(() => readCustomerSession());
   const [profile, setProfile] = useState(null);
@@ -2129,7 +2204,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
     const skipped = [];
     for (const line of (order.items || [])) {
       const menuItem = menuItems.find(mi => String(mi._id) === String(line.itemId));
-      if (!menuItem || menuItem.available === false) { skipped.push(line.name); continue; }
+      if (!menuItem || menuItem.available === false) { skipped.push(itemNameAr({ name: line.name }, lang)); continue; }
       const groups = groupsOfItem(menuItem);
       const selections = groups.map(() => []);
       for (const mod of (line.modifiers || [])) {
@@ -2150,7 +2225,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
         const max = Number.isFinite(Number(groups[gi].max)) ? Number(groups[gi].max) : (groups[gi].options || []).length;
         if (selections[gi].length < min || selections[gi].length > max) { valid = false; break; }
       }
-      if (!valid) { skipped.push(line.name); continue; }
+      if (!valid) { skipped.push(itemNameAr({ name: line.name }, lang)); continue; }
       let price = getDiscountedPrice(menuItem.price, menuItem.discount);
       const modifiersInfo = [];
       const modifierSelections = [];
@@ -2239,9 +2314,9 @@ const MyOrdersPage = ({ cart, setCart, menuItems }) => {
                     <div className="space-y-1 mb-3">
                       {(o.items || []).map((it, idx) => (
                         <div key={idx} className="text-sm">
-                          <span className="text-white">{it.quantity}× {it.name}</span>
+                          <span className="text-white">{it.quantity}× {itemNameAr({ name: it.name }, lang)}</span>
                           <span className="text-[#FFB800]"> — {it.price * it.quantity} ج</span>
-                          {(it.modifiers || []).map((m, i) => (<p key={i} className="text-xs text-zinc-400 pr-3">- {stripMoney(m)}</p>))}
+                          {(it.modifiers || []).map((m, i) => (<p key={i} className="text-xs text-zinc-400 pr-3">- {localizeModifierOption(m, lang)}</p>))}
                           {it.notes && <p className="text-xs text-[#FFB800] pr-3">📝 {it.notes}</p>}
                         </div>
                       ))}
@@ -3103,10 +3178,53 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     setFrom(f); setTo(t); load(f, t);
   };
 
+  // ملخص بسيط بالعربي — جمل كاملة من أرقام التقرير اللي جاية من السيرفر
+  const plainNum = (v) => Number(v) || 0;
+  const plainNetCash = (tt) => plainNum(tt.payments?.cash) - plainNum(tt.expensesTotal) + plainNum(tt.depositsTotal);
+  const plainShiftSentence = (d) => {
+    const shifts = d.shifts || [];
+    if (!shifts.length) return '';
+    const closed = shifts.filter((sh) => sh.closedAt && sh.expectedCash !== null && sh.expectedCash !== undefined);
+    const openShift = shifts.find((sh) => !sh.closedAt);
+    let out = '';
+    if (closed.length) out += ` والوردية قفلت والمتوقع في الدرج ${money(closed[closed.length - 1].expectedCash)}.`;
+    if (openShift) out += ' والوردية لسه مفتوحة.';
+    return out;
+  };
+  const plainDaySentence = (d) => {
+    const dp = d.payments || {};
+    const hasActivity = (d.count || 0) > 0 || (d.expenses || []).length > 0 || (d.deposits || []).length > 0 || (d.shifts || []).length > 0;
+    if (!hasActivity) return `يوم ${d.date} (${periodWeekday(d.date)}): مفيش نشاط مسجل في اليوم ده.`;
+    return `يوم ${d.date} (${periodWeekday(d.date)}): بعت بـ ${money(d.total)} في ${d.count || 0} أوردر، كاش ${money(dp.cash)}، فيزا ${money(dp.visa)}، انستا ${money(dp.instapay)}، سلف ${money(d.advancesTotal)}، مصروفات تانية ${money(d.otherExpensesTotal)}.${plainShiftSentence(d)}`;
+  };
+
   const printReport = () => {
     if (!rep) return;
     const t = rep.totals || {};
     const pays = t.payments || {};
+    const plainPrintDay = (d) => {
+      const dp = d.payments || {};
+      const hasActivity = (d.count || 0) > 0 || (d.expenses || []).length > 0 || (d.deposits || []).length > 0 || (d.shifts || []).length > 0;
+      if (!hasActivity) return `<p class="line">يوم ${periodEsc(d.date)} (${periodWeekday(d.date)}): مفيش نشاط مسجل في اليوم ده.</p>`;
+      const shifts = d.shifts || [];
+      const closed = shifts.filter((sh) => sh.closedAt && sh.expectedCash !== null && sh.expectedCash !== undefined);
+      const openShift = shifts.find((sh) => !sh.closedAt);
+      let shiftTxt = '';
+      if (closed.length) shiftTxt += ` والوردية قفلت والمتوقع في الدرج ${money(closed[closed.length - 1].expectedCash)}.`;
+      if (openShift) shiftTxt += ' والوردية لسه مفتوحة.';
+      return `<p class="line">يوم ${periodEsc(d.date)} (${periodWeekday(d.date)}): بعت بـ ${money(d.total)} في ${d.count || 0} أوردر، كاش ${money(dp.cash)}، فيزا ${money(dp.visa)}، انستا ${money(dp.instapay)}، سلف ${money(d.advancesTotal)}، مصروفات تانية ${money(d.otherExpensesTotal)}.${shiftTxt}</p>`;
+    };
+    const plainNetPrint = (Number(pays.cash) || 0) - (Number(t.expensesTotal) || 0) + (Number(t.depositsTotal) || 0);
+    const plainSummaryPrint = `<h2>ملخص الفترة ببساطة</h2>`
+      + `<p class="line">في الفترة من ${periodEsc(rep.from)} إلى ${periodEsc(rep.to)}، بعت بـ ${money(t.total)} في ${t.count || 0} أوردر.</p>`
+      + `<p class="line">منهم كاش ${money(pays.cash)}، فيزا ${money(pays.visa)}، انستا باي ${money(pays.instapay)}، محفظة ${money(pays.wallet)}.</p>`
+      + `<p class="line">ومنهم طلبات بـ ${money(t.talabat)} (كاش طلبات ${money(t.talabatCash)} وفيزا طلبات ${money(t.talabatVisa)}).</p>`
+      + `<p class="line">طلع من الدرج ${money(t.expensesTotal)}: سلف ${money(t.advancesTotal)} (${t.advancesCount || 0} سلفة)، ومصروفات تانية ${money(t.otherExpensesTotal)}.</p>`
+      + `<p class="line">دخل الدرج إيداعات ${money(t.depositsTotal)}.</p>`
+      + `<p class="line"><strong>صافي كاش الفترة = كاش ${money(pays.cash)} ناقص اللي طلع من الدرج ${money(t.expensesTotal)} زائد الإيداعات ${money(t.depositsTotal)} = ${money(plainNetPrint)}. ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</strong></p>`
+      + `<p class="line">خصومات ${money(t.discounts)}، وأوردرات ملغية ${t.cancelled || 0} بقيمة ${money(t.cancelledTotal)}.</p>`
+      + `<h2>كل يوم باختصار</h2>`
+      + (rep.days || []).map(plainPrintDay).join('');
     const tbl = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
     const advRows = (list) => list.map((a) => `<tr><td>${periodEsc(a.day || '')}</td><td>${periodTime(a.at)}</td><td><strong>${periodEsc(a.person)}</strong></td><td>${money(a.amount)}</td><td>${periodEsc(a.reason)}</td><td>${periodEsc(a.by)}</td><td>${periodEsc(a.shiftBy)}</td></tr>`).join('');
     const expRows = (list) => list.filter((m) => !m.isAdvance).map((m) => `<tr><td>${periodTime(m.at)}</td><td>${periodEsc(m.reason)}</td><td>${money(m.amount)}</td><td>${periodEsc(m.by)}</td></tr>`).join('');
@@ -3134,6 +3252,8 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     </style></head><body>
       <h1>${periodEsc(RESTAURANT_NAME)} — تقرير فترة تفصيلي</h1>
       <p class="sub">من ${rep.from} إلى ${rep.to} (${rep.daysCount} يوم) · اتعمل بتاريخ ${periodDateTime(rep.generatedAt)} · اليوم بيتحسب من 6 الصبح لـ 6 الصبح</p>
+      <hr>
+      ${plainSummaryPrint}
       <hr>
       <h2>📌 إجمالي الفترة</h2>
       <p class="line">أوردرات: <strong>${t.count || 0}</strong> · مبيعات: <strong>${money(t.total)}</strong> · كاش ${money(pays.cash || 0)} · فيزا ${money(pays.visa || 0)} · انستا ${money(pays.instapay || 0)} · محفظة ${money(pays.wallet || 0)} · طلبات ${money(t.talabat)} · خصومات ${money(t.discounts)} · ملغي ${t.cancelled || 0} (${money(t.cancelledTotal)}) · إيداعات ${money(t.depositsTotal)}</p>
@@ -3189,7 +3309,7 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     <div className={card + ' space-y-4'}>
       <div>
         <h4 className="font-black text-lg text-white">📋 تقرير فترة تفصيلي + السلف</h4>
-        <p className="text-xs text-zinc-400 mt-1 leading-5">اختار أي فترة (أسبوع إجازة، شهر كامل، لحد 92 يوم) وشوف كل يوم لوحده: المبيعات والورديات والمصروفات، والسلف بالاسم والمبلغ والوقت ومين سجّلها. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
+        <p className="text-xs text-zinc-400 mt-1 leading-5">اختار أي فترة (أسبوع، شهر كامل، لحد 92 يوم) وشوف كل يوم لوحده: المبيعات والورديات والمصروفات، والسلف بالاسم والمبلغ والوقت ومين سجّلها. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
       </div>
 
       <div className="flex flex-wrap gap-3 items-end">
@@ -3199,7 +3319,7 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => preset('today')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">اليوم</button>
-        <button type="button" onClick={() => preset('week')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">آخر 7 أيام (أسبوع الإجازة)</button>
+        <button type="button" onClick={() => preset('week')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">آخر 7 أيام</button>
         <button type="button" onClick={() => preset('month')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">آخر 30 يوم</button>
         <button type="button" onClick={() => preset('thisMonth')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">الشهر الحالي</button>
         <button type="button" onClick={() => preset('lastMonth')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">الشهر اللي فات</button>
@@ -3209,6 +3329,24 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
 
       {rep && (
         <>
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 space-y-2">
+            <h5 className="font-black text-emerald-300 text-base">ملخص الفترة ببساطة</h5>
+            <p className="text-sm text-zinc-200 leading-7">في الفترة من {rep.from} إلى {rep.to}، بعت بـ {money(t.total)} في {t.count || 0} أوردر.</p>
+            <p className="text-sm text-zinc-200 leading-7">منهم كاش {money(t.payments?.cash)}، فيزا {money(t.payments?.visa)}، انستا باي {money(t.payments?.instapay)}، محفظة {money(t.payments?.wallet)}.</p>
+            <p className="text-sm text-zinc-200 leading-7">ومنهم طلبات بـ {money(t.talabat)} (كاش طلبات {money(t.talabatCash)} وفيزا طلبات {money(t.talabatVisa)}).</p>
+            <p className="text-sm text-zinc-200 leading-7">طلع من الدرج {money(t.expensesTotal)}: سلف {money(t.advancesTotal)} ({t.advancesCount || 0} سلفة)، ومصروفات تانية {money(t.otherExpensesTotal)}.</p>
+            <p className="text-sm text-zinc-200 leading-7">دخل الدرج إيداعات {money(t.depositsTotal)}.</p>
+            <p className="text-sm text-white leading-7 font-bold bg-black/30 rounded-lg px-3 py-2">صافي كاش الفترة = كاش {money(t.payments?.cash)} ناقص اللي طلع من الدرج {money(t.expensesTotal)} زائد الإيداعات {money(t.depositsTotal)} = {money(plainNetCash(t))}. ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</p>
+            <p className="text-sm text-zinc-200 leading-7">خصومات {money(t.discounts)}، وأوردرات ملغية {t.cancelled || 0} بقيمة {money(t.cancelledTotal)}.</p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-2">
+            <h5 className="font-black text-white text-sm">كل يوم باختصار</h5>
+            {(rep.days || []).map((d) => (
+              <p key={d.date} className="text-sm text-zinc-300 leading-7">{plainDaySentence(d)}</p>
+            ))}
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={printReport} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-black text-sm">🖨️ طباعة التقرير (A4 / PDF)</button>
             <button type="button" onClick={downloadExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black text-sm">📥 تحميل Excel — كل التفاصيل</button>
@@ -5750,7 +5888,7 @@ function App() {
           <Route path="/pos" element={<CashierDashboard initialTab="pos" />} />
           <Route path="/reports" element={<CampaignReportsPage />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} storeStatus={storeStatus} />} />
-          <Route path="/my-orders" element={<MyOrdersPage cart={cart} setCart={setCart} menuItems={menuItems} />} />
+          <Route path="/my-orders" element={<MyOrdersPage cart={cart} setCart={setCart} menuItems={menuItems} lang={lang} />} />
         </Routes>
       </div>
 
@@ -5761,20 +5899,20 @@ function App() {
             {/* 1. صورة الصنف وزر الإغلاق العائم */}
             <div className="relative w-full h-24 md:h-32 shrink-0 bg-white border-b border-gray-200">
               <button onClick={() => setSelectedItemDetail(null)} className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition backdrop-blur-md">✕</button>
-              <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={selectedItemDetail.name} className="w-full h-full object-cover" />
+              <img src={selectedItemDetail.image || "https://via.placeholder.com/800x600/0D0D0D/EF321B?text=Bahbah"} alt={itemNameAr(selectedItemDetail, lang)} className="w-full h-full object-cover" />
             </div>
 
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
               {/* 2. اسم السندوتش والسعر والوصف */}
               <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm">
                 <div className="flex justify-between items-start gap-3">
-                  <h3 className="text-xl font-black text-gray-900 leading-tight">{selectedItemDetail.name}</h3>
+                  <h3 className="text-xl font-black text-gray-900 leading-tight">{itemNameAr(selectedItemDetail, lang)}</h3>
                   <span className="text-lg font-black text-[#FF4500] whitespace-nowrap" dir="ltr">
                     {selectedItemDetail.discount > 0 ? getDiscountedPrice(selectedItemDetail.price, selectedItemDetail.discount) : selectedItemDetail.price} ج.م
                   </span>
                 </div>
                 {selectedItemDetail.description && (
-                  <p className="text-gray-500 text-xs mt-1.5 leading-relaxed">{selectedItemDetail.description}</p>
+                  <p className="text-gray-500 text-xs mt-1.5 leading-relaxed">{itemDescAr(selectedItemDetail, lang)}</p>
                 )}
               </div>
 
@@ -5787,12 +5925,12 @@ function App() {
                     <div className="px-3 py-2.5 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                       <div>
                         <h4 className="font-bold text-gray-800 text-[14px] flex items-center gap-1">
-                          {group.name}
+                          {groupNameAr(group, lang)}
                           {group.min > 0 && <span className="text-red-500 text-base leading-none">*</span>}
                         </h4>
                         {group.min > 0 ? (
                           <p className={`text-[10px] font-bold mt-0.5 ${isSatisfied ? 'text-green-600' : 'text-red-500'}`}>
-                            {isSatisfied ? '✓ تم الاختيار' : `يجب اختيار على الأقل ${group.min} من ${group.name}`}
+                            {isSatisfied ? '✓ تم الاختيار' : `يجب اختيار على الأقل ${group.min} من ${groupNameAr(group, lang)}`}
                           </p>
                         ) : (
                           <p className="text-[10px] font-bold text-gray-400 mt-0.5">اختياري</p>
@@ -5818,7 +5956,7 @@ function App() {
                                   {isSelected && <span className="text-white text-[10px] font-bold">✓</span>}
                                 </div>
                               )}
-                              <span className={`text-[14px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{opt.name}</span>
+                              <span className={`text-[14px] ${isSelected ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{optNameAr(opt, lang)}</span>
                             </div>
                             {opt.price > 0 ? (
                               <span className="text-[13px] text-gray-600 font-medium flex items-center gap-1.5">
