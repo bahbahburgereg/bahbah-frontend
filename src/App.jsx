@@ -3191,6 +3191,15 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     if (openShift) out += ' والوردية لسه مفتوحة.';
     return out;
   };
+  const plainDayClosing = (d) => {
+    const shifts = d.shifts || [];
+    if (!shifts.length) return '—';
+    const closed = shifts.filter((sh) => sh.closedAt && sh.expectedCash !== null && sh.expectedCash !== undefined);
+    const openShift = shifts.find((sh) => !sh.closedAt);
+    if (closed.length) return money(closed[closed.length - 1].expectedCash);
+    if (openShift) return 'لسه مفتوحة';
+    return '—';
+  };
   const plainDaySentence = (d) => {
     const dp = d.payments || {};
     const hasActivity = (d.count || 0) > 0 || (d.expenses || []).length > 0 || (d.deposits || []).length > 0 || (d.shifts || []).length > 0;
@@ -3202,30 +3211,38 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     if (!rep) return;
     const t = rep.totals || {};
     const pays = t.payments || {};
-    const plainPrintDay = (d) => {
+    const plainPrintDayRow = (d) => {
       const dp = d.payments || {};
       const hasActivity = (d.count || 0) > 0 || (d.expenses || []).length > 0 || (d.deposits || []).length > 0 || (d.shifts || []).length > 0;
-      if (!hasActivity) return `<p class="line">يوم ${periodEsc(d.date)} (${periodWeekday(d.date)}): مفيش نشاط مسجل في اليوم ده.</p>`;
       const shifts = d.shifts || [];
       const closed = shifts.filter((sh) => sh.closedAt && sh.expectedCash !== null && sh.expectedCash !== undefined);
       const openShift = shifts.find((sh) => !sh.closedAt);
-      let shiftTxt = '';
-      if (closed.length) shiftTxt += ` والوردية قفلت والمتوقع في الدرج ${money(closed[closed.length - 1].expectedCash)}.`;
-      if (openShift) shiftTxt += ' والوردية لسه مفتوحة.';
-      return `<p class="line">يوم ${periodEsc(d.date)} (${periodWeekday(d.date)}): بعت بـ ${money(d.total)} في ${d.count || 0} أوردر، كاش ${money(dp.cash)}، فيزا ${money(dp.visa)}، انستا ${money(dp.instapay)}، سلف ${money(d.advancesTotal)}، مصروفات تانية ${money(d.otherExpensesTotal)}.${shiftTxt}</p>`;
+      const closing = !shifts.length ? '-' : (closed.length ? money(closed[closed.length - 1].expectedCash) : (openShift ? 'لسه مفتوحة' : '-'));
+      if (!hasActivity) return `<tr><td><strong>${periodEsc(d.date)}</strong> (${periodWeekday(d.date)})</td><td colspan="8" class="muted">مفيش نشاط مسجل في اليوم ده.</td></tr>`;
+      return `<tr><td><strong>${periodEsc(d.date)}</strong> (${periodWeekday(d.date)})</td><td>${d.count || 0}</td><td>${money(d.total)}</td><td>${money(dp.cash)}</td><td>${money(dp.visa)}</td><td>${money(dp.instapay)}</td><td>${money(d.advancesTotal)}</td><td>${money(d.otherExpensesTotal)}</td><td><strong>${closing}</strong></td></tr>`;
     };
     const plainNetPrint = (Number(pays.cash) || 0) - (Number(t.expensesTotal) || 0) + (Number(t.depositsTotal) || 0);
-    const plainSummaryPrint = `<h2>ملخص الفترة ببساطة</h2>`
-      + `<p class="line">في الفترة من ${periodEsc(rep.from)} إلى ${periodEsc(rep.to)}، بعت بـ ${money(t.total)} في ${t.count || 0} أوردر.</p>`
-      + `<p class="line">منهم كاش ${money(pays.cash)}، فيزا ${money(pays.visa)}، انستا باي ${money(pays.instapay)}، محفظة ${money(pays.wallet)}.</p>`
-      + `<p class="line">ومنهم طلبات بـ ${money(t.talabat)} (كاش طلبات ${money(t.talabatCash)} وفيزا طلبات ${money(t.talabatVisa)}).</p>`
-      + `<p class="line">طلع من الدرج ${money(t.expensesTotal)}: سلف ${money(t.advancesTotal)} (${t.advancesCount || 0} سلفة)، ومصروفات تانية ${money(t.otherExpensesTotal)}.</p>`
-      + `<p class="line">دخل الدرج إيداعات ${money(t.depositsTotal)}.</p>`
-      + `<p class="line"><strong>صافي كاش الفترة = كاش ${money(pays.cash)} ناقص اللي طلع من الدرج ${money(t.expensesTotal)} زائد الإيداعات ${money(t.depositsTotal)} = ${money(plainNetPrint)}. ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</strong></p>`
-      + `<p class="line">خصومات ${money(t.discounts)}، وأوردرات ملغية ${t.cancelled || 0} بقيمة ${money(t.cancelledTotal)}.</p>`
-      + `<h2>كل يوم باختصار</h2>`
-      + (rep.days || []).map(plainPrintDay).join('');
     const tbl = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+    const plainSummaryRows = [
+      `<tr><td>إجمالي المبيعات (${t.count || 0} أوردر)</td><td><strong>${money(t.total)}</strong></td></tr>`,
+      `<tr><td>كاش</td><td><strong>${money(pays.cash)}</strong></td></tr>`,
+      `<tr><td>فيزا</td><td><strong>${money(pays.visa)}</strong></td></tr>`,
+      `<tr><td>انستا باي</td><td><strong>${money(pays.instapay)}</strong></td></tr>`,
+      `<tr><td>محفظة</td><td><strong>${money(pays.wallet)}</strong></td></tr>`,
+      `<tr><td>طلبات (من ضمن المبيعات)</td><td><strong>${money(t.talabat)}</strong> <span class="muted">(كاش طلبات ${money(t.talabatCash)} · فيزا طلبات ${money(t.talabatVisa)})</span></td></tr>`,
+      `<tr><td>إجمالي السلف (${t.advancesCount || 0} سلفة)</td><td><strong>${money(t.advancesTotal)}</strong></td></tr>`,
+      `<tr><td>مصروفات أخرى</td><td><strong>${money(t.otherExpensesTotal)}</strong></td></tr>`,
+      `<tr><td>خارج من الدرج</td><td><strong>${money(t.expensesTotal)}</strong></td></tr>`,
+      `<tr><td>إيداعات</td><td><strong>${money(t.depositsTotal)}</strong></td></tr>`,
+      `<tr><td>خصومات</td><td><strong>${money(t.discounts)}</strong></td></tr>`,
+      `<tr><td>ملغي (${t.cancelled || 0})</td><td><strong>${money(t.cancelledTotal)}</strong></td></tr>`,
+    ].join('');
+    const plainSummaryPrint = `<h2>ملخص الفترة ببساطة</h2>`
+      + `<div class="hero"><p class="hero-label">صافي كاش الفترة</p><p class="hero-num">${money(plainNetPrint)}</p><p class="hero-formula">كاش ${money(pays.cash)} − اللي طلع من الدرج ${money(t.expensesTotal)} + الإيداعات ${money(t.depositsTotal)}</p><p class="muted">ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</p></div>`
+      + tbl(['البيان', 'المبلغ'], plainSummaryRows)
+      + `<p class="line">في الفترة من ${periodEsc(rep.from)} إلى ${periodEsc(rep.to)}، بعت بـ ${money(t.total)} في ${t.count || 0} أوردر. طلع من الدرج ${money(t.expensesTotal)} (سلف ${money(t.advancesTotal)} ومصروفات تانية ${money(t.otherExpensesTotal)})، ودخل الدرج إيداعات ${money(t.depositsTotal)}.</p>`
+      + `<h2>كل يوم باختصار</h2>`
+      + tbl(['اليوم', 'أوردرات', 'مبيعات', 'كاش', 'فيزا', 'انستا', 'سلف', 'مصروفات', 'المتوقع في الدرج'], (rep.days || []).map(plainPrintDayRow).join(''));
     const advRows = (list) => list.map((a) => `<tr><td>${periodEsc(a.day || '')}</td><td>${periodTime(a.at)}</td><td><strong>${periodEsc(a.person)}</strong></td><td>${money(a.amount)}</td><td>${periodEsc(a.reason)}</td><td>${periodEsc(a.by)}</td><td>${periodEsc(a.shiftBy)}</td></tr>`).join('');
     const expRows = (list) => list.filter((m) => !m.isAdvance).map((m) => `<tr><td>${periodTime(m.at)}</td><td>${periodEsc(m.reason)}</td><td>${money(m.amount)}</td><td>${periodEsc(m.by)}</td></tr>`).join('');
     const daysHtml = (rep.days || []).map((d) => {
@@ -3247,7 +3264,7 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير فترة ${rep.from} - ${rep.to}</title><style>
       body{font-family:Tahoma,Arial,sans-serif;color:#111;margin:24px} h1{font-size:22px;margin:0} h2{font-size:17px;margin:22px 0 6px} h3{font-size:14px;margin:14px 0 4px}
       .sub{color:#555;font-size:13px} table{width:100%;border-collapse:collapse;margin:6px 0 10px} th,td{border:1px solid #999;padding:6px 8px;font-size:13px;text-align:right} th{background:#eee}
-      .line{font-size:13px;line-height:1.9} .muted{color:#777;font-size:13px} .day{page-break-inside:avoid} hr{border:none;border-top:2px solid #333;margin:14px 0}
+      .line{font-size:13px;line-height:1.9} .muted{color:#777;font-size:13px} .day{page-break-inside:avoid} .hero{border:2px solid #111;padding:16px 20px;text-align:center;margin:10px 0} .hero-label{font-size:13px;color:#555;margin:0} .hero-num{font-size:30px;font-weight:900;margin:6px 0} .hero-formula{font-size:13px;color:#333;margin:0} hr{border:none;border-top:2px solid #333;margin:14px 0}
       @media print{ body{margin:12px} }
     </style></head><body>
       <h1>${periodEsc(RESTAURANT_NAME)} — تقرير فترة تفصيلي</h1>
@@ -3304,6 +3321,13 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
       <p className={`text-xl font-black mt-1 ${hot ? 'text-amber-300' : 'text-white'}`}>{value}</p>
     </div>
   );
+  const plainKpi = (label, value, sub, hot) => (
+    <div className={`rounded-xl px-4 py-3 border ${hot ? 'bg-amber-500/10 border-amber-500/50' : 'bg-black/20 border-white/10'}`}>
+      <p className="text-xs text-zinc-400 font-bold">{label}</p>
+      <p className={`text-xl font-black mt-1 ${hot ? 'text-amber-300' : 'text-white'}`}>{value}</p>
+      {sub ? <p className="text-[11px] text-zinc-500 font-bold mt-1 leading-4">{sub}</p> : null}
+    </div>
+  );
 
   return (
     <div className={card + ' space-y-4'}>
@@ -3329,22 +3353,84 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
 
       {rep && (
         <>
-          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 space-y-2">
-            <h5 className="font-black text-emerald-300 text-base">ملخص الفترة ببساطة</h5>
-            <p className="text-sm text-zinc-200 leading-7">في الفترة من {rep.from} إلى {rep.to}، بعت بـ {money(t.total)} في {t.count || 0} أوردر.</p>
-            <p className="text-sm text-zinc-200 leading-7">منهم كاش {money(t.payments?.cash)}، فيزا {money(t.payments?.visa)}، انستا باي {money(t.payments?.instapay)}، محفظة {money(t.payments?.wallet)}.</p>
-            <p className="text-sm text-zinc-200 leading-7">ومنهم طلبات بـ {money(t.talabat)} (كاش طلبات {money(t.talabatCash)} وفيزا طلبات {money(t.talabatVisa)}).</p>
-            <p className="text-sm text-zinc-200 leading-7">طلع من الدرج {money(t.expensesTotal)}: سلف {money(t.advancesTotal)} ({t.advancesCount || 0} سلفة)، ومصروفات تانية {money(t.otherExpensesTotal)}.</p>
-            <p className="text-sm text-zinc-200 leading-7">دخل الدرج إيداعات {money(t.depositsTotal)}.</p>
-            <p className="text-sm text-white leading-7 font-bold bg-black/30 rounded-lg px-3 py-2">صافي كاش الفترة = كاش {money(t.payments?.cash)} ناقص اللي طلع من الدرج {money(t.expensesTotal)} زائد الإيداعات {money(t.depositsTotal)} = {money(plainNetCash(t))}. ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</p>
-            <p className="text-sm text-zinc-200 leading-7">خصومات {money(t.discounts)}، وأوردرات ملغية {t.cancelled || 0} بقيمة {money(t.cancelledTotal)}.</p>
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h5 className="font-black text-emerald-300 text-base">ملخص الفترة ببساطة</h5>
+              <span className="text-xs text-zinc-400 font-bold">من {rep.from} إلى {rep.to} · {rep.daysCount || (rep.days || []).length} يوم</span>
+            </div>
+            <div className="rounded-xl bg-emerald-600/15 border border-emerald-500/40 px-4 py-5 text-center">
+              <p className="text-xs text-emerald-300 font-black">صافي كاش الفترة</p>
+              <p className="text-3xl sm:text-4xl font-black text-white mt-1">{money(plainNetCash(t))}</p>
+              <p className="text-xs text-zinc-400 font-bold mt-2">كاش {money(t.payments?.cash)} − اللي طلع من الدرج {money(t.expensesTotal)} + الإيداعات {money(t.depositsTotal)}</p>
+              <p className="text-[11px] text-zinc-500 mt-1">ده صافي كاش الفترة بس، غير الفلوس اللي كانت في الدرج قبل الفترة.</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {plainKpi('إجمالي المبيعات', money(t.total), `${t.count || 0} أوردر`)}
+              {plainKpi('💵 كاش', money(t.payments?.cash || 0))}
+              {plainKpi('💳 فيزا', money(t.payments?.visa || 0))}
+              {plainKpi('📱 انستا باي', money(t.payments?.instapay || 0))}
+              {plainKpi('👛 محفظة', money(t.payments?.wallet || 0))}
+              {plainKpi('🛍️ طلبات', money(t.talabat), `كاش طلبات ${money(t.talabatCash)} · فيزا طلبات ${money(t.talabatVisa)} — من ضمن المبيعات اللي فوق`)}
+              {plainKpi('💰 إجمالي السلف', money(t.advancesTotal), `${t.advancesCount || 0} سلفة`, true)}
+              {plainKpi('💸 مصروفات أخرى', money(t.otherExpensesTotal))}
+              {plainKpi('خارج من الدرج', money(t.expensesTotal))}
+              {plainKpi('➕ إيداعات', money(t.depositsTotal))}
+              {plainKpi('🏷️ خصومات', money(t.discounts))}
+              {plainKpi('❌ ملغي', `${t.cancelled || 0} · ${money(t.cancelledTotal)}`)}
+            </div>
+            <div className="space-y-2 border-t border-white/10 pt-3">
+              <p className="font-black text-white text-sm">الخلاصة</p>
+              <p className="text-sm text-zinc-200 leading-8">في الفترة من {rep.from} إلى {rep.to}، بعت بـ {money(t.total)} في {t.count || 0} أوردر.</p>
+              <p className="text-sm text-zinc-200 leading-8">ومنهم طلبات بـ {money(t.talabat)} (كاش طلبات {money(t.talabatCash)} وفيزا طلبات {money(t.talabatVisa)})، ودي من ضمن المبيعات مش زيادة عليها.</p>
+              <p className="text-sm text-zinc-200 leading-8">طلع من الدرج {money(t.expensesTotal)}: سلف {money(t.advancesTotal)} ومصروفات تانية {money(t.otherExpensesTotal)}، ودخل الدرج إيداعات {money(t.depositsTotal)}.</p>
+              <p className="text-sm text-zinc-200 leading-8">خصومات {money(t.discounts)}، وأوردرات ملغية {t.cancelled || 0} بقيمة {money(t.cancelledTotal)}.</p>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-2">
+          <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3">
             <h5 className="font-black text-white text-sm">كل يوم باختصار</h5>
-            {(rep.days || []).map((d) => (
-              <p key={d.date} className="text-sm text-zinc-300 leading-7">{plainDaySentence(d)}</p>
-            ))}
+            <div className="overflow-x-auto -mx-1 px-1">
+              <table className="w-full min-w-[760px] border-collapse text-sm">
+                <thead>
+                  <tr className="text-zinc-400 text-xs border-b border-white/10">
+                    <th className="text-right font-bold py-2 px-2">اليوم</th>
+                    <th className="text-center font-bold py-2 px-2">أوردرات</th>
+                    <th className="text-left font-bold py-2 px-2">مبيعات</th>
+                    <th className="text-left font-bold py-2 px-2">كاش</th>
+                    <th className="text-left font-bold py-2 px-2">فيزا</th>
+                    <th className="text-left font-bold py-2 px-2">انستا</th>
+                    <th className="text-left font-bold py-2 px-2">سلف</th>
+                    <th className="text-left font-bold py-2 px-2">مصروفات</th>
+                    <th className="text-left font-bold py-2 px-2">المتوقع في الدرج</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(rep.days || []).map((d, i) => {
+                    const dp = d.payments || {};
+                    const hasActivity = (d.count || 0) > 0 || (d.expenses || []).length > 0 || (d.deposits || []).length > 0 || (d.shifts || []).length > 0;
+                    return (
+                      <tr key={d.date} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                        <td className="py-2.5 px-2 font-black text-white whitespace-nowrap">{periodWeekday(d.date)} · {d.date}</td>
+                        {hasActivity ? (
+                          <>
+                            <td className="py-2.5 px-2 text-center text-zinc-200 font-bold">{d.count || 0}</td>
+                            <td className="py-2.5 px-2 text-zinc-200 font-bold whitespace-nowrap">{money(d.total)}</td>
+                            <td className="py-2.5 px-2 text-zinc-200 whitespace-nowrap">{money(dp.cash)}</td>
+                            <td className="py-2.5 px-2 text-zinc-200 whitespace-nowrap">{money(dp.visa)}</td>
+                            <td className="py-2.5 px-2 text-zinc-200 whitespace-nowrap">{money(dp.instapay)}</td>
+                            <td className="py-2.5 px-2 text-amber-300 whitespace-nowrap">{money(d.advancesTotal)}</td>
+                            <td className="py-2.5 px-2 text-zinc-200 whitespace-nowrap">{money(d.otherExpensesTotal)}</td>
+                            <td className="py-2.5 px-2 text-emerald-300 font-bold whitespace-nowrap">{plainDayClosing(d)}</td>
+                          </>
+                        ) : (
+                          <td colSpan={8} className="py-2.5 px-2 text-zinc-500 text-xs">مفيش نشاط مسجل في اليوم ده.</td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
