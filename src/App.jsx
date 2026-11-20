@@ -43,6 +43,19 @@ const readChatSession = () => {
 const saveChatSession = (session) => {
   try { localStorage.setItem(CHAT_SESSION_KEY, JSON.stringify(session)); } catch {}
 };
+
+// جلسة المحاسب — مفتاح منفصل تماماً عن جلسة الكاشير/الأدمن وجلسة العميل والشات
+const ACCOUNTANT_SESSION_KEY = 'bahbahAccountantSession';
+const readAccountantSession = () => {
+  try { return JSON.parse(localStorage.getItem(ACCOUNTANT_SESSION_KEY)) || null; }
+  catch { return null; }
+};
+const saveAccountantSession = (session) => {
+  try { localStorage.setItem(ACCOUNTANT_SESSION_KEY, JSON.stringify(session)); } catch {}
+};
+const clearAccountantSession = () => {
+  try { localStorage.removeItem(ACCOUNTANT_SESSION_KEY); } catch {}
+};
 // نفس قواعد الرقم السري في السيرفر: 4-6 أرقام، ونرفض السهل التخمين
 const isWeakCustomerPin = (p) => {
   const s = String(p || '');
@@ -245,7 +258,7 @@ const ATTR_KEY = 'bahbahAttribution';
 const captureAttribution = () => {
   try {
     const p = window.location.pathname;
-    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports') return;
+    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports' || p === '/accountant') return;
     const q = new URLSearchParams(window.location.search);
     const get = (k) => (q.get(k) || '').trim();
     const hasUtm = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].some(k => get(k));
@@ -1310,6 +1323,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         <div>
           <h4 className="font-bold text-white">
             {item.name}
+            {item.code ? <span className="bg-zinc-700 text-zinc-200 text-xs px-2 py-0.5 rounded-lg font-black mr-2">#{item.code}</span> : null}
             {item.available === false && <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-lg font-black mr-2">⛔ خلص</span>}
             {item.discount > 0 && <span className="bg-[#FF4500] text-white text-xs px-2.5 py-0.5 rounded-lg font-black mr-2">خصم {item.discount}%</span>}
           </h4>
@@ -3149,7 +3163,7 @@ const periodDownload = (filename, content, type) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-const PeriodReportPanel = ({ authFetch, card, inp }) => {
+const PeriodReportPanel = ({ authFetch, card, inp, base, sharedFrom, sharedTo }) => {
   const [from, setFrom] = useState(() => periodAddDays(periodBizToday(), -6));
   const [to, setTo] = useState(() => periodBizToday());
   const [rep, setRep] = useState(null);
@@ -3161,12 +3175,21 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
     if (!ff || !tt || tt < ff) return alert('اختار فترة صحيحة (تاريخ النهاية بعد البداية)');
     setBusy(true); setMsg(''); setRep(null);
     try {
-      const r = await authFetch(`/api/reports/period?from=${encodeURIComponent(ff)}&to=${encodeURIComponent(tt)}`);
+      const r = await authFetch(`${base || '/api/reports/period'}?from=${encodeURIComponent(ff)}&to=${encodeURIComponent(tt)}`);
       const d = await r.json().catch(() => ({}));
       if (!r.ok) setMsg(d.error || 'حصل خطأ'); else setRep(d);
     } catch (e) { setMsg('تعذر الاتصال بالسيرفر'); }
     setBusy(false);
   };
+
+  // لو الصفحة اللي مستضيفة البانل بتديله فترة مشتركة (صفحة المحاسب)، الفترة
+  // بتتحدد من برّه والبانل بيحمّل لوحده كل ما الفترة تتغير — من غير أزرار التواريخ بتاعته.
+  const shared = Boolean(sharedFrom && sharedTo);
+  useEffect(() => {
+    if (!shared) return;
+    setFrom(sharedFrom); setTo(sharedTo); load(sharedFrom, sharedTo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedFrom, sharedTo]);
 
   const preset = (kind) => {
     const today = periodBizToday();
@@ -3336,6 +3359,7 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
         <p className="text-xs text-zinc-400 mt-1 leading-5">اختار أي فترة (أسبوع، شهر كامل، لحد 92 يوم) وشوف كل يوم لوحده: المبيعات والورديات والمصروفات، والسلف بالاسم والمبلغ والوقت ومين سجّلها. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
       </div>
 
+      {!shared && (<>
       <div className="flex flex-wrap gap-3 items-end">
         <div><label className="block text-xs text-zinc-400 mb-1">من يوم</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inp} /></div>
         <div><label className="block text-xs text-zinc-400 mb-1">إلى يوم</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={inp} /></div>
@@ -3348,6 +3372,7 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
         <button type="button" onClick={() => preset('thisMonth')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">الشهر الحالي</button>
         <button type="button" onClick={() => preset('lastMonth')} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">الشهر اللي فات</button>
       </div>
+      </>)}
 
       {msg && <p className="text-red-400 text-sm font-bold">{msg}</p>}
 
@@ -3523,6 +3548,486 @@ const PeriodReportPanel = ({ authFetch, card, inp }) => {
           </div>
         </>
       )}
+    </div>
+  );
+};
+
+
+// ================= ملف Excel حقيقي (.xlsx) من غير أي مكتبات =================
+// ZIP بصيغة stored + sharedStrings + styles — بيفتح في Excel و Google Sheets،
+ // والأرقام بتتخزن أرقام حقيقية مش نص.
+const xlsxCrcTable = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+const xlsxCrc32 = (bytes) => { let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = xlsxCrcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+const xlsxU16 = (n) => [n & 0xFF, (n >> 8) & 0xFF];
+const xlsxU32 = (n) => [n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF];
+const xlsxEnc = (s) => new TextEncoder().encode(s);
+const xlsxEsc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const xlsxCol = (n) => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+const xlsxZip = (files) => {
+  const parts = []; const central = []; let offset = 0;
+  for (const [name, content] of files) {
+    const data = typeof content === 'string' ? xlsxEnc(content) : content;
+    const crc = xlsxCrc32(data);
+    const nameBytes = xlsxEnc(name);
+    const local = new Uint8Array([...xlsxU32(0x04034b50), ...xlsxU16(20), ...xlsxU16(0x0800), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(crc), ...xlsxU32(data.length), ...xlsxU32(data.length), ...xlsxU16(nameBytes.length), ...xlsxU16(0), ...nameBytes, ...data]);
+    parts.push(local);
+    central.push({ name: nameBytes, crc, size: data.length, offset });
+    offset += local.length;
+  }
+  const centralParts = []; let centralSize = 0;
+  for (const c of central) {
+    const h = new Uint8Array([...xlsxU32(0x02014b50), ...xlsxU16(20), ...xlsxU16(20), ...xlsxU16(0x0800), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(c.crc), ...xlsxU32(c.size), ...xlsxU32(c.size), ...xlsxU16(c.name.length), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU32(0), ...xlsxU32(c.offset), ...c.name]);
+    centralParts.push(h); centralSize += h.length;
+  }
+  const end = new Uint8Array([...xlsxU32(0x06054b50), ...xlsxU16(0), ...xlsxU16(0), ...xlsxU16(central.length), ...xlsxU16(central.length), ...xlsxU32(centralSize), ...xlsxU32(offset), ...xlsxU16(0)]);
+  const total = parts.reduce((a, p) => a + p.length, 0) + centralSize + end.length;
+  const out = new Uint8Array(total); let pos = 0;
+  for (const p of [...parts, ...centralParts, end]) { out.set(p, pos); pos += p.length; }
+  return out;
+};
+// styles: 0 عادي | 1 عريض | 2 عنوان الجدول (أصفر + عريض) | 3 عنوان التقرير | 4 فلوس | 5 فلوس إجمالي | 6 نص إجمالي | 7 عدد صحيح | 8 عدد إجمالي | 9 فلوس عريضة
+const XLSX_STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor rgb="FFFFFF00"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor rgb="FFD9D9D9"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="1" borderId="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0"/><xf numFmtId="3" fontId="1" fillId="2" borderId="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0"/><xf numFmtId="1" fontId="1" fillId="2" borderId="1"/><xf numFmtId="3" fontId="1" fillId="0" borderId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+const buildXlsx = ({ sheetName, title, subtitle, headers, rows, widths, moneyCols, intCols, totals, summary }) => {
+  const moneySet = new Set(moneyCols || []);
+  const intSet = new Set(intCols || []);
+  const colCount = headers.length;
+  const strings = new Map(); const stringList = []; let strRefs = 0;
+  const strIdx = (s) => { const k = String(s ?? ''); strRefs++; if (!strings.has(k)) { strings.set(k, stringList.length); stringList.push(k); } return strings.get(k); };
+  const numVal = (v) => Math.round((Number(v) || 0) * 100) / 100;
+  const cellXml = (r, c, value, isTotal) => {
+    const ref = `${xlsxCol(c)}${r}`;
+    if (typeof value === 'number') {
+      const style = isTotal ? (moneySet.has(c) ? 5 : intSet.has(c) ? 8 : 6) : (moneySet.has(c) ? 4 : intSet.has(c) ? 7 : 0);
+      return `<c r="${ref}" s="${style}"><v>${numVal(value)}</v></c>`;
+    }
+    const style = isTotal ? 6 : 0;
+    return `<c r="${ref}" t="s" s="${style}"><v>${strIdx(value)}</v></c>`;
+  };
+  const rowXml = (r, cells, isTotal) => `<row r="${r}">${cells.map((v, c) => cellXml(r, c, v, isTotal)).join('')}</row>`;
+  const outRows = [];
+  outRows.push(`<row r="1"><c r="A1" t="s" s="3"><v>${strIdx(title)}</v></c></row>`);
+  outRows.push(`<row r="2"><c r="A2" t="s"><v>${strIdx(subtitle)}</v></c></row>`);
+  outRows.push(`<row r="4">${headers.map((h, c) => `<c r="${xlsxCol(c)}4" t="s" s="2"><v>${strIdx(h)}</v></c>`).join('')}</row>`);
+  let rr = 5;
+  for (const row of rows) { outRows.push(rowXml(rr, row, false)); rr++; }
+  if (totals) { outRows.push(rowXml(rr, totals, true)); rr++; }
+  if (summary && summary.length) {
+    rr++;
+    for (const s of summary) {
+      outRows.push(`<row r="${rr}"><c r="A${rr}" t="s" s="1"><v>${strIdx(s.label)}</v></c><c r="${xlsxCol(colCount - 1)}${rr}" s="9"><v>${numVal(s.value)}</v></c></row>`);
+      rr++;
+    }
+  }
+  const safeName = String(sheetName || 'Sheet1').replace(/[\\/?*\[\]:]/g, '').slice(0, 31) || 'Sheet1';
+  const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView showGridLines="0" rightToLeft="1"/></sheetViews><cols>${(widths || []).map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${outRows.join('')}</sheetData></worksheet>`;
+  const sharedXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strRefs}" uniqueCount="${stringList.length}">${stringList.map((s) => `<si><t xml:space="preserve">${xlsxEsc(s)}</t></si>`).join('')}</sst>`;
+  const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xlsxEsc(safeName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  return xlsxZip([
+    ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml', workbookXml],
+    ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/worksheets/sheet1.xml', sheetXml],
+    ['xl/sharedStrings.xml', sharedXml],
+    ['xl/styles.xml', XLSX_STYLES],
+  ]);
+};
+const downloadXlsxFile = (filename, bytes) => {
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// ================= صفحة المحاسب =================
+// صفحة منفصلة تماماً عن الكاشير والإدارة والعميل — مفيش أي لينك ليها في الموقع،
+// الدخول بيها بيوزر + رقم سري خاص بالمحاسب (ACCOUNTANT_PIN في Railway)،
+// أو بحساب الأدمن لو زياد حابب يشوفها من غير الرقم السري.
+const AccountantLogin = ({ onLogin, onAdminLogin }) => {
+  const [username, setUsername] = useState('');
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const adminSession = (() => { try { const s = readSession(); return s?.user?.role === 'admin' ? s : null; } catch { return null; } })();
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username.trim(), pin: pin.trim() }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'بيانات الدخول غلط!');
+      setPin('');
+      onLogin(data);
+    } catch (err) { setError(err.message === 'Failed to fetch' ? 'مشكلة في الاتصال بالسيرفر' : err.message); }
+    setLoading(false);
+  };
+  return (
+    <div dir="rtl" className="min-h-screen bg-[#050304] flex items-center justify-center p-4">
+      <form onSubmit={submit} className="bg-[#100609] border border-[#FFB800]/40 p-8 rounded-[2rem] w-full max-w-md shadow-2xl text-center">
+        <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 صفحة المحاسب — بحبح برجر</h2>
+        <p className="text-xs text-zinc-400 mb-6 leading-5">صفحة خاصة بالمحاسب بس — تقارير المبيعات والأصناف وقنوات البيع.</p>
+        <input type="text" placeholder="اسم المستخدم" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" autoComplete="username" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg" />
+        <input type="password" placeholder="الرقم السري" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" inputMode="numeric" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg tracking-widest" />
+        {error && <p className="text-red-400 text-sm font-bold mb-4">{error}</p>}
+        <button type="submit" disabled={loading} className="w-full bg-[#FFB800] text-black font-black py-3 rounded-xl hover:bg-[#e6a800] transition shadow disabled:opacity-60">{loading ? 'جاري الدخول...' : 'دخول'}</button>
+        {adminSession && (
+          <button type="button" onClick={() => onAdminLogin(adminSession)} className="w-full mt-3 bg-zinc-800 text-zinc-200 font-bold py-3 rounded-xl hover:bg-zinc-700 transition text-sm">الدخول بحساب الأدمن</button>
+        )}
+      </form>
+    </div>
+  );
+};
+
+const AccountantPage = () => {
+  const [session, setSession] = useState(readAccountantSession);
+  const logout = () => { clearAccountantSession(); setSession(null); };
+  if (!session?.token) {
+    return <AccountantLogin
+      onLogin={(data) => { saveAccountantSession(data); setSession(data); }}
+      onAdminLogin={(data) => setSession(data)}
+    />;
+  }
+  return <AccountantReports token={session.token} userName={session.user?.name || 'المحاسب'} onLogout={logout} />;
+};
+
+const AccountantReports = ({ token, userName, onLogout }) => {
+  const card = 'bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5';
+  const inp = 'w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm';
+  const [tab, setTab] = useState('sales');
+  const [from, setFrom] = useState(() => periodAddDays(periodBizToday(), -6));
+  const [to, setTo] = useState(() => periodBizToday());
+  const [type, setType] = useState('all');
+  const [summary, setSummary] = useState(null);
+  const [itemsData, setItemsData] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const authFetch = (path, options = {}) => authRequest(token, path, options, onLogout);
+
+  const typeLabel = type === 'pickup' ? 'استلام' : type === 'delivery' ? 'توصيل' : type === 'talabat' ? 'طلبات' : 'كل القنوات';
+
+  const loadSummary = async (f, t) => {
+    const res = await authFetch(`/api/accountant/reports/summary?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'تعذر تحميل التقرير');
+    setSummary(d);
+  };
+  const loadItems = async (f, t, ty) => {
+    const res = await authFetch(`/api/accountant/reports/items?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}&type=${encodeURIComponent(ty)}`);
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'تعذر تحميل تقرير الأصناف');
+    setItemsData(d);
+  };
+  const loadAll = async (f, t, ty) => {
+    const ff = f || from, tt = t || to, yy = ty || type;
+    if (!ff || !tt || tt < ff) { setMsg('اختار فترة صحيحة (تاريخ النهاية بعد البداية)'); return; }
+    setBusy(true); setMsg('');
+    try { await Promise.all([loadSummary(ff, tt), loadItems(ff, tt, yy)]); }
+    catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
+    setBusy(false);
+  };
+  useEffect(() => { loadAll(from, to, type); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to]);
+  useEffect(() => { if (tab === 'catalog' && catalog === null) loadCatalog(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+  const changeType = async (v) => {
+    setType(v);
+    if (!from || !to || to < from) return;
+    setBusy(true); setMsg('');
+    try { await loadItems(from, to, v); }
+    catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
+    setBusy(false);
+  };
+  const preset = (kind) => {
+    const today = periodBizToday();
+    let f = today, t = today;
+    if (kind === 'yesterday') { f = periodAddDays(today, -1); t = f; }
+    if (kind === 'week') f = periodAddDays(today, -6);
+    if (kind === 'month') f = periodAddDays(today, -29);
+    if (kind === 'thisMonth') f = `${today.slice(0, 7)}-01`;
+    setFrom(f); setTo(t);
+  };
+
+  const downloadItemsXlsx = () => {
+    if (!itemsData) return;
+    const rows = (itemsData.items || []).map((it) => [it.code ?? '—', it.name, it.qty, it.total]);
+    const totalsRow = ['الإجمالي', '', itemsData.itemsTotals?.qty || 0, itemsData.itemsTotals?.total || 0];
+    const discounts = Number(itemsData.totals?.discounts) || 0;
+    const gross = Number(itemsData.itemsTotals?.total) || 0;
+    const bytes = buildXlsx({
+      sheetName: 'مبيعات الأصناف',
+      title: `${RESTAURANT_NAME} — تقرير مبيعات الأصناف`,
+      subtitle: `من ${itemsData.from} إلى ${itemsData.to} · ${typeLabel} · اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · اليوم بيتحسب من 6 الصبح لـ 6 الصبح`,
+      headers: ['الرمز', 'اسم الصنف', 'عدد الأصناف', 'مجموع سعر المبيعات (ج)'],
+      rows, widths: [10, 46, 14, 24], moneyCols: [3], intCols: [0, 2],
+      totals: totalsRow,
+      summary: [
+        { label: 'إجمالي مبيعات الأصناف', value: gross },
+        { label: 'الخصومات', value: discounts },
+        { label: 'صافي المبيعات بعد الخصم', value: gross - discounts },
+      ],
+    });
+    downloadXlsxFile(`items-sales-${itemsData.from}_to_${itemsData.to}-${type}.xlsx`, bytes);
+  };
+  const downloadChannelsXlsx = () => {
+    if (!summary) return;
+    const chs = summary.channels || [];
+    const rows = chs.map((c) => [c.label, c.count, c.total, c.payments?.cash || 0, c.payments?.visa || 0, c.payments?.instapay || 0, c.payments?.wallet || 0, c.delivery, c.discounts]);
+    const sum = (fn) => chs.reduce((a, c) => a + (Number(fn(c)) || 0), 0);
+    const totalsRow = ['الإجمالي', sum((c) => c.count), sum((c) => c.total), sum((c) => c.payments?.cash), sum((c) => c.payments?.visa), sum((c) => c.payments?.instapay), sum((c) => c.payments?.wallet), sum((c) => c.delivery), sum((c) => c.discounts)];
+    const bytes = buildXlsx({
+      sheetName: 'قنوات البيع',
+      title: `${RESTAURANT_NAME} — تقرير قنوات البيع`,
+      subtitle: `من ${summary.from} إلى ${summary.to} · اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · اليوم بيتحسب من 6 الصبح لـ 6 الصبح`,
+      headers: ['القناة', 'عدد الأوردرات', 'إجمالي المبيعات (ج)', 'كاش (ج)', 'فيزا (ج)', 'انستا باي (ج)', 'محفظة (ج)', 'رسوم توصيل (ج)', 'خصومات (ج)'],
+      rows, widths: [14, 14, 18, 14, 14, 14, 14, 15, 14], moneyCols: [2, 3, 4, 5, 6, 7, 8], intCols: [1],
+      totals: totalsRow, summary: null,
+    });
+    downloadXlsxFile(`channels-sales-${summary.from}_to_${summary.to}.xlsx`, bytes);
+  };
+  const loadCatalog = async () => {
+    setCatalogBusy(true); setMsg('');
+    try {
+      const res = await authFetch('/api/accountant/reports/catalog');
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'تعذر تحميل دليل الأصناف');
+      setCatalog(Array.isArray(d.items) ? d.items : []);
+    } catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
+    setCatalogBusy(false);
+  };
+  const downloadCatalogXlsx = () => {
+    if (!catalog) return;
+    const rows = catalog.map((it) => [it.code ?? '—', it.name, it.nameAr || it.name, it.category, it.price, it.available ? 'متاح' : 'موقوف']);
+    const bytes = buildXlsx({
+      sheetName: 'دليل الأصناف',
+      title: `${RESTAURANT_NAME} — دليل الأصناف والأكواد`,
+      subtitle: `اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · ${catalog.length} صنف`,
+      headers: ['الرمز', 'اسم الصنف', 'الاسم بالعربي', 'التصنيف', 'السعر (ج)', 'الحالة'],
+      rows, widths: [10, 40, 40, 20, 14, 12], moneyCols: [4], intCols: [0],
+      totals: null, summary: null,
+    });
+    downloadXlsxFile('items-catalog.xlsx', bytes);
+  };
+
+  const tabBtn = (key, label) => (
+    <button type="button" onClick={() => setTab(key)} className={`px-5 py-2.5 rounded-xl font-black text-sm border transition ${tab === key ? 'bg-[#FFB800] text-black border-[#FFB800]' : 'bg-[#100609] text-zinc-300 border-[#1F0A0E] hover:border-[#FFB800]'}`}>{label}</button>
+  );
+  const presetBtn = (kind, label) => (
+    <button type="button" onClick={() => preset(kind)} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">{label}</button>
+  );
+  const yellowHead = 'bg-[#FFD800] text-black text-sm border-b border-black/20';
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-[#050304] text-white px-4 sm:px-8 py-8">
+      <div className="max-w-6xl mx-auto space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#FFB800]">📊 صفحة المحاسب — {RESTAURANT_NAME}</h1>
+            <p className="text-xs text-zinc-400 mt-1">أهلاً {userName} — تقارير المبيعات والأصناف وقنوات البيع لأي فترة، ودليل الأصناف والأكواد. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
+          </div>
+          <button type="button" onClick={onLogout} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl font-bold text-sm">تسجيل الخروج</button>
+        </div>
+
+{tab !== 'catalog' && (
+        <div className={card + ' space-y-3'}>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div><label className="block text-xs text-zinc-400 mb-1">من يوم</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inp} /></div>
+            <div><label className="block text-xs text-zinc-400 mb-1">إلى يوم</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={inp} /></div>
+            <button type="button" disabled={busy} onClick={() => loadAll()} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl font-black text-sm">{busy ? '... جاري التحميل' : '🔄 عرض'}</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {presetBtn('today', 'اليوم')}
+            {presetBtn('yesterday', 'أمس')}
+            {presetBtn('week', 'آخر 7 أيام')}
+            {presetBtn('month', 'آخر 30 يوم')}
+            {presetBtn('thisMonth', 'الشهر ده')}
+          </div>
+        </div>)}
+
+        <div className="flex flex-wrap gap-2">
+          {tabBtn('sales', '📈 تقرير المبيعات')}
+          {tabBtn('items', '🍽️ تقرير مبيعات الأصناف')}
+          {tabBtn('channels', '🛵 تقرير قنوات البيع')}
+          {tabBtn('catalog', '📋 الأصناف والأكواد')}
+        </div>
+
+        {msg && <p className="text-red-400 text-sm font-bold">{msg}</p>}
+
+        {tab === 'sales' && (
+          <PeriodReportPanel authFetch={authFetch} card={card} inp={inp} base="/api/accountant/reports/period" sharedFrom={from} sharedTo={to} />
+        )}
+
+        {tab === 'items' && (
+          <div className={card + ' space-y-4'}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="font-black text-lg text-white">🍽️ تقرير مبيعات الأصناف</h4>
+                <p className="text-xs text-zinc-400 mt-1 leading-5">نفس شكل الورقة الصفراء: الرمز واسم الصنف والعدد ومجموع المبيعات — اختار القناة قبل العرض والتنزيل.</p>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <select value={type} onChange={(e) => changeType(e.target.value)} className="bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2.5 text-white text-sm font-bold">
+                  <option value="all">كل القنوات</option>
+                  <option value="pickup">استلام</option>
+                  <option value="delivery">توصيل</option>
+                  <option value="talabat">طلبات</option>
+                </select>
+                <button type="button" disabled={busy || !itemsData} onClick={downloadItemsXlsx} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-sm">⬇ تنزيل Excel</button>
+              </div>
+            </div>
+            {!itemsData ? (
+              <p className="text-sm text-zinc-400 font-bold py-6 text-center">{busy ? '... جاري التحميل' : 'اختار فترة واضغط عرض.'}</p>
+            ) : (itemsData.items || []).length === 0 ? (
+              <p className="text-sm text-zinc-400 font-bold py-6 text-center">مفيش مبيعات أصناف في الفترة دي.</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto -mx-1 px-1">
+                  <table className="w-full min-w-[560px] border-collapse text-sm">
+                    <thead>
+                      <tr className={yellowHead}>
+                        <th className="text-right font-black py-2.5 px-3">الرمز</th>
+                        <th className="text-right font-black py-2.5 px-3">اسم الصنف</th>
+                        <th className="text-center font-black py-2.5 px-3">عدد الأصناف</th>
+                        <th className="text-left font-black py-2.5 px-3">مجموع سعر المبيعات (ج)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(itemsData.items || []).map((it, i) => (
+                        <tr key={it.name} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                          <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
+                          <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
+                          <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{it.qty}</td>
+                          <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(it.total)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-[#FFB800]/50 bg-white/[0.04]">
+                        <td className="py-2.5 px-3 font-black text-white">الإجمالي</td>
+                        <td className="py-2.5 px-3 text-zinc-400 text-xs font-bold">{(itemsData.items || []).length} صنف</td>
+                        <td className="py-2.5 px-3 text-center font-black text-white">{itemsData.itemsTotals?.qty || 0}</td>
+                        <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{money(itemsData.itemsTotals?.total)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="space-y-1.5 border-t border-white/10 pt-3 text-sm">
+                  <p className="text-zinc-200">إجمالي مبيعات الأصناف: <strong className="text-white">{money(itemsData.itemsTotals?.total)}</strong></p>
+                  <p className="text-zinc-200">الخصومات: <strong className="text-white">{money(itemsData.totals?.discounts)}</strong></p>
+                  <p className="text-zinc-200">صافي المبيعات بعد الخصم: <strong className="text-[#FFB800]">{money((Number(itemsData.itemsTotals?.total) || 0) - (Number(itemsData.totals?.discounts) || 0))}</strong></p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === 'channels' && (
+          <div className={card + ' space-y-4'}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="font-black text-lg text-white">🛵 تقرير قنوات البيع</h4>
+                <p className="text-xs text-zinc-400 mt-1 leading-5">كل قناة لوحدها: استلام ودليفري وطلبات — عدد الأوردرات والمبيعات وطرق الدفع ورسوم التوصيل والخصومات.</p>
+              </div>
+              <button type="button" disabled={busy || !summary} onClick={downloadChannelsXlsx} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-sm">⬇ تنزيل Excel</button>
+            </div>
+            {!summary ? (
+              <p className="text-sm text-zinc-400 font-bold py-6 text-center">{busy ? '... جاري التحميل' : 'اختار فترة واضغط عرض.'}</p>
+            ) : (
+              <div className="overflow-x-auto -mx-1 px-1">
+                <table className="w-full min-w-[860px] border-collapse text-sm">
+                  <thead>
+                    <tr className={yellowHead}>
+                      <th className="text-right font-black py-2.5 px-3">القناة</th>
+                      <th className="text-center font-black py-2.5 px-3">عدد الأوردرات</th>
+                      <th className="text-left font-black py-2.5 px-3">إجمالي المبيعات</th>
+                      <th className="text-left font-black py-2.5 px-3">كاش</th>
+                      <th className="text-left font-black py-2.5 px-3">فيزا</th>
+                      <th className="text-left font-black py-2.5 px-3">انستا باي</th>
+                      <th className="text-left font-black py-2.5 px-3">محفظة</th>
+                      <th className="text-left font-black py-2.5 px-3">رسوم توصيل</th>
+                      <th className="text-left font-black py-2.5 px-3">خصومات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(summary.channels || []).map((c, i) => (
+                      <tr key={c.key} className={`border-b border-white/5 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                        <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{c.label}</td>
+                        <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{c.count}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(c.total)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.payments?.cash)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.payments?.visa)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.payments?.instapay)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.payments?.wallet)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.delivery)}</td>
+                        <td className="py-2.5 px-3 text-zinc-200 whitespace-nowrap">{money(c.discounts)}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-[#FFB800]/50 bg-white/[0.04]">
+                      <td className="py-2.5 px-3 font-black text-white">الإجمالي</td>
+                      <td className="py-2.5 px-3 text-center font-black text-white">{summary.totals?.count || 0}</td>
+                      <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{money(summary.totals?.total)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.payments?.cash)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.payments?.visa)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.payments?.instapay)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.payments?.wallet)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.delivery)}</td>
+                      <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.discounts)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'catalog' && (
+          <div className={card + ' space-y-4'}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="font-black text-lg text-white">📋 الأصناف والأكواد</h4>
+                <p className="text-xs text-zinc-400 mt-1 leading-5">دليل كل الأصناف المسجلة ورمز كل صنف — حتى الأصناف اللي ماتباعتش في أي فترة.</p>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button type="button" disabled={catalogBusy} onClick={loadCatalog} className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-sm">🔄 تحديث</button>
+                <button type="button" disabled={catalogBusy || !catalog} onClick={downloadCatalogXlsx} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl font-black text-sm">⬇ تنزيل Excel</button>
+              </div>
+            </div>
+            {!catalog ? (
+              <p className="text-sm text-zinc-400 font-bold py-6 text-center">{catalogBusy ? '... جاري التحميل' : 'جاري تحميل دليل الأصناف...'}</p>
+            ) : catalog.length === 0 ? (
+              <p className="text-sm text-zinc-400 font-bold py-6 text-center">مفيش أصناف مسجلة.</p>
+            ) : (
+              <>
+                <p className="text-sm text-zinc-300 font-bold">{catalog.length} صنف مسجل</p>
+                <div className="overflow-x-auto -mx-1 px-1">
+                  <table className="w-full min-w-[720px] border-collapse text-sm">
+                    <thead>
+                      <tr className={yellowHead}>
+                        <th className="text-right font-black py-2.5 px-3">الرمز</th>
+                        <th className="text-right font-black py-2.5 px-3">اسم الصنف</th>
+                        <th className="text-right font-black py-2.5 px-3">الاسم بالعربي</th>
+                        <th className="text-right font-black py-2.5 px-3">التصنيف</th>
+                        <th className="text-left font-black py-2.5 px-3">السعر (ج)</th>
+                        <th className="text-center font-black py-2.5 px-3">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {catalog.map((it, i) => (
+                        <tr key={it.code ?? it.name} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                          <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
+                          <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
+                          <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.nameAr || it.name}</td>
+                          <td className="py-2.5 px-3 text-zinc-200">{it.category}</td>
+                          <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(it.price)}</td>
+                          <td className="py-2.5 px-3 text-center font-bold whitespace-nowrap">{it.available ? <span className="text-emerald-400">متاح</span> : <span className="text-red-400">موقوف</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -5792,7 +6297,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   // صفحات الكاشير/الـPOS: من غير هيدر وفوتر الموقع عشان الشاشة كلها للشغل
-  const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier' || location.pathname === '/reports';
+  const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier' || location.pathname === '/reports' || location.pathname === '/accountant';
   const menuRef = useRef(null);
   const [cart, setCart] = useState([]);
   const menuCache = (() => { try { const c = JSON.parse(localStorage.getItem('bahbahMenuCache')); return c && Array.isArray(c.items) && c.items.length ? c : null; } catch (e) { return null; } })();
@@ -5830,7 +6335,7 @@ function App() {
   // Meta Pixel: PageView مع كل تنقل بين الصفحات (من غير صفحات الكاشير والأدمن)
   useEffect(() => {
     const p = location.pathname;
-    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports') return;
+    if (p === '/pos' || p === '/cashier' || p === '/secret-admin-dashboard' || p === '/reports' || p === '/accountant') return;
     track('PageView');
   }, [location.pathname]);
 
@@ -5973,6 +6478,7 @@ function App() {
           <Route path="/cashier" element={<CashierDashboard />} />
           <Route path="/pos" element={<CashierDashboard initialTab="pos" />} />
           <Route path="/reports" element={<CampaignReportsPage />} />
+          <Route path="/accountant" element={<AccountantPage />} />
           <Route path="/cart" element={<CartPage cart={cart} setCart={setCart} lang={lang} storeStatus={storeStatus} />} />
           <Route path="/my-orders" element={<MyOrdersPage cart={cart} setCart={setCart} menuItems={menuItems} lang={lang} />} />
         </Routes>
