@@ -3842,6 +3842,11 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
   const [otherPin, setOtherPin] = useState('');
   const [otherBusy, setOtherBusy] = useState(false);
   const [otherErr, setOtherErr] = useState('');
+  // كاش تقارير المحاسب: التبديل بين المطعمين/الاتنين بيعرض النتيجة المحفوظة فوراً
+  // بدل إعادة تحميل نفس الفترة. الفشل مش بيتخزّن، والكاش بيتحدد بالنطاق الفعلي.
+  const reportCache = useRef(new Map());
+  const cacheGet = (key) => reportCache.current.get(key) || null;
+  const cacheSet = (key, data) => { reportCache.current.set(key, data); };
 
   const otherConnected = Boolean(tokens.other);
   const siteName = (site) => site === 'other' ? OTHER_RESTAURANT_NAME : RESTAURANT_NAME;
@@ -3890,6 +3895,9 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
 
   const loadSummary = async (f, t) => {
     const sites = sitesInScope();
+    const sKey = `summary|${sites.join('+')}|${f}|${t}`;
+    const sHit = cacheGet(sKey);
+    if (sHit) { setSummary(sHit); return; }
     const results = await fetchSites(sites, () => `/api/accountant/reports/summary?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
     const ok = results.filter(Boolean);
     if (!ok.length) throw new Error('تعذر تحميل التقرير');
@@ -3906,10 +3914,15 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
       items = mergeItemsRows(items, null, d.items || [], siteName(sites[i]));
       itemsTotals.qty += cmbNum(d.itemsTotals?.qty); itemsTotals.total += cmbNum(d.itemsTotals?.total);
     });
-    setSummary({ from: f, to: t, totals, channels, items, itemsTotals });
+    const mergedSummary = { from: f, to: t, totals, channels, items, itemsTotals };
+    cacheSet(sKey, mergedSummary);
+    setSummary(mergedSummary);
   };
   const loadItems = async (f, t, ty) => {
     const sites = sitesInScope();
+    const iKey = `items|${sites.join('+')}|${f}|${t}|${ty}`;
+    const iHit = cacheGet(iKey);
+    if (iHit) { setItemsData(iHit); return; }
     const results = await fetchSites(sites, () => `/api/accountant/reports/items?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}&type=${encodeURIComponent(ty)}`);
     const ok = results.filter(Boolean);
     if (!ok.length) throw new Error('تعذر تحميل تقرير الأصناف');
@@ -3922,19 +3935,30 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
       itemsTotals.qty += cmbNum(d.itemsTotals?.qty); itemsTotals.total += cmbNum(d.itemsTotals?.total);
       totals.count += cmbNum(d.totals?.count); totals.total += cmbNum(d.totals?.total); totals.discounts += cmbNum(d.totals?.discounts);
     });
-    setItemsData({ from: f, to: t, type: ty, items, itemsTotals, totals });
+    const mergedItems = { from: f, to: t, type: ty, items, itemsTotals, totals };
+    cacheSet(iKey, mergedItems);
+    setItemsData(mergedItems);
   };
   const fetchPeriodForScope = async (f, t) => {
     const sites = sitesInScope();
+    const pKey = `period|${sites.join('+')}|${f}|${t}`;
+    const pHit = cacheGet(pKey);
+    if (pHit) return pHit;
     const results = await fetchSites(sites, () => `/api/accountant/reports/period?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
     const ok = results.filter(Boolean);
     if (!ok.length) throw new Error('تعذر تحميل التقرير');
     partialNote(sites, results);
-    return ok.length === 1 ? ok[0] : mergePeriodReports(ok[0], ok[1]);
+    const merged = ok.length === 1 ? ok[0] : mergePeriodReports(ok[0], ok[1]);
+    cacheSet(pKey, merged);
+    return merged;
   };
   const loadAll = async (f, t, ty) => {
     const ff = f || from, tt = t || to, yy = ty || type;
     if (!ff || !tt || tt < ff) { setMsg('اختار فترة صحيحة (تاريخ النهاية بعد البداية)'); return; }
+    const sites0 = sitesInScope();
+    const sHit0 = cacheGet(`summary|${sites0.join('+')}|${ff}|${tt}`);
+    const iHit0 = cacheGet(`items|${sites0.join('+')}|${ff}|${tt}|${yy}`);
+    if (sHit0 && iHit0) { setSummary(sHit0); setItemsData(iHit0); setMsg(''); return; }
     setBusy(true); setMsg('');
     try { await Promise.all([loadSummary(ff, tt), loadItems(ff, tt, yy)]); }
     catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
@@ -4023,12 +4047,16 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
     setCatalogBusy(true); setMsg('');
     try {
       const sites = sitesInScope();
+      const cKey = `catalog|${sites.join('+')}`;
+      const cHit = cacheGet(cKey);
+      if (cHit) { setCatalog(cHit); setCatalogBusy(false); return; }
       const results = await fetchSites(sites, () => '/api/accountant/reports/catalog');
       const ok = results.filter(Boolean);
       if (!ok.length) throw new Error('تعذر تحميل دليل الأصناف');
       partialNote(sites, results);
       let rows = [];
       results.forEach((d, i) => { if (!d) return; rows = mergeItemsRows(rows, null, d.items || [], siteName(sites[i])); });
+      cacheSet(cKey, rows);
       setCatalog(rows);
     } catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
     setCatalogBusy(false);
