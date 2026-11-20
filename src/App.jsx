@@ -3,6 +3,8 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { createPortal } from 'react-dom';
 
 const API_BASE = 'https://bahbah-backend-production-7ef2.up.railway.app';
+const OTHER_API_BASE = 'https://noss-kofta-production-d57f.up.railway.app';
+const OTHER_RESTAURANT_NAME = 'نص كفتة';
 const RESTAURANT_NAME = 'بحبح برجر';
 const RESTAURANT_PHONE = '01042281510';
 const WHATSAPP_NUMBER = '201042281510';
@@ -3163,7 +3165,7 @@ const periodDownload = (filename, content, type) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-const PeriodReportPanel = ({ authFetch, card, inp, base, sharedFrom, sharedTo }) => {
+const PeriodReportPanel = ({ authFetch, card, inp, base, sharedFrom, sharedTo, fetchReport }) => {
   const [from, setFrom] = useState(() => periodAddDays(periodBizToday(), -6));
   const [to, setTo] = useState(() => periodBizToday());
   const [rep, setRep] = useState(null);
@@ -3175,10 +3177,16 @@ const PeriodReportPanel = ({ authFetch, card, inp, base, sharedFrom, sharedTo })
     if (!ff || !tt || tt < ff) return alert('اختار فترة صحيحة (تاريخ النهاية بعد البداية)');
     setBusy(true); setMsg(''); setRep(null);
     try {
-      const r = await authFetch(`${base || '/api/reports/period'}?from=${encodeURIComponent(ff)}&to=${encodeURIComponent(tt)}`);
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) setMsg(d.error || 'حصل خطأ'); else setRep(d);
-    } catch (e) { setMsg('تعذر الاتصال بالسيرفر'); }
+      if (fetchReport) {
+        // صفحة المحاسب المجمّعة بتجيب التقرير (أو التقريرين المدموجين) بنفسها.
+        const d = await fetchReport(ff, tt);
+        setRep(d);
+      } else {
+        const r = await authFetch(`${base || '/api/reports/period'}?from=${encodeURIComponent(ff)}&to=${encodeURIComponent(tt)}`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) setMsg(d.error || 'حصل خطأ'); else setRep(d);
+      }
+    } catch (e) { if (e.message !== 'unauthorized') setMsg(e.message || 'تعذر الاتصال بالسيرفر'); }
     setBusy(false);
   };
 
@@ -3642,27 +3650,138 @@ const downloadXlsxFile = (filename, bytes) => {
 // ================= صفحة المحاسب =================
 // صفحة منفصلة تماماً عن الكاشير والإدارة والعميل — مفيش أي لينك ليها في الموقع،
 // الدخول بيها برقم سري خاص بالمحاسب بس (ACCOUNTANT_PIN في Railway) — صفحة حسابات فقط.
+// ---------- دمج تقارير المطعمين (دوال نقية — من غير أي اعتماد على الحالة) ----------
+// بتجمع أرقام المطعمين في تقرير واحد بنفس شكل تقرير المطعم الواحد، عشان
+// التبويبات تعرضها من غير ما تعرف إن البيانات جاية من سيرفرين.
+const cmbNum = (v) => Number(v) || 0;
+const cmbMergePayments = (a, b) => {
+  const out = { ...(a || {}) };
+  for (const [k, v] of Object.entries(b || {})) out[k] = cmbNum(out[k]) + cmbNum(v);
+  return out;
+};
+const cmbMergeTotals = (a, b) => ({
+  count: cmbNum(a?.count) + cmbNum(b?.count),
+  total: cmbNum(a?.total) + cmbNum(b?.total),
+  delivery: cmbNum(a?.delivery) + cmbNum(b?.delivery),
+  discounts: cmbNum(a?.discounts) + cmbNum(b?.discounts),
+  talabat: cmbNum(a?.talabat) + cmbNum(b?.talabat),
+  talabatCash: cmbNum(a?.talabatCash) + cmbNum(b?.talabatCash),
+  talabatVisa: cmbNum(a?.talabatVisa) + cmbNum(b?.talabatVisa),
+  cancelled: cmbNum(a?.cancelled) + cmbNum(b?.cancelled),
+  cancelledTotal: cmbNum(a?.cancelledTotal) + cmbNum(b?.cancelledTotal),
+  payments: cmbMergePayments(a?.payments, b?.payments),
+  advancesTotal: cmbNum(a?.advancesTotal) + cmbNum(b?.advancesTotal),
+  advancesCount: cmbNum(a?.advancesCount) + cmbNum(b?.advancesCount),
+  expensesTotal: cmbNum(a?.expensesTotal) + cmbNum(b?.expensesTotal),
+  otherExpensesTotal: cmbNum(a?.otherExpensesTotal) + cmbNum(b?.otherExpensesTotal),
+  depositsTotal: cmbNum(a?.depositsTotal) + cmbNum(b?.depositsTotal),
+});
+const cmbMergeDay = (a, b) => {
+  const days = { ...a };
+  for (const k of ['count', 'total', 'delivery', 'discounts', 'talabat', 'talabatCash', 'talabatVisa', 'cancelled', 'cancelledTotal', 'advancesTotal', 'advancesCount', 'expensesTotal', 'otherExpensesTotal', 'depositsTotal']) days[k] = cmbNum(a[k]) + cmbNum(b[k]);
+  days.payments = cmbMergePayments(a.payments, b.payments);
+  days.advances = [...(a.advances || []), ...(b.advances || [])];
+  days.expenses = [...(a.expenses || []), ...(b.expenses || [])];
+  days.deposits = [...(a.deposits || []), ...(b.deposits || [])];
+  days.shifts = [...(a.shifts || []), ...(b.shifts || [])];
+  const catMap = new Map();
+  for (const c of [...(a.categories || []), ...(b.categories || [])]) {
+    const cur = catMap.get(c.name) || { name: c.name, qty: 0, total: 0, items: [] };
+    cur.qty += cmbNum(c.qty); cur.total += cmbNum(c.total);
+    const im = new Map(cur.items.map((it) => [it.name, it]));
+    for (const it of (c.items || [])) {
+      const ex = im.get(it.name);
+      if (ex) { ex.qty = cmbNum(ex.qty) + cmbNum(it.qty); ex.total = cmbNum(ex.total) + cmbNum(it.total); }
+      else im.set(it.name, { name: it.name, qty: cmbNum(it.qty), total: cmbNum(it.total) });
+    }
+    cur.items = [...im.values()];
+    catMap.set(c.name, cur);
+  }
+  days.categories = [...catMap.values()];
+  return days;
+};
+const mergePeriodReports = (a, b) => {
+  if (!a) return b || null;
+  if (!b) return a;
+  const dayMap = new Map();
+  for (const d of [...(a.days || []), ...(b.days || [])]) {
+    const key = d.date;
+    dayMap.set(key, dayMap.has(key) ? cmbMergeDay(dayMap.get(key), d) : { ...d });
+  }
+  const days = [...dayMap.values()].sort((x, y) => String(x.date).localeCompare(String(y.date)));
+  const personMap = new Map();
+  for (const p of [...(a.advancesByPerson || []), ...(b.advancesByPerson || [])]) {
+    const cur = personMap.get(p.person) || { person: p.person, count: 0, total: 0, lastAt: null };
+    cur.count += cmbNum(p.count); cur.total += cmbNum(p.total);
+    if (!cur.lastAt || (p.lastAt && new Date(p.lastAt) > new Date(cur.lastAt))) cur.lastAt = p.lastAt;
+    personMap.set(p.person, cur);
+  }
+  return {
+    from: a.from < b.from ? a.from : b.from,
+    to: a.to > b.to ? a.to : b.to,
+    daysCount: days.length,
+    generatedAt: new Date().toISOString(),
+    totals: cmbMergeTotals(a.totals, b.totals),
+    advances: [...(a.advances || []), ...(b.advances || [])],
+    advancesByPerson: [...personMap.values()].sort((x, y) => y.total - x.total),
+    expenses: [...(a.expenses || []), ...(b.expenses || [])],
+    shifts: [...(a.shifts || []), ...(b.shifts || [])],
+    days,
+  };
+};
+// صفوف مبيعات الأصناف (أو دليل الأصناف): كل صف بيتوسّم باسم مطعمه وبتترتب
+// بالأكواد — نص كفتة 1..300 وبعدها بحبح 301..600. لو restaurant فاضي الصف
+// بيفضل زي ما هو (مفيد لما ندمج على كذا خطوة).
+const mergeItemsRows = (itemsA, restaurantA, itemsB, restaurantB) => {
+  const tag = (list, rest) => (list || []).map((it) => ({ ...it, restaurant: rest || it.restaurant || '' }));
+  const rows = [...tag(itemsA, restaurantA), ...tag(itemsB, restaurantB)];
+  rows.sort((x, y) => (x.code ?? Infinity) - (y.code ?? Infinity) || String(x.name || '').localeCompare(String(y.name || '')));
+  return rows;
+};
+// قنوات البيع: صف لكل مطعم × قناة. لما المطعمين موجودين مع بعض، اسم المطعم
+// بيتحط قبل اسم القناة ("بحبح — استلام")؛ لو مطعم واحد بس، الاسم بيفضل زي ما هو.
+const mergeChannels = (channelsA, restaurantA, channelsB, restaurantB) => {
+  const hasA = (channelsA || []).length > 0;
+  const hasB = (channelsB || []).length > 0;
+  const both = hasA && hasB;
+  const tag = (chs, rest) => (chs || []).map((c) => {
+    const r = rest || c.restaurant || '';
+    return { ...c, restaurant: r, label: both && r ? `${r} — ${c.label}` : c.label };
+  });
+  return [...tag(channelsA, restaurantA), ...tag(channelsB, restaurantB)];
+};
+
 const AccountantLogin = ({ onLogin }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const tryAccountantLogin = async (base) => {
+    const res = await fetch(`${base}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin.trim() }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'بيانات الدخول غلط!');
+    return data;
+  };
   const submit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin.trim() }) });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'بيانات الدخول غلط!');
+      // الدخول برقم سري واحد على المطعمين (لازم نفس الرقم في الباك-إند بتاع الاتنين).
+      // لو المطعم التاني مفتحش (رقم مختلف أو لسه متظبطش)، بندخل بالمطعم ده بس
+      // وبنعرض زرار توصيل من جوه الصفحة.
+      const own = await tryAccountantLogin(API_BASE);
+      let otherToken = null, otherError = '';
+      try { const other = await tryAccountantLogin(OTHER_API_BASE); otherToken = other.token; }
+      catch (err) { otherError = err.message === 'Failed to fetch' ? 'مشكلة في الاتصال بسيرفر نص كفتة' : err.message; }
       setPin('');
-      onLogin(data);
+      onLogin({ ownToken: own.token, otherToken, user: own.user, otherError });
     } catch (err) { setError(err.message === 'Failed to fetch' ? 'مشكلة في الاتصال بالسيرفر' : err.message); }
     setLoading(false);
   };
   return (
     <div dir="rtl" className="min-h-screen bg-[#050304] flex items-center justify-center p-4">
       <form onSubmit={submit} className="bg-[#100609] border border-[#FFB800]/40 p-8 rounded-[2rem] w-full max-w-md shadow-2xl text-center">
-        <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 بحبح برجر</h2>
-        <p className="text-xs text-zinc-400 mb-6 leading-5"></p>
+        <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 صفحة المحاسب — المطعمين</h2>
+        <p className="text-xs text-zinc-400 mb-6 leading-5">صفحة خاصة بالمحاسب بس — تقارير المبيعات والأصناف وقنوات البيع للمطعمين مع بعض أو كل مطعم لوحده.</p>
         <input type="password" placeholder="الرقم السري" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" inputMode="numeric" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg tracking-widest" />
         {error && <p className="text-red-400 text-sm font-bold mb-4">{error}</p>}
         <button type="submit" disabled={loading} className="w-full bg-[#FFB800] text-black font-black py-3 rounded-xl hover:bg-[#e6a800] transition shadow disabled:opacity-60">{loading ? 'جاري الدخول...' : 'دخول'}</button>
@@ -3671,21 +3790,45 @@ const AccountantLogin = ({ onLogin }) => {
   );
 };
 
+// جلسة قديمة كانت بتتخزن {token} — نحوّلها للشكل الجديد {ownToken, otherToken}.
+const normalizeAccountantSession = (s) => {
+  if (!s) return null;
+  if (s.ownToken) return s;
+  if (s.token) return { ownToken: s.token, otherToken: s.otherToken || null, user: s.user };
+  return null;
+};
+
 const AccountantPage = () => {
-  const [session, setSession] = useState(readAccountantSession);
+  const [session, setSession] = useState(() => normalizeAccountantSession(readAccountantSession()));
   const logout = () => { clearAccountantSession(); setSession(null); };
-  if (!session?.token) {
+  const updateSession = (patch) => {
+    setSession((prev) => {
+      const next = { ...(prev || {}), ...patch };
+      saveAccountantSession(next);
+      return next;
+    });
+  };
+  if (!session?.ownToken) {
     return <AccountantLogin
       onLogin={(data) => { saveAccountantSession(data); setSession(data); }}
     />;
   }
-  return <AccountantReports token={session.token} userName={session.user?.name || 'المحاسب'} onLogout={logout} />;
+  return (
+    <AccountantReports
+      tokens={{ own: session.ownToken, other: session.otherToken || null }}
+      userName={session.user?.name || 'المحاسب'}
+      onLogout={logout}
+      onOtherConnected={(token) => updateSession({ otherToken: token })}
+      onOtherDown={() => updateSession({ otherToken: null })}
+    />
+  );
 };
 
-const AccountantReports = ({ token, userName, onLogout }) => {
+const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOtherDown }) => {
   const card = 'bg-[#100609] border border-[#1F0A0E] rounded-2xl p-5';
   const inp = 'w-full bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm';
   const [tab, setTab] = useState('sales');
+  const [scope, setScope] = useState(tokens.other ? 'both' : 'own');
   const [from, setFrom] = useState(() => periodAddDays(periodBizToday(), -6));
   const [to, setTo] = useState(() => periodBizToday());
   const [type, setType] = useState('all');
@@ -3695,21 +3838,99 @@ const AccountantReports = ({ token, userName, onLogout }) => {
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
-  const authFetch = (path, options = {}) => authRequest(token, path, options, onLogout);
+  const [scopeNote, setScopeNote] = useState('');
+  const [otherPin, setOtherPin] = useState('');
+  const [otherBusy, setOtherBusy] = useState(false);
+  const [otherErr, setOtherErr] = useState('');
 
-  const typeLabel = type === 'pickup' ? 'استلام' : type === 'delivery' ? 'توصيل' : type === 'talabat' ? 'طلبات' : 'كل القنوات';
+  const otherConnected = Boolean(tokens.other);
+  const siteName = (site) => site === 'other' ? OTHER_RESTAURANT_NAME : RESTAURANT_NAME;
+  const scopeTitle = scope === 'both' ? 'المطعمين' : scope === 'other' ? OTHER_RESTAURANT_NAME : RESTAURANT_NAME;
+  const sitesInScope = () => {
+    const s = [];
+    if (scope !== 'other') s.push('own');
+    if (scope !== 'own' && otherConnected) s.push('other');
+    return s;
+  };
 
-  const loadSummary = async (f, t) => {
-    const res = await authFetch(`/api/accountant/reports/summary?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
+  // طلب للمطعم اللي نختاره (own = بحبح، other = نص كفتة) — المطعم اللي يقع
+  // مبيوقفش المطعم التاني، والصفحة بتكمّل باللي شغال وبتقول اللي وقع.
+  const acctFetch = async (site, path, options = {}) => {
+    const base = site === 'other' ? OTHER_API_BASE : API_BASE;
+    const tok = site === 'other' ? tokens.other : tokens.own;
+    if (!tok) throw new Error('other-down');
+    const res = await fetch(`${base}${path}`, { ...options, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}`, ...(options.headers || {}) } });
+    if (res.status === 401) {
+      if (site === 'own') { onLogout(); throw new Error('unauthorized'); }
+      onOtherDown(); throw new Error('other-down');
+    }
+    return res;
+  };
+  const authFetch = (path, options = {}) => acctFetch('own', path, options);
+
+  const partialNote = (sites, results) => {
+    const failed = sites.filter((s, i) => !results[i]);
+    if (!failed.length) { setScopeNote(''); return; }
+    setScopeNote(`${failed.map(siteName).join(' و ')} غير متصل حالياً — الأرقام المعروضة من المطعم التاني بس.`);
+  };
+  const fetchJson = async (site, path) => {
+    const res = await acctFetch(site, path);
     const d = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(d.error || 'تعذر تحميل التقرير');
-    setSummary(d);
+    return d;
+  };
+  // بيجيب من كل مطعم في النطاق، والمطعم اللي يقع بيرجع null من غير ما يبوّظ الباقي.
+  const fetchSites = async (sites, pathFn) => {
+    const results = await Promise.all(sites.map(async (site) => {
+      try { return await fetchJson(site, pathFn(site)); }
+      catch (e) { if (e.message === 'unauthorized') throw e; return null; }
+    }));
+    return results;
+  };
+
+  const loadSummary = async (f, t) => {
+    const sites = sitesInScope();
+    const results = await fetchSites(sites, () => `/api/accountant/reports/summary?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
+    const ok = results.filter(Boolean);
+    if (!ok.length) throw new Error('تعذر تحميل التقرير');
+    partialNote(sites, results);
+    const totals = { count: 0, total: 0, delivery: 0, discounts: 0, payments: {}, talabat: 0, talabatCash: 0, talabatVisa: 0 };
+    let channels = [], items = [], itemsTotals = { qty: 0, total: 0 };
+    results.forEach((d, i) => {
+      if (!d) return;
+      const tt = d.totals || {};
+      totals.count += cmbNum(tt.count); totals.total += cmbNum(tt.total); totals.delivery += cmbNum(tt.delivery); totals.discounts += cmbNum(tt.discounts);
+      totals.talabat += cmbNum(tt.talabat); totals.talabatCash += cmbNum(tt.talabatCash); totals.talabatVisa += cmbNum(tt.talabatVisa);
+      totals.payments = cmbMergePayments(totals.payments, tt.payments);
+      channels = mergeChannels(channels, null, d.channels || [], siteName(sites[i]));
+      items = mergeItemsRows(items, null, d.items || [], siteName(sites[i]));
+      itemsTotals.qty += cmbNum(d.itemsTotals?.qty); itemsTotals.total += cmbNum(d.itemsTotals?.total);
+    });
+    setSummary({ from: f, to: t, totals, channels, items, itemsTotals });
   };
   const loadItems = async (f, t, ty) => {
-    const res = await authFetch(`/api/accountant/reports/items?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}&type=${encodeURIComponent(ty)}`);
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(d.error || 'تعذر تحميل تقرير الأصناف');
-    setItemsData(d);
+    const sites = sitesInScope();
+    const results = await fetchSites(sites, () => `/api/accountant/reports/items?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}&type=${encodeURIComponent(ty)}`);
+    const ok = results.filter(Boolean);
+    if (!ok.length) throw new Error('تعذر تحميل تقرير الأصناف');
+    partialNote(sites, results);
+    let items = [], itemsTotals = { qty: 0, total: 0 };
+    const totals = { count: 0, total: 0, discounts: 0 };
+    results.forEach((d, i) => {
+      if (!d) return;
+      items = mergeItemsRows(items, null, d.items || [], siteName(sites[i]));
+      itemsTotals.qty += cmbNum(d.itemsTotals?.qty); itemsTotals.total += cmbNum(d.itemsTotals?.total);
+      totals.count += cmbNum(d.totals?.count); totals.total += cmbNum(d.totals?.total); totals.discounts += cmbNum(d.totals?.discounts);
+    });
+    setItemsData({ from: f, to: t, type: ty, items, itemsTotals, totals });
+  };
+  const fetchPeriodForScope = async (f, t) => {
+    const sites = sitesInScope();
+    const results = await fetchSites(sites, () => `/api/accountant/reports/period?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`);
+    const ok = results.filter(Boolean);
+    if (!ok.length) throw new Error('تعذر تحميل التقرير');
+    partialNote(sites, results);
+    return ok.length === 1 ? ok[0] : mergePeriodReports(ok[0], ok[1]);
   };
   const loadAll = async (f, t, ty) => {
     const ff = f || from, tt = t || to, yy = ty || type;
@@ -3719,8 +3940,10 @@ const AccountantReports = ({ token, userName, onLogout }) => {
     catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
     setBusy(false);
   };
-  useEffect(() => { loadAll(from, to, type); // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to]);
+  useEffect(() => { loadAll(from, to, type); if (tab === 'catalog') loadCatalog(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to, scope]);
+  useEffect(() => { if (!otherConnected && scope !== 'own') setScope('own'); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otherConnected]);
   useEffect(() => { if (tab === 'catalog' && catalog === null) loadCatalog(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
   const changeType = async (v) => {
@@ -3740,19 +3963,37 @@ const AccountantReports = ({ token, userName, onLogout }) => {
     if (kind === 'thisMonth') f = `${today.slice(0, 7)}-01`;
     setFrom(f); setTo(t);
   };
+  const changeScope = (v) => { setScope(v); setScopeNote(''); };
+
+  const connectOther = async (e) => {
+    if (e) e.preventDefault();
+    if (!otherPin.trim()) { setOtherErr('اكتب الرقم السري'); return; }
+    setOtherBusy(true); setOtherErr('');
+    try {
+      const res = await fetch(`${OTHER_API_BASE}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: otherPin.trim() }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'الرقم السري غلط');
+      setOtherPin('');
+      onOtherConnected(d.token);
+      setScope('both');
+    } catch (err) { setOtherErr(err.message === 'Failed to fetch' ? 'مشكلة في الاتصال بسيرفر نص كفتة' : err.message); }
+    setOtherBusy(false);
+  };
+
+  const typeLabel = type === 'pickup' ? 'استلام' : type === 'delivery' ? 'توصيل' : type === 'talabat' ? 'طلبات' : 'كل القنوات';
 
   const downloadItemsXlsx = () => {
     if (!itemsData) return;
-    const rows = (itemsData.items || []).map((it) => [it.code ?? '—', it.name, it.qty, it.total]);
-    const totalsRow = ['الإجمالي', '', itemsData.itemsTotals?.qty || 0, itemsData.itemsTotals?.total || 0];
+    const rows = (itemsData.items || []).map((it) => [it.restaurant || '', it.code ?? '—', it.name, it.qty, it.total]);
+    const totalsRow = ['الإجمالي', '', '', itemsData.itemsTotals?.qty || 0, itemsData.itemsTotals?.total || 0];
     const discounts = Number(itemsData.totals?.discounts) || 0;
     const gross = Number(itemsData.itemsTotals?.total) || 0;
     const bytes = buildXlsx({
       sheetName: 'مبيعات الأصناف',
-      title: `${RESTAURANT_NAME} — تقرير مبيعات الأصناف`,
+      title: `${scopeTitle} — تقرير مبيعات الأصناف`,
       subtitle: `من ${itemsData.from} إلى ${itemsData.to} · ${typeLabel} · اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · اليوم بيتحسب من 6 الصبح لـ 6 الصبح`,
-      headers: ['الرمز', 'اسم الصنف', 'عدد الأصناف', 'مجموع سعر المبيعات (ج)'],
-      rows, widths: [10, 46, 14, 24], moneyCols: [3], intCols: [0, 2],
+      headers: ['المطعم', 'الرمز', 'اسم الصنف', 'عدد الأصناف', 'مجموع سعر المبيعات (ج)'],
+      rows, widths: [16, 10, 44, 14, 24], moneyCols: [4], intCols: [1, 3],
       totals: totalsRow,
       summary: [
         { label: 'إجمالي مبيعات الأصناف', value: gross },
@@ -3760,50 +4001,57 @@ const AccountantReports = ({ token, userName, onLogout }) => {
         { label: 'صافي المبيعات بعد الخصم', value: gross - discounts },
       ],
     });
-    downloadXlsxFile(`items-sales-${itemsData.from}_to_${itemsData.to}-${type}.xlsx`, bytes);
+    downloadXlsxFile(`items-sales-${itemsData.from}_to_${itemsData.to}-${type}-${scope}.xlsx`, bytes);
   };
   const downloadChannelsXlsx = () => {
     if (!summary) return;
     const chs = summary.channels || [];
-    const rows = chs.map((c) => [c.label, c.count, c.total, c.payments?.cash || 0, c.payments?.visa || 0, c.payments?.instapay || 0, c.payments?.wallet || 0, c.delivery, c.discounts]);
+    const rows = chs.map((c) => [c.restaurant || '', c.label, c.count, c.total, c.payments?.cash || 0, c.payments?.visa || 0, c.payments?.instapay || 0, c.payments?.wallet || 0, c.delivery, c.discounts]);
     const sum = (fn) => chs.reduce((a, c) => a + (Number(fn(c)) || 0), 0);
-    const totalsRow = ['الإجمالي', sum((c) => c.count), sum((c) => c.total), sum((c) => c.payments?.cash), sum((c) => c.payments?.visa), sum((c) => c.payments?.instapay), sum((c) => c.payments?.wallet), sum((c) => c.delivery), sum((c) => c.discounts)];
+    const totalsRow = ['الإجمالي', '', sum((c) => c.count), sum((c) => c.total), sum((c) => c.payments?.cash), sum((c) => c.payments?.visa), sum((c) => c.payments?.instapay), sum((c) => c.payments?.wallet), sum((c) => c.delivery), sum((c) => c.discounts)];
     const bytes = buildXlsx({
       sheetName: 'قنوات البيع',
-      title: `${RESTAURANT_NAME} — تقرير قنوات البيع`,
+      title: `${scopeTitle} — تقرير قنوات البيع`,
       subtitle: `من ${summary.from} إلى ${summary.to} · اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · اليوم بيتحسب من 6 الصبح لـ 6 الصبح`,
-      headers: ['القناة', 'عدد الأوردرات', 'إجمالي المبيعات (ج)', 'كاش (ج)', 'فيزا (ج)', 'انستا باي (ج)', 'محفظة (ج)', 'رسوم توصيل (ج)', 'خصومات (ج)'],
-      rows, widths: [14, 14, 18, 14, 14, 14, 14, 15, 14], moneyCols: [2, 3, 4, 5, 6, 7, 8], intCols: [1],
+      headers: ['المطعم', 'القناة', 'عدد الأوردرات', 'إجمالي المبيعات (ج)', 'كاش (ج)', 'فيزا (ج)', 'انستا باي (ج)', 'محفظة (ج)', 'رسوم توصيل (ج)', 'خصومات (ج)'],
+      rows, widths: [16, 14, 14, 18, 14, 14, 14, 14, 15, 14], moneyCols: [3, 4, 5, 6, 7, 8, 9], intCols: [2],
       totals: totalsRow, summary: null,
     });
-    downloadXlsxFile(`channels-sales-${summary.from}_to_${summary.to}.xlsx`, bytes);
+    downloadXlsxFile(`channels-sales-${summary.from}_to_${summary.to}-${scope}.xlsx`, bytes);
   };
   const loadCatalog = async () => {
     setCatalogBusy(true); setMsg('');
     try {
-      const res = await authFetch('/api/accountant/reports/catalog');
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'تعذر تحميل دليل الأصناف');
-      setCatalog(Array.isArray(d.items) ? d.items : []);
+      const sites = sitesInScope();
+      const results = await fetchSites(sites, () => '/api/accountant/reports/catalog');
+      const ok = results.filter(Boolean);
+      if (!ok.length) throw new Error('تعذر تحميل دليل الأصناف');
+      partialNote(sites, results);
+      let rows = [];
+      results.forEach((d, i) => { if (!d) return; rows = mergeItemsRows(rows, null, d.items || [], siteName(sites[i])); });
+      setCatalog(rows);
     } catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
     setCatalogBusy(false);
   };
   const downloadCatalogXlsx = () => {
     if (!catalog) return;
-    const rows = catalog.map((it) => [it.code ?? '—', it.name, it.nameAr || it.name, it.category, it.price, it.available ? 'متاح' : 'موقوف']);
+    const rows = catalog.map((it) => [it.restaurant || '', it.code ?? '—', it.name, it.nameAr || it.name, it.category, it.price, it.available ? 'متاح' : 'موقوف']);
     const bytes = buildXlsx({
       sheetName: 'دليل الأصناف',
-      title: `${RESTAURANT_NAME} — دليل الأصناف والأكواد`,
+      title: `${scopeTitle} — دليل الأصناف والأكواد`,
       subtitle: `اتعمل بتاريخ ${new Date().toLocaleString('ar-EG')} · ${catalog.length} صنف`,
-      headers: ['الرمز', 'اسم الصنف', 'الاسم بالعربي', 'التصنيف', 'السعر (ج)', 'الحالة'],
-      rows, widths: [10, 40, 40, 20, 14, 12], moneyCols: [4], intCols: [0],
+      headers: ['المطعم', 'الرمز', 'اسم الصنف', 'الاسم بالعربي', 'التصنيف', 'السعر (ج)', 'الحالة'],
+      rows, widths: [16, 10, 36, 36, 20, 14, 12], moneyCols: [5], intCols: [1],
       totals: null, summary: null,
     });
-    downloadXlsxFile('items-catalog.xlsx', bytes);
+    downloadXlsxFile(`items-catalog-${scope}.xlsx`, bytes);
   };
 
   const tabBtn = (key, label) => (
     <button type="button" onClick={() => setTab(key)} className={`px-5 py-2.5 rounded-xl font-black text-sm border transition ${tab === key ? 'bg-[#FFB800] text-black border-[#FFB800]' : 'bg-[#100609] text-zinc-300 border-[#1F0A0E] hover:border-[#FFB800]'}`}>{label}</button>
+  );
+  const scopeBtn = (key, label) => (
+    <button type="button" onClick={() => changeScope(key)} className={`px-5 py-2.5 rounded-xl font-black text-sm border transition ${scope === key ? 'bg-[#FFB800] text-black border-[#FFB800]' : 'bg-[#100609] text-zinc-300 border-[#1F0A0E] hover:border-[#FFB800]'}`}>{label}</button>
   );
   const presetBtn = (kind, label) => (
     <button type="button" onClick={() => preset(kind)} className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">{label}</button>
@@ -3815,10 +4063,32 @@ const AccountantReports = ({ token, userName, onLogout }) => {
       <div className="max-w-6xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#FFB800]">📊بحبح برجر — {RESTAURANT_NAME}</h1>
-            <p className="text-xs text-zinc-400 mt-1">أهلاً {userName} — تقارير المبيعات والأصناف وقنوات البيع لأي فترة، ودليل الأصناف والأكواد. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#FFB800]">📊 صفحة المحاسب — {scopeTitle}</h1>
+            <p className="text-xs text-zinc-400 mt-1">أهلاً {userName} — تقارير المبيعات والأصناف وقنوات البيع لأي فترة، ودليل الأصناف والأكواد — للمطعمين مع بعض أو كل مطعم لوحده. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
           </div>
           <button type="button" onClick={onLogout} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl font-bold text-sm">تسجيل الخروج</button>
+        </div>
+
+        {!otherConnected && (
+          <div className={card + ' space-y-2 border-[#FFB800]/40'}>
+            <p className="text-sm font-bold text-[#FFB800]">⚠️ نص كفتة غير متصل — معروض بيانات بحبح برجر بس.</p>
+            <p className="text-xs text-zinc-400 leading-5">لو الرقم السري هناك مختلف أو لسه متظبطش في Railway، اكتبه هنا عشان توصّل المطعم التاني.</p>
+            <form onSubmit={connectOther} className="flex flex-wrap gap-2">
+              <input type="password" placeholder="الرقم السري بتاع نص كفتة" value={otherPin} onChange={(e) => setOtherPin(e.target.value)} inputMode="numeric" className={inp + ' max-w-[240px] text-center tracking-widest'} />
+              <button type="submit" disabled={otherBusy} className="bg-[#FFB800] text-black px-4 py-2 rounded-xl font-black text-sm disabled:opacity-60">{otherBusy ? 'جاري التوصيل...' : 'توصيل'}</button>
+            </form>
+            {otherErr && <p className="text-red-400 text-sm font-bold">{otherErr}</p>}
+          </div>
+        )}
+
+        <div className={card + ' space-y-3'}>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-zinc-400 font-bold ml-1">المطعم:</span>
+            {otherConnected && scopeBtn('both', 'الكل (المطعمين)')}
+            {scopeBtn('own', RESTAURANT_NAME)}
+            {otherConnected && scopeBtn('other', OTHER_RESTAURANT_NAME)}
+          </div>
+          {scopeNote && <p className="text-amber-400 text-sm font-bold">{scopeNote}</p>}
         </div>
 
 {tab !== 'catalog' && (
@@ -3847,7 +4117,7 @@ const AccountantReports = ({ token, userName, onLogout }) => {
         {msg && <p className="text-red-400 text-sm font-bold">{msg}</p>}
 
         {tab === 'sales' && (
-          <PeriodReportPanel authFetch={authFetch} card={card} inp={inp} base="/api/accountant/reports/period" sharedFrom={from} sharedTo={to} />
+          <PeriodReportPanel key={scope} authFetch={authFetch} card={card} inp={inp} base="/api/accountant/reports/period" sharedFrom={from} sharedTo={to} fetchReport={fetchPeriodForScope} />
         )}
 
         {tab === 'items' && (
@@ -3874,9 +4144,10 @@ const AccountantReports = ({ token, userName, onLogout }) => {
             ) : (
               <>
                 <div className="overflow-x-auto -mx-1 px-1">
-                  <table className="w-full min-w-[560px] border-collapse text-sm">
+                  <table className="w-full min-w-[640px] border-collapse text-sm">
                     <thead>
                       <tr className={yellowHead}>
+                        <th className="text-right font-black py-2.5 px-3">المطعم</th>
                         <th className="text-right font-black py-2.5 px-3">الرمز</th>
                         <th className="text-right font-black py-2.5 px-3">اسم الصنف</th>
                         <th className="text-center font-black py-2.5 px-3">عدد الأصناف</th>
@@ -3885,7 +4156,8 @@ const AccountantReports = ({ token, userName, onLogout }) => {
                     </thead>
                     <tbody>
                       {(itemsData.items || []).map((it, i) => (
-                        <tr key={it.name} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                        <tr key={`${it.restaurant}-${it.code ?? it.name}`} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                          <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{it.restaurant || ''}</td>
                           <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
                           <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
                           <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{it.qty}</td>
@@ -3894,6 +4166,7 @@ const AccountantReports = ({ token, userName, onLogout }) => {
                       ))}
                       <tr className="border-t-2 border-[#FFB800]/50 bg-white/[0.04]">
                         <td className="py-2.5 px-3 font-black text-white">الإجمالي</td>
+                        <td className="py-2.5 px-3"></td>
                         <td className="py-2.5 px-3 text-zinc-400 text-xs font-bold">{(itemsData.items || []).length} صنف</td>
                         <td className="py-2.5 px-3 text-center font-black text-white">{itemsData.itemsTotals?.qty || 0}</td>
                         <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{money(itemsData.itemsTotals?.total)}</td>
@@ -3924,9 +4197,10 @@ const AccountantReports = ({ token, userName, onLogout }) => {
               <p className="text-sm text-zinc-400 font-bold py-6 text-center">{busy ? '... جاري التحميل' : 'اختار فترة واضغط عرض.'}</p>
             ) : (
               <div className="overflow-x-auto -mx-1 px-1">
-                <table className="w-full min-w-[860px] border-collapse text-sm">
+                <table className="w-full min-w-[920px] border-collapse text-sm">
                   <thead>
                     <tr className={yellowHead}>
+                      <th className="text-right font-black py-2.5 px-3">المطعم</th>
                       <th className="text-right font-black py-2.5 px-3">القناة</th>
                       <th className="text-center font-black py-2.5 px-3">عدد الأوردرات</th>
                       <th className="text-left font-black py-2.5 px-3">إجمالي المبيعات</th>
@@ -3940,7 +4214,8 @@ const AccountantReports = ({ token, userName, onLogout }) => {
                   </thead>
                   <tbody>
                     {(summary.channels || []).map((c, i) => (
-                      <tr key={c.key} className={`border-b border-white/5 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                      <tr key={`${c.restaurant}-${c.key}`} className={`border-b border-white/5 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                        <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{c.restaurant || ''}</td>
                         <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{c.label}</td>
                         <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{c.count}</td>
                         <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(c.total)}</td>
@@ -3954,6 +4229,7 @@ const AccountantReports = ({ token, userName, onLogout }) => {
                     ))}
                     <tr className="border-t-2 border-[#FFB800]/50 bg-white/[0.04]">
                       <td className="py-2.5 px-3 font-black text-white">الإجمالي</td>
+                      <td className="py-2.5 px-3"></td>
                       <td className="py-2.5 px-3 text-center font-black text-white">{summary.totals?.count || 0}</td>
                       <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{money(summary.totals?.total)}</td>
                       <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{money(summary.totals?.payments?.cash)}</td>
@@ -3990,9 +4266,10 @@ const AccountantReports = ({ token, userName, onLogout }) => {
               <>
                 <p className="text-sm text-zinc-300 font-bold">{catalog.length} صنف مسجل</p>
                 <div className="overflow-x-auto -mx-1 px-1">
-                  <table className="w-full min-w-[720px] border-collapse text-sm">
+                  <table className="w-full min-w-[780px] border-collapse text-sm">
                     <thead>
                       <tr className={yellowHead}>
+                        <th className="text-right font-black py-2.5 px-3">المطعم</th>
                         <th className="text-right font-black py-2.5 px-3">الرمز</th>
                         <th className="text-right font-black py-2.5 px-3">اسم الصنف</th>
                         <th className="text-right font-black py-2.5 px-3">الاسم بالعربي</th>
@@ -4003,7 +4280,8 @@ const AccountantReports = ({ token, userName, onLogout }) => {
                     </thead>
                     <tbody>
                       {catalog.map((it, i) => (
-                        <tr key={it.code ?? it.name} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                        <tr key={`${it.restaurant}-${it.code ?? it.name}`} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                          <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{it.restaurant || ''}</td>
                           <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
                           <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
                           <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.nameAr || it.name}</td>
@@ -4023,6 +4301,7 @@ const AccountantReports = ({ token, userName, onLogout }) => {
     </div>
   );
 };
+
 
 
 // ================= تبويب الوردية والتقفيل =================
