@@ -3641,19 +3641,16 @@ const downloadXlsxFile = (filename, bytes) => {
 
 // ================= صفحة المحاسب =================
 // صفحة منفصلة تماماً عن الكاشير والإدارة والعميل — مفيش أي لينك ليها في الموقع،
-// الدخول بيها بيوزر + رقم سري خاص بالمحاسب (ACCOUNTANT_PIN في Railway)،
-// أو بحساب الأدمن لو زياد حابب يشوفها من غير الرقم السري.
-const AccountantLogin = ({ onLogin, onAdminLogin }) => {
-  const [username, setUsername] = useState('');
+// الدخول بيها برقم سري خاص بالمحاسب بس (ACCOUNTANT_PIN في Railway) — صفحة حسابات فقط.
+const AccountantLogin = ({ onLogin }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const adminSession = (() => { try { const s = readSession(); return s?.user?.role === 'admin' ? s : null; } catch { return null; } })();
   const submit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username.trim(), pin: pin.trim() }) });
+      const res = await fetch(`${API_BASE}/api/auth/accountant-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin.trim() }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'بيانات الدخول غلط!');
       setPin('');
@@ -3666,13 +3663,9 @@ const AccountantLogin = ({ onLogin, onAdminLogin }) => {
       <form onSubmit={submit} className="bg-[#100609] border border-[#FFB800]/40 p-8 rounded-[2rem] w-full max-w-md shadow-2xl text-center">
         <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 صفحة المحاسب — بحبح برجر</h2>
         <p className="text-xs text-zinc-400 mb-6 leading-5">صفحة خاصة بالمحاسب بس — تقارير المبيعات والأصناف وقنوات البيع.</p>
-        <input type="text" placeholder="اسم المستخدم" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" autoComplete="username" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg" />
         <input type="password" placeholder="الرقم السري" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" inputMode="numeric" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg tracking-widest" />
         {error && <p className="text-red-400 text-sm font-bold mb-4">{error}</p>}
         <button type="submit" disabled={loading} className="w-full bg-[#FFB800] text-black font-black py-3 rounded-xl hover:bg-[#e6a800] transition shadow disabled:opacity-60">{loading ? 'جاري الدخول...' : 'دخول'}</button>
-        {adminSession && (
-          <button type="button" onClick={() => onAdminLogin(adminSession)} className="w-full mt-3 bg-zinc-800 text-zinc-200 font-bold py-3 rounded-xl hover:bg-zinc-700 transition text-sm">الدخول بحساب الأدمن</button>
-        )}
       </form>
     </div>
   );
@@ -3684,7 +3677,6 @@ const AccountantPage = () => {
   if (!session?.token) {
     return <AccountantLogin
       onLogin={(data) => { saveAccountantSession(data); setSession(data); }}
-      onAdminLogin={(data) => setSession(data)}
     />;
   }
   return <AccountantReports token={session.token} userName={session.user?.name || 'المحاسب'} onLogout={logout} />;
