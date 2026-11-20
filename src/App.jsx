@@ -3661,8 +3661,8 @@ const AccountantLogin = ({ onLogin }) => {
   return (
     <div dir="rtl" className="min-h-screen bg-[#050304] flex items-center justify-center p-4">
       <form onSubmit={submit} className="bg-[#100609] border border-[#FFB800]/40 p-8 rounded-[2rem] w-full max-w-md shadow-2xl text-center">
-        <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 صفحة المحاسب — بحبح برجر</h2>
-        <p className="text-xs text-zinc-400 mb-6 leading-5">صفحة خاصة بالمحاسب بس — تقارير المبيعات والأصناف وقنوات البيع.</p>
+        <h2 className="text-2xl font-black text-[#FFB800] mb-2">📊 بحبح برجر</h2>
+        <p className="text-xs text-zinc-400 mb-6 leading-5"></p>
         <input type="password" placeholder="الرقم السري" value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="current-password" inputMode="numeric" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-white text-center mb-4 text-lg tracking-widest" />
         {error && <p className="text-red-400 text-sm font-bold mb-4">{error}</p>}
         <button type="submit" disabled={loading} className="w-full bg-[#FFB800] text-black font-black py-3 rounded-xl hover:bg-[#e6a800] transition shadow disabled:opacity-60">{loading ? 'جاري الدخول...' : 'دخول'}</button>
@@ -3815,7 +3815,7 @@ const AccountantReports = ({ token, userName, onLogout }) => {
       <div className="max-w-6xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#FFB800]">📊 صفحة المحاسب — {RESTAURANT_NAME}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#FFB800]">📊بحبح برجر — {RESTAURANT_NAME}</h1>
             <p className="text-xs text-zinc-400 mt-1">أهلاً {userName} — تقارير المبيعات والأصناف وقنوات البيع لأي فترة، ودليل الأصناف والأكواد. اليوم بيتحسب من 6 الصبح لـ 6 الصبح.</p>
           </div>
           <button type="button" onClick={onLogout} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl font-bold text-sm">تسجيل الخروج</button>
