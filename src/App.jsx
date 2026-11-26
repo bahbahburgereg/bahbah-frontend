@@ -2009,6 +2009,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     else window.location.href = whatsappUrl;
 
     setCart([]);
+    try { localStorage.removeItem(CART_STORAGE_KEY); } catch (e) {}
     setPlacedOrderId(savedOrderId);
   };
 
@@ -5912,7 +5913,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
       try { localStorage.setItem('bahbahDrivers', JSON.stringify([name, ...readDrivers().filter(d => d !== name)].slice(0, 12))); } catch (e) {}
     }
     if (!ord.paymentMethod) {
-      if (!['cash', 'visa', 'instapay'].includes(completionPay)) return alert('اختار طريقة الدفع قبل تأكيد التسليم');
+      if (!['cash', 'visa', 'instapay', 'wallet'].includes(completionPay)) return alert('اختار طريقة الدفع قبل تأكيد التسليم');
       extra.paymentMethod = completionPay;
     }
     driverBusyRef.current = true;
@@ -6387,7 +6388,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
               <div className="space-y-2">
                 <p className="text-sm text-zinc-300 font-bold">اختار طريقة الدفع *</p>
                 <div className="grid grid-cols-3 gap-2">
-                  {[['cash', '💵 كاش'], ['visa', '💳 فيزا'], ['instapay', '📱 انستا باي']].map(([key, label]) => <button key={key} type="button" onClick={() => setCompletionPay(key)} className={`py-3 rounded-xl text-xs font-black border ${completionPay === key ? 'bg-green-600 text-white border-green-400' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E]'}`}>{label}</button>)}
+                  {[['cash', '💵 كاش'], ['visa', '💳 فيزا'], ['instapay', '📱 انستا باي'], ['wallet', '👛 محفظة']].map(([key, label]) => <button key={key} type="button" onClick={() => setCompletionPay(key)} className={`py-3 rounded-xl text-xs font-black border ${completionPay === key ? 'bg-green-600 text-white border-green-400' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E]'}`}>{label}</button>)}
                 </div>
               </div>
             )}
@@ -6657,6 +6658,40 @@ const CustomerChatWidget = () => {
   );
 };
 
+// ================= السلة المحفوظة (localStorage) =================
+const CART_STORAGE_KEY = 'bahbah-cart-v1';
+// يرجّع السلة المحفوظة بعد تنضيفها: سطور سليمة الشكل بس، وبسعرها المحفوظ زي ما هو
+// (السيرفر بيعيد تسعير كل حاجة وقت الطلب، فمش محتاجين نحسب الأسعار من تاني)
+const loadSavedCart = () => {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out = [];
+    for (const l of parsed) {
+      if (!l || typeof l !== 'object') continue;
+      const price = Number(l.price);
+      if (typeof l._id !== 'string' || !l._id || typeof l.name !== 'string' || !Number.isFinite(price)) continue;
+      out.push({
+        ...l,
+        price,
+        cartId: (l.cartId ?? (Date.now() + Math.random())),
+        modifiersInfo: Array.isArray(l.modifiersInfo) ? l.modifiersInfo : [],
+        modifierSelections: Array.isArray(l.modifierSelections) ? l.modifierSelections : undefined,
+        notes: typeof l.notes === 'string' ? l.notes : ''
+      });
+    }
+    return out;
+  } catch (e) { return []; }
+};
+// يشيل من السلة أي سطر صنفه مش موجود في المنيو الحالي
+const dropRemovedItems = (lines, menu) => {
+  if (!menu.length) return lines;
+  const ids = new Set(menu.map((m) => String(m._id)));
+  return lines.filter((l) => ids.has(String(l._id)));
+};
+
 // ================= التطبيق الرئيسي =================
 function App() {
   const navigate = useNavigate();
@@ -6664,7 +6699,7 @@ function App() {
   // صفحات الكاشير/الـPOS: من غير هيدر وفوتر الموقع عشان الشاشة كلها للشغل
   const isStaffPage = location.pathname === '/pos' || location.pathname === '/cashier' || location.pathname === '/reports' || location.pathname === '/accountant';
   const menuRef = useRef(null);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(loadSavedCart);
   const menuCache = (() => { try { const c = JSON.parse(localStorage.getItem('bahbahMenuCache')); return c && Array.isArray(c.items) && c.items.length ? c : null; } catch (e) { return null; } })();
   const [menuItems, setMenuItems] = useState(menuCache ? menuCache.items : []);
   const [categories, setCategories] = useState(menuCache && Array.isArray(menuCache.categories) ? menuCache.categories : []);
@@ -6696,6 +6731,20 @@ function App() {
     };
     loadAll();
   }, []);
+
+  // السلة بتتحفظ في المتصفح وترجع لما الصفحة تفتح تاني (نفس فكرة bahbahMenuCache)
+  useEffect(() => {
+    try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart)); } catch (e) {}
+  }, [cart]);
+
+  // لو صنف اتشال من المنيو بعد ما اتحفظ في السلة، نشيله منها أول ما المنيو يتحدّث
+  useEffect(() => {
+    if (!menuItems.length) return;
+    setCart((cur) => {
+      const next = dropRemovedItems(cur, menuItems);
+      return next.length === cur.length ? cur : next;
+    });
+  }, [menuItems]);
 
   // Meta Pixel: PageView مع كل تنقل بين الصفحات (من غير صفحات الكاشير والأدمن)
   useEffect(() => {
