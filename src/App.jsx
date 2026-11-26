@@ -1817,9 +1817,14 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     if (!isEgMobile(customerPhone) || isFakeEgPhone(customerPhone)) return;
     let cancelled = false;
     const runPublicLookup = () => {
-      fetch(`${API_BASE}/api/customers/lookup?phone=${customerPhone}`).then(r => r.json()).then(d => {
+      fetch(`${API_BASE}/api/customers/lookup?phone=${customerPhone}`).then(r => {
+        // لو اتقفلنا من كتر الطلبات (429) نكمّل كأن الرقم جديد — البحث ميوقفش الطلب أبداً
+        if (r.status === 429) return { ok: true, name: '' };
+        return r.json().catch(() => null);
+      }).then(d => {
         if (cancelled || !d) return;
-        if (!d.known) { setPhoneInfo(d.needsCallVerification ? d : null); return; }
+        // الرد الموحّد: اسم فاضي = رقم جديد → مسار توثيق المكالمة، اسم موجود = عميل راجع
+        if (!d.name) { setPhoneInfo({ needsCallVerification: true }); return; }
         setPhoneInfo(d);
         setCustomerName(d.name || '');
         if (orderType === 'delivery') {
@@ -3595,7 +3600,7 @@ const xlsxZip = (files) => {
 };
 // styles: 0 عادي | 1 عريض | 2 عنوان الجدول (أصفر + عريض) | 3 عنوان التقرير | 4 فلوس | 5 فلوس إجمالي | 6 نص إجمالي | 7 عدد صحيح | 8 عدد إجمالي | 9 فلوس عريضة
 const XLSX_STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor rgb="FFFFFF00"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor rgb="FFD9D9D9"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="1" borderId="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0"/><xf numFmtId="3" fontId="1" fillId="2" borderId="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0"/><xf numFmtId="1" fontId="1" fillId="2" borderId="1"/><xf numFmtId="3" fontId="1" fillId="0" borderId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
-const buildXlsx = ({ sheetName, title, subtitle, headers, rows, widths, moneyCols, intCols, totals, summary }) => {
+const buildXlsx = ({ sheetName, title, subtitle, headers, rows, widths, moneyCols, intCols, totals, summary, extraSections }) => {
   const moneySet = new Set(moneyCols || []);
   const intSet = new Set(intCols || []);
   const colCount = headers.length;
@@ -3624,6 +3629,16 @@ const buildXlsx = ({ sheetName, title, subtitle, headers, rows, widths, moneyCol
     for (const s of summary) {
       outRows.push(`<row r="${rr}"><c r="A${rr}" t="s" s="1"><v>${strIdx(s.label)}</v></c><c r="${xlsxCol(colCount - 1)}${rr}" s="9"><v>${numVal(s.value)}</v></c></row>`);
       rr++;
+    }
+  }
+  if (extraSections && extraSections.length) {
+    for (const sec of extraSections) {
+      rr++;
+      outRows.push(`<row r="${rr}"><c r="A${rr}" t="s" s="3"><v>${strIdx(sec.title)}</v></c></row>`);
+      rr++;
+      outRows.push(`<row r="${rr}">${sec.headers.map((h, c) => `<c r="${xlsxCol(c)}${rr}" t="s" s="2"><v>${strIdx(h)}</v></c>`).join('')}</row>`);
+      rr++;
+      for (const row of (sec.rows || [])) { outRows.push(rowXml(rr, row, false)); rr++; }
     }
   }
   const safeName = String(sheetName || 'Sheet1').replace(/[\\/?*\[\]:]/g, '').slice(0, 31) || 'Sheet1';
@@ -3835,6 +3850,7 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
   const [summary, setSummary] = useState(null);
   const [itemsData, setItemsData] = useState(null);
   const [catalog, setCatalog] = useState(null);
+  const [catalogBox, setCatalogBox] = useState(null);
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -4008,7 +4024,11 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
 
   const downloadItemsXlsx = () => {
     if (!itemsData) return;
-    const rows = (itemsData.items || []).map((it) => [it.restaurant || '', it.code ?? '—', it.name, it.qty, it.total]);
+    const rows = [];
+    for (const it of (itemsData.items || [])) {
+      rows.push([it.restaurant || '', it.code ?? '—', it.name, it.qty, it.total]);
+      for (const c of (it.contents || [])) rows.push([it.restaurant || '', c.code ?? '—', `↳ ${c.name}`, c.qty, '']);
+    }
     const totalsRow = ['الإجمالي', '', '', itemsData.itemsTotals?.qty || 0, itemsData.itemsTotals?.total || 0];
     const discounts = Number(itemsData.totals?.discounts) || 0;
     const gross = Number(itemsData.itemsTotals?.total) || 0;
@@ -4049,21 +4069,23 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
       const sites = sitesInScope();
       const cKey = `catalog|${sites.join('+')}`;
       const cHit = cacheGet(cKey);
-      if (cHit) { setCatalog(cHit); setCatalogBusy(false); return; }
+      if (cHit) { setCatalog(cHit); setCatalogBox(cacheGet(`${cKey}|box`) || []); setCatalogBusy(false); return; }
       const results = await fetchSites(sites, () => '/api/accountant/reports/catalog');
       const ok = results.filter(Boolean);
       if (!ok.length) throw new Error('تعذر تحميل دليل الأصناف');
       partialNote(sites, results);
-      let rows = [];
-      results.forEach((d, i) => { if (!d) return; rows = mergeItemsRows(rows, null, d.items || [], siteName(sites[i])); });
-      cacheSet(cKey, rows);
-      setCatalog(rows);
+      let rows = []; let boxRows = [];
+      results.forEach((d, i) => { if (!d) return; rows = mergeItemsRows(rows, null, d.items || [], siteName(sites[i])); for (const b of (d.boxContents || [])) boxRows.push({ ...b, restaurant: siteName(sites[i]) }); });
+      boxRows.sort((a, b) => (a.code ?? Infinity) - (b.code ?? Infinity) || String(a.name || '').localeCompare(String(b.name || '')));
+      cacheSet(cKey, rows); cacheSet(`${cKey}|box`, boxRows);
+      setCatalog(rows); setCatalogBox(boxRows);
     } catch (e) { if (e.message !== 'unauthorized') setMsg(e.message); }
     setCatalogBusy(false);
   };
   const downloadCatalogXlsx = () => {
     if (!catalog) return;
     const rows = catalog.map((it) => [it.restaurant || '', it.code ?? '—', it.name, it.nameAr || it.name, it.category, it.price, it.available ? 'متاح' : 'موقوف']);
+    const boxRows = (catalogBox || []).map((b) => [b.restaurant || '', b.code ?? '—', b.name]);
     const bytes = buildXlsx({
       sheetName: 'دليل الأصناف',
       title: `${scopeTitle} — دليل الأصناف والأكواد`,
@@ -4071,6 +4093,7 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
       headers: ['المطعم', 'الرمز', 'اسم الصنف', 'الاسم بالعربي', 'التصنيف', 'السعر (ج)', 'الحالة'],
       rows, widths: [16, 10, 36, 36, 20, 14, 12], moneyCols: [5], intCols: [1],
       totals: null, summary: null,
+      extraSections: boxRows.length ? [{ title: '📦 محتويات البوكسات وأكوادها', headers: ['المطعم', 'الرمز', 'اسم المحتوى'], rows: boxRows }] : [],
     });
     downloadXlsxFile(`items-catalog-${scope}.xlsx`, bytes);
   };
@@ -4184,13 +4207,24 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
                     </thead>
                     <tbody>
                       {(itemsData.items || []).map((it, i) => (
-                        <tr key={`${it.restaurant}-${it.code ?? it.name}`} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
-                          <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{it.restaurant || ''}</td>
-                          <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
-                          <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
-                          <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{it.qty}</td>
-                          <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(it.total)}</td>
-                        </tr>
+                        <React.Fragment key={`${it.restaurant}-${it.code ?? it.name}`}>
+                          <tr className={`border-b border-white/5 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                            <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{it.restaurant || ''}</td>
+                            <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{it.code ?? '—'}</td>
+                            <td className="py-2.5 px-3 text-zinc-200 font-bold">{it.name}</td>
+                            <td className="py-2.5 px-3 text-center text-zinc-200 font-bold">{it.qty}</td>
+                            <td className="py-2.5 px-3 text-zinc-200 font-bold whitespace-nowrap">{money(it.total)}</td>
+                          </tr>
+                          {(it.contents || []).map((c) => (
+                            <tr key={`${it.restaurant}-${it.code ?? it.name}-c${c.code ?? c.name}`} className="border-b border-white/5 bg-white/[0.015]">
+                              <td className="py-1.5 px-3 font-bold text-[#FFB800]/70 text-xs whitespace-nowrap">{it.restaurant || ''}</td>
+                              <td className="py-1.5 px-3 font-bold text-zinc-400 text-xs whitespace-nowrap">{c.code ?? '—'}</td>
+                              <td className="py-1.5 px-3 text-zinc-400 text-xs font-bold pr-6">↳ {c.name}</td>
+                              <td className="py-1.5 px-3 text-center text-zinc-400 text-xs font-bold">{c.qty}</td>
+                              <td className="py-1.5 px-3 text-zinc-500 text-xs font-bold whitespace-nowrap">—</td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
                       ))}
                       <tr className="border-t-2 border-[#FFB800]/50 bg-white/[0.04]">
                         <td className="py-2.5 px-3 font-black text-white">الإجمالي</td>
@@ -4321,6 +4355,38 @@ const AccountantReports = ({ tokens, userName, onLogout, onOtherConnected, onOth
                     </tbody>
                   </table>
                 </div>
+                {catalogBox !== null && (
+                  <div className="pt-4 mt-2 border-t border-white/10">
+                    <h5 className="font-black text-base text-white mb-1">📦 محتويات البوكسات وأكوادها</h5>
+                    {catalogBox.length === 0 ? (
+                      <p className="text-sm text-zinc-400 font-bold py-4 text-center">مفيش محتويات بوكسات مسجلة.</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-zinc-300 font-bold mb-2">{catalogBox.length} محتوى مسجل</p>
+                        <div className="overflow-x-auto -mx-1 px-1">
+                          <table className="w-full min-w-[480px] border-collapse text-sm">
+                            <thead>
+                              <tr className={yellowHead}>
+                                <th className="text-right font-black py-2.5 px-3">المطعم</th>
+                                <th className="text-right font-black py-2.5 px-3">الرمز</th>
+                                <th className="text-right font-black py-2.5 px-3">اسم المحتوى</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {catalogBox.map((b, i) => (
+                                <tr key={`${b.restaurant}-${b.code ?? b.name}`} className={`border-b border-white/5 last:border-0 ${i % 2 ? 'bg-white/[0.03]' : ''}`}>
+                                  <td className="py-2.5 px-3 font-black text-[#FFB800] whitespace-nowrap">{b.restaurant || ''}</td>
+                                  <td className="py-2.5 px-3 font-black text-white whitespace-nowrap">{b.code ?? '—'}</td>
+                                  <td className="py-2.5 px-3 text-zinc-200 font-bold">{b.name}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
