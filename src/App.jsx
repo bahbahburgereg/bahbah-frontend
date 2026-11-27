@@ -1081,6 +1081,8 @@ const PeakHoursPanel = ({ adminFetch }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [dailyMsg, setDailyMsg] = useState('');
+  const [backupMsg, setBackupMsg] = useState('');
   const load = async (d) => {
     setLoading(true); setErr('');
     try {
@@ -1090,6 +1092,56 @@ const PeakHoursPanel = ({ adminFetch }) => {
       setData(j);
     } catch (e) { if (e.message !== 'unauthorized') setErr(e.message); }
     setLoading(false);
+  };
+  // تقرير اليوم على التليجرام — نفس زرار نص كفتة
+  const sendDaily = async () => {
+    setDailyMsg('... جاري الإرسال');
+    try {
+      const r = await adminFetch('/api/admin/daily-report', { method: 'POST' });
+      const j = await r.json().catch(() => ({}));
+      setDailyMsg(r.ok ? `✅ اتبعت تقرير يوم ${j.day || ''} (تليجرام: ${j.telegramSent ? 'وصل' : 'متظبطش — اتأكد من إعدادات التليجرام'})` : `❌ ${j.error || 'فشل الإرسال'}`);
+    } catch { setDailyMsg('❌ تعذر الإرسال'); }
+  };
+  // التقرير الكامل: تفصيل الدفع + أكتر 5 أصناف + الملغي + سلف/مصاريف — الكرون بيبعت المختصر من غير body
+  const sendFullDaily = async () => {
+    setDailyMsg('... جاري الإرسال');
+    try {
+      const r = await adminFetch('/api/admin/daily-report', { method: 'POST', body: JSON.stringify({ full: true }) });
+      const j = await r.json().catch(() => ({}));
+      setDailyMsg(r.ok ? `✅ اتبعت التقرير الكامل ليوم ${j.day || ''} (تليجرام: ${j.telegramSent ? 'وصل' : 'متظبطش — اتأكد من إعدادات التليجرام'})` : `❌ ${j.error || 'فشل الإرسال'}`);
+    } catch { setDailyMsg('❌ تعذر الإرسال'); }
+  };
+  // نسخة احتياطية دلوقتي: بتتبعت للتليجرام كملف (السيرفر مبيحتفظش بنسخة)
+  const runBackup = async () => {
+    setBackupMsg('... جاري عمل النسخة');
+    try {
+      const r = await adminFetch('/api/admin/backup', { method: 'POST' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return setBackupMsg(`❌ ${j.error || 'فشل النسخة الاحتياطية'}`);
+      const cols = Object.entries(j.collections || {}).map(([n, c]) => `${n}: ${c}`).join(' • ');
+      const kb = Math.round((Number(j.bytes) || 0) / 1024);
+      setBackupMsg(`✅ نسخة ${j.day} اتبعتت (تليجرام: ${j.telegramSent ? 'وصل' : 'متظبطش'}) — ${kb} ك.ب — ${cols}`);
+    } catch { setBackupMsg('❌ تعذر الإرسال'); }
+  };
+  // نسخة على الكمبيوتر: تنزيل نفس الـ dump كملف
+  const downloadBackup = async () => {
+    setBackupMsg('... جاري تجهيز الملف');
+    try {
+      const r = await adminFetch('/api/admin/backup/download');
+      if (!r.ok) return setBackupMsg('❌ تعذر تحميل النسخة');
+      const blob = await r.blob();
+      const cd = r.headers.get('Content-Disposition') || '';
+      const m = /filename=([^;]+)/.exec(cd);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = m ? m[1].trim() : `backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setBackupMsg('✅ النسخة نزلت على الكمبيوتر');
+    } catch { setBackupMsg('❌ تعذر تحميل النسخة'); }
   };
   useEffect(() => { load(days); }, [days]);
   const maxHour = Math.max(1, ...((data?.byHour || []).map(h => h.count)));
@@ -1101,7 +1153,13 @@ const PeakHoursPanel = ({ adminFetch }) => {
         <button type="button" onClick={() => setDays(7)} className={chip + (days === 7 ? ' !border-[#FFB800] !text-white' : '')}>آخر 7 أيام</button>
         <button type="button" onClick={() => setDays(30)} className={chip + (days === 30 ? ' !border-[#FFB800] !text-white' : '')}>آخر 30 يوم</button>
         <button type="button" onClick={() => load(days)} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-black text-white">🔄 تحديث</button>
+        <button type="button" onClick={sendDaily} className="px-4 py-2 rounded-xl text-sm font-bold bg-[#25D366] text-black mr-auto">📩 ابعت تقرير النهارده دلوقتي</button>
+        <button type="button" onClick={sendFullDaily} className="px-4 py-2 rounded-xl text-sm font-bold bg-[#25D366] text-black">📩 ابعت التقرير الكامل</button>
+        <button type="button" onClick={runBackup} className="px-4 py-2 rounded-xl text-sm font-bold bg-[#FFB800] text-black">💾 نسخة احتياطية دلوقتي</button>
+        <button type="button" onClick={downloadBackup} className="px-4 py-2 rounded-xl text-sm font-bold bg-zinc-700 text-white">⬇️ نزّل نسخة على الكمبيوتر</button>
       </div>
+      {dailyMsg && <p className="text-xs font-bold text-zinc-300 mb-3">{dailyMsg}</p>}
+      {backupMsg && <p className="text-xs font-bold text-zinc-300 mb-3">{backupMsg}</p>}
       {err && <p className="text-red-400 text-sm mb-2">{err}</p>}
       {loading && <p className="text-zinc-400 text-sm">⏳ بنحمّل...</p>}
       {data && (
@@ -1129,6 +1187,83 @@ const PeakHoursPanel = ({ adminFetch }) => {
             </tbody>
           </table>
         </>
+      )}
+    </div>
+  );
+};
+
+// ================= سجل عمليات الأدمن =================
+const AuditLogPanel = ({ adminFetch }) => {
+  const [rows, setRows] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const load = async (f) => {
+    setLoading(true);
+    try {
+      const r = await adminFetch(`/api/admin/audit-log?limit=100${f ? `&action=${encodeURIComponent(f)}` : ''}`);
+      const j = await r.json().catch(() => []);
+      if (Array.isArray(j)) setRows(j);
+    } catch {}
+    setLoading(false);
+  };
+  useEffect(() => { load(filter); }, [filter]);
+  const fmtTime = (t) => { try { return new Date(t).toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+  return (
+    <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 className="text-2xl font-black text-[#FFB800]">📜 سجل العمليات</h3>
+        <div className="flex gap-2">
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} className="bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-sm text-white">
+            <option value="">كل العمليات</option>
+            <option value="تعديل صنف">تعديل صنف</option>
+            <option value="تعديل أسعار طلبات">تعديل أسعار طلبات</option>
+            <option value="مسح أوردر">مسح أوردر</option>
+          </select>
+          <button type="button" onClick={() => load(filter)} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-black text-white">🔄 تحديث</button>
+        </div>
+      </div>
+      {loading && <p className="text-zinc-400 text-sm">⏳ بنحمّل...</p>}
+      {rows.length === 0 && !loading ? <p className="text-zinc-500 text-sm">لسه مفيش عمليات مسجلة.</p> : (
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="text-zinc-400 text-xs border-b border-[#1F0A0E]"><th className="p-2 text-right">الوقت</th><th className="p-2 text-right">مين</th><th className="p-2 text-right">العملية</th><th className="p-2 text-right">التفاصيل</th></tr></thead>
+          <tbody>{rows.map((r) => (<tr key={r._id} className="border-b border-[#1F0A0E]/60"><td className="p-2 text-zinc-400 whitespace-nowrap">{fmtTime(r.at)}</td><td className="p-2 font-bold">{r.by || '—'}</td><td className="p-2 font-bold text-[#FFB800]">{r.action}{r.entityName ? ` — ${r.entityName}` : ''}</td><td className="p-2 text-zinc-300">{r.details || ''}</td></tr>))}</tbody>
+        </table></div>
+      )}
+    </div>
+  );
+};
+
+// ================= هامش الربح =================
+const MarginReportPanel = ({ adminFetch }) => {
+  const [days, setDays] = useState(7);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const load = async (d) => {
+    setLoading(true);
+    try {
+      const r = await adminFetch(`/api/admin/reports/margin?days=${d}`);
+      const j = await r.json().catch(() => ({}));
+      if (Array.isArray(j.rows)) setRows(j.rows);
+    } catch {}
+    setLoading(false);
+  };
+  useEffect(() => { load(days); }, [days]);
+  const chip = 'px-3 py-2 rounded-xl text-xs font-black border border-[#1F0A0E] bg-[#050304] text-zinc-300 hover:border-[#FFB800]';
+  return (
+    <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
+      <h3 className="text-2xl font-black text-[#FFB800] mb-2">📈 هامش الربح</h3>
+      <p className="text-[11px] text-zinc-500 mb-3">الربح بيتحسب من التكلفة الحالية للصنف — الأصناف اللي من غير تكلفة بتظهر "—".</p>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button type="button" onClick={() => setDays(7)} className={chip + (days === 7 ? ' !border-[#FFB800] !text-white' : '')}>آخر 7 أيام</button>
+        <button type="button" onClick={() => setDays(30)} className={chip + (days === 30 ? ' !border-[#FFB800] !text-white' : '')}>آخر 30 يوم</button>
+        <button type="button" onClick={() => load(days)} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-black text-white">🔄 تحديث</button>
+      </div>
+      {loading && <p className="text-zinc-400 text-sm">⏳ بنحمّل...</p>}
+      {rows.length === 0 && !loading ? <p className="text-zinc-500 text-sm">مفيش مبيعات في الفترة دي.</p> : (
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="text-zinc-400 text-xs border-b border-[#1F0A0E]"><th className="p-2 text-right">الصنف</th><th className="p-2">الكمية</th><th className="p-2">الإيراد</th><th className="p-2">التكلفة</th><th className="p-2">الربح</th><th className="p-2">الهامش</th></tr></thead>
+          <tbody>{rows.map((r, i) => (<tr key={i} className="border-b border-[#1F0A0E]/60 text-center"><td className="p-2 text-right font-bold">{r.name}</td><td className="p-2">{r.quantity}</td><td className="p-2 font-bold">{r.revenue} ج</td><td className="p-2">{r.costTotal === null ? '—' : `${r.costTotal} ج`}</td><td className={`p-2 font-black ${r.profit === null ? '' : r.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>{r.profit === null ? '—' : `${r.profit} ج`}</td><td className="p-2 font-bold">{r.margin === null ? '—' : `${r.margin}%`}</td></tr>))}</tbody>
+        </table></div>
       )}
     </div>
   );
@@ -1325,6 +1460,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const [name, setName] = useState('');
   const [nameAr, setNameAr] = useState('');
   const [price, setPrice] = useState('');
+  const [cost, setCost] = useState('');
   const [discount, setDiscount] = useState('');
   const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
@@ -1404,7 +1540,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const handleSaveItem = async (e) => {
     e.preventDefault();
     const itemData = {
-      name, nameAr, price: Number(price), discount: Number(discount) || 0,
+      name, nameAr, price: Number(price), cost: cost === '' ? 0 : Math.max(0, Number(cost) || 0), discount: Number(discount) || 0,
       image: image || "https://via.placeholder.com/400x300/0D0507/FF4500?text=Bahbah+Burger",
       description, descriptionAr, category: category || (categories.length > 0 ? categories[0].name : 'General'),
       isOffer, modifierGroups
@@ -1418,7 +1554,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   };
 
   const handleEditItemClick = (item) => {
-    setEditId(item._id); setName(item.name); setNameAr(item.nameAr || ''); setPrice(item.price); setDiscount(item.discount || '');
+    setEditId(item._id); setName(item.name); setNameAr(item.nameAr || ''); setPrice(item.price); setCost(item.cost ?? ''); setDiscount(item.discount || '');
     setImage(item.image); setDescription(item.description || ''); setDescriptionAr(item.descriptionAr || ''); setCategory(item.category);
     setIsOffer(item.isOffer || false);
 
@@ -1434,7 +1570,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   };
 
   const resetForm = () => {
-    setEditId(null); setName(''); setNameAr(''); setPrice(''); setDiscount(''); setImage(''); setDescription(''); setDescriptionAr(''); setIsOffer(false); setModifierGroups([]); setImportFromId('');
+    setEditId(null); setName(''); setNameAr(''); setPrice(''); setCost(''); setDiscount(''); setImage(''); setDescription(''); setDescriptionAr(''); setIsOffer(false); setModifierGroups([]); setImportFromId('');
     if (categories.length > 0) setCategory(categories[0].name);
   };
 
@@ -1510,6 +1646,10 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
       <PeakHoursPanel adminFetch={adminFetch} />
 
       <PromoCodesPanel adminFetch={adminFetch} />
+
+      <AuditLogPanel adminFetch={adminFetch} />
+
+      <MarginReportPanel adminFetch={adminFetch} />
 
       <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
         <h3 className="text-xl font-bold text-[#FFB800] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
@@ -1598,6 +1738,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
         <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف *</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: برجر دبل" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">اسم الصنف بالعربي</label><input type="text" value={nameAr} onChange={(e) => setNameAr(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: تشيزي بوم" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">السعر الأساسي *</label><input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 150" /></div>
+        <div><label className="block text-sm mb-2 text-zinc-300">التكلفة (ج) — لحساب هامش الربح</label><input type="number" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white" placeholder="مثال: 90 (فاضي = مش متسجلة)" /></div>
         <div><label className="block text-sm mb-2 text-[#FFB800]">نسبة الخصم %</label><input type="number" placeholder="مثال: 20" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full bg-[#050304] border border-[#FF4500]/50 rounded-2xl p-4 text-white" /></div>
         <div><label className="block text-sm mb-2 text-zinc-300">القسم *</label><select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white">{categories.map(cat => (<option key={cat._id} value={cat.name}>{cat.name}</option>))}</select></div>
         <div><label className="block text-sm mb-2 text-zinc-300">صورة الصنف</label><input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) compressImage(e.target.files[0], 700, 700, setImage); }} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-1 text-white text-sm cursor-pointer" /></div>
@@ -1956,6 +2097,12 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const [customerPin, setCustomerPin] = useState('');
   const [pinSavedMsg, setPinSavedMsg] = useState(false);
   const [customerAddress, setCustomerAddress] = useState('');
+  const routeLocation = useLocation();
+  const [reorderNotice, setReorderNotice] = useState(routeLocation.state?.reorderNote || '');
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [addressLabel, setAddressLabel] = useState('');
+  const [liveActiveOrders, setLiveActiveOrders] = useState(null);
+  const [allItems, setAllItems] = useState([]);
   const [placedOrderId, setPlacedOrderId] = useState(null);
   const [phoneInfo, setPhoneInfo] = useState(null);
   const [loc, setLoc] = useState(null);
@@ -1975,6 +2122,13 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     fetch(`${API_BASE}/api/zones`).then(res => res.json()).then(data => { setDeliveryZones(data); if (data.length > 0) setSelectedZone(data[0]); }).catch(err => {});
   }, []);
 
+  // عدد الأوردرات النشطة من السيرفر لحساب وقت التوصيل المتوقع (ولو مجاش بنستخدم رقم حالة المحل)
+  // + تحميل المنيو لاقتراحات الإضافات في السلة
+  useEffect(() => {
+    fetch(`${API_BASE}/api/delivery-eta`).then((r) => r.json().catch(() => null)).then((d) => { if (d && typeof d.activeOrders === 'number') setLiveActiveOrders(d.activeOrders); }).catch(() => {});
+    fetch(`${API_BASE}/api/items`).then((r) => r.json().catch(() => [])).then((d) => { if (Array.isArray(d)) setAllItems(d); }).catch(() => {});
+  }, []);
+
   // لو الرقم ده عميل سابق: نجيب اسمه وعنوانه وموقعه المحفوظ
   useEffect(() => {
     setPhoneInfo(null);
@@ -1982,6 +2136,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     // رقم جديد؟ امسح بيانات الرقم السابق قبل البحث حتى لا تختلط بيانات عميل بآخر.
     setCustomerName('');
     setCustomerAddress('');
+    setAddressLabel('');
+    setSavedAddresses([]);
     setLoc(null);
     if (!isEgMobile(customerPhone) || isFakeEgPhone(customerPhone)) return;
     let cancelled = false;
@@ -2016,8 +2172,11 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         setPhoneInfo({ known: true, name: p.name || '' });
         setLoyaltyBalance(Number(p.points) || 0);
         setCustomerName(p.name || '');
+        setSavedAddresses(Array.isArray(p.addresses) ? p.addresses : []);
         if (orderType === 'delivery') {
           setCustomerAddress(p.address || '');
+          const matchAddr = (Array.isArray(p.addresses) ? p.addresses : []).find((a) => p.address && String(a.address || '') === String(p.address || ''));
+          if (matchAddr) setAddressLabel(matchAddr.label || '');
           const z = p.zoneName ? deliveryZones.find(x => x.name === p.zoneName) : null;
           if (z) setSelectedZone(z);
           setLoc(p.location && p.location.lat ? p.location : null);
@@ -2063,12 +2222,39 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const promoDiscount = promoApplied ? Math.min(Number(promoApplied.discountAmount) || 0, itemsTotal) : 0;
   const orderDiscount = promoDiscount + loyaltyDiscount;
   const finalTotal = Math.max(0, itemsTotal - orderDiscount + deliveryFee);
-  // عدد الأوردرات النشطة بييجي من السيرفر (store-status بيتحدث كل دقيقة) — والوقت المتوقع بيتحسب منه ومن المنطقة
-  const activeOrders = Number(storeStatus?.activeOrders) || 0;
+  // عدد الأوردرات النشطة بييجي من السيرفر (/api/delivery-eta لحظياً، ولو مجاش من store-status اللي بيتحدث كل دقيقة)
+  const activeOrders = liveActiveOrders !== null ? liveActiveOrders : (Number(storeStatus?.activeOrders) || 0);
   const deliveryEta = orderType === 'delivery' ? deliveryEtaOf(selectedZone, activeOrders) : null;
 
   // لو السلة اتغيرت بعد تطبيق الكود/النقاط، الخصم يتلغي ويتطبق من تاني
   useEffect(() => { setPromoApplied(null); setPromoMsg(''); setLoyaltyBlocks(0); }, [cart]);
+
+  // اقتراح إضافات في السلة: مشروبات الأول، ولو مفيش أرخص أصناف مش موجودة في السلة أصلاً
+  const cartItemIds = new Set(cart.map((i) => String(i._id)));
+  const suggestions = (() => {
+    const pool = (allItems || []).filter((it) => it.available !== false && it.type !== 'box' && !cartItemIds.has(String(it._id)));
+    const isDrink = (it) => /مشروب|عصير|مياه|beverage|drink|juice/i.test(`${it.category || ''} ${it.nameAr || ''} ${it.name || ''}`);
+    const drinks = pool.filter(isDrink);
+    const list = drinks.length > 0 ? drinks : [...pool].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    return list.slice(0, 3);
+  })();
+  const addSuggestion = (item) => {
+    const groups = groupsOfItem(item);
+    const legacySized = !(Array.isArray(item.modifierGroups) && item.modifierGroups.length > 0) && Array.isArray(item.sizes) && item.sizes.length > 0;
+    let price = !legacySized && Number(item.price) > 0 ? getDiscountedPrice(item.price, item.discount) : 0;
+    const modifiersInfo = [];
+    const modifierSelections = [];
+    groups.forEach((g, gi) => {
+      if ((Number(g.min) || 0) < 1) return;
+      const opt = (g.options || [])[0];
+      if (!opt) return;
+      const op = getDiscountedPrice(opt.price, item.discount);
+      price += op;
+      modifiersInfo.push(`${g.name}: ${opt.name}${op > 0 ? ` (+${op} ج)` : ''}`);
+      modifierSelections.push({ groupIndex: gi, optionIndices: [0] });
+    });
+    setCart([...cart, { ...item, cartId: Date.now() + Math.random(), price, modifiersInfo, modifierSelections, notes: '' }]);
+  };
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
@@ -2137,6 +2323,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     const orderPayload = {
       orderId, customerName, customerPhone, orderType,
       customerAddress: orderType === 'delivery' ? customerAddress : 'استلام من الفرع',
+      addressLabel: orderType === 'delivery' ? (addressLabel || '') : undefined,
       zoneName: orderType === 'delivery' && selectedZone ? selectedZone.name : 'استلام من الفرع',
       deliveryFee: orderType === 'delivery' ? deliveryFee : 0,
       items: groupedCart.map((g) => ({
@@ -2231,6 +2418,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   return (
     <section className="px-6 py-12 max-w-4xl mx-auto min-h-screen bg-[#050304] text-white">
       <h2 className="text-3xl font-black text-[#FFB800] mb-8 border-b border-[#1A0B0E] pb-4">{t.cart}</h2>
+      {reorderNotice && <div className="bg-amber-500/10 border border-amber-500/50 text-amber-300 rounded-2xl p-4 text-sm font-bold mb-6 flex items-start justify-between gap-3"><span>{reorderNotice}</span><button type="button" onClick={() => setReorderNotice('')} className="text-amber-300 underline shrink-0">✕</button></div>}
       {cart.length === 0 ? (
         <div className="border border-[#1F0A0E] bg-[#100609] rounded-[2.5rem] p-16 text-center">
           <h2 className="text-2xl font-bold text-zinc-400 mb-4">{t.emptyCart}</h2>
@@ -2264,6 +2452,19 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                 );
               })}
             </div>
+            {suggestions.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-[#1F0A0E]">
+                <h4 className="text-base font-bold text-[#FFB800] mb-3">كمّل طلبك؟ 🥤</h4>
+                <div className="space-y-2">
+                  {suggestions.map((sug) => (
+                    <div key={sug._id} className="flex items-center justify-between gap-2 bg-[#050304] border border-[#1F0A0E] rounded-2xl px-3 py-2">
+                      <div><p className="text-sm font-bold text-white">{itemNameAr(sug, lang)}</p><p className="text-xs text-[#FFB800] font-bold">{getDiscountedPrice(sug.price, sug.discount)} ج</p></div>
+                      <button type="button" onClick={() => addSuggestion(sug)} className="bg-[#FF4500] text-white text-xs font-black px-3 py-2 rounded-xl shrink-0">➕ ضيف</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
               <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
               {orderType === 'delivery' && <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>}
@@ -2322,7 +2523,26 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
               {orderType === 'delivery' && (
                 <>
                   <div><label className="block text-xs text-zinc-300 mb-1">منطقة التوصيل *</label><select value={selectedZone?._id || ''} onChange={(e) => setSelectedZone(deliveryZones.find(z => z._id === e.target.value))} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm cursor-pointer">{deliveryZones.map(z => (<option key={z._id} value={z._id}>{z.name} ({z.fee} ج)</option>))}</select></div>
-                  <div><label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *</label><textarea value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
+                  {savedAddresses.length > 0 && (
+                    <div>
+                      <label className="block text-xs text-zinc-300 mb-1">عناويني المحفوظة</label>
+                      <div className="flex flex-wrap gap-2">
+                        {savedAddresses.map((a, i) => (
+                          <button key={i} type="button" onClick={() => { setCustomerAddress(a.address || ''); setAddressLabel(a.label || ''); }} className={`px-3 py-2 rounded-xl text-xs font-bold border ${customerAddress === a.address ? 'bg-[#FF4500] text-white border-[#FF4500]' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E]'}`}>{a.label === 'بيت' ? '🏠 بيت' : a.label === 'شغل' ? '💼 شغل' : `📍 ${a.label || 'عنوان'}`}</button>
+                        ))}
+                        <button type="button" onClick={() => { setCustomerAddress(''); setAddressLabel(''); }} className="px-3 py-2 rounded-xl text-xs font-bold border bg-[#050304] text-zinc-300 border-[#1F0A0E]">➕ عنوان جديد</button>
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs text-zinc-300 mb-1">نوع العنوان (اختياري — عشان يتحفظ عندك للمرة الجاية)</label>
+                    <div className="flex gap-2">
+                      {['بيت', 'شغل'].map((l) => (
+                        <button key={l} type="button" onClick={() => setAddressLabel(addressLabel === l ? '' : l)} className={`flex-1 py-2 rounded-xl text-xs font-bold border ${addressLabel === l ? 'bg-[#FF4500] text-white border-[#FF4500]' : 'bg-[#050304] text-zinc-300 border-[#1F0A0E]'}`}>{l === 'بيت' ? '🏠 بيت' : '💼 شغل'}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div><label className="block text-xs text-zinc-300 mb-1">العنوان بالتفصيل *{addressLabel ? ` — ${addressLabel === 'بيت' ? '🏠 بيت' : addressLabel === 'شغل' ? '💼 شغل' : addressLabel}` : ''}</label><textarea value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" /></div>
                   <div>
                     {loc ? (
                       <div className="flex items-center justify-between gap-3 bg-green-500/10 border border-green-500/40 rounded-2xl p-3 text-sm">
@@ -2398,7 +2618,111 @@ const OrderStepper = ({ order }) => {
   );
 };
 
+// ---------- وقت التوصيل اللي بيحدده الكاشير للأوردر (بيظهر للعميل في "طلباتي") ----------
+const OrderEtaControl = ({ ord, zones, activeCount, authFetch, onSaved }) => {
+  const zone = (zones || []).find((z) => z.name === ord.zoneName);
+  const autoEta = zone ? deliveryEtaOf(zone, activeCount).low : null;
+  const initial = Number(ord.etaMinutes) > 0 ? String(Number(ord.etaMinutes)) : (autoEta ? String(autoEta) : '');
+  const [minutes, setMinutes] = useState(initial);
+  const [savedBy, setSavedBy] = useState(ord.etaSetBy || '');
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const v = Number(minutes);
+    if (!Number.isInteger(v) || v < 5 || v > 180) return alert('وقت التوصيل لازم يكون من 5 لـ 180 دقيقة');
+    setBusy(true);
+    try {
+      const r = await authFetch(`/api/orders/${ord._id || ord.orderId}/eta`, { method: 'PUT', body: JSON.stringify({ etaMinutes: v }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return alert(d.error || 'تعذر حفظ الوقت');
+      setSavedBy(d.etaSetBy || '');
+      setMinutes(String(Number(d.etaMinutes)));
+      if (onSaved) onSaved();
+    } catch { alert('تعذر الاتصال بالسيرفر'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 mb-4">
+      <label className="block text-xs font-bold text-zinc-300 mb-2">🕐 وقت التوصيل (دقيقة)</label>
+      <div className="flex gap-2">
+        <input type="number" min="5" max="180" value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="مثال: 45" className="flex-1 bg-[#100609] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" dir="ltr" />
+        <button type="button" onClick={save} disabled={busy} className="bg-[#FFB800] hover:bg-[#e6a800] disabled:opacity-60 text-black font-black px-4 py-2 rounded-xl text-sm">💾 حفظ الوقت</button>
+      </div>
+      {savedBy && <p className="text-[11px] text-zinc-400 mt-2">آخر تعديل: {savedBy}</p>}
+    </div>
+  );
+};
+
 // ================= صفحة "طلباتي" للعميل: بياناته المحفوظة + سجل أوردراته + إعادة الطلب + التقييم =================
+// مجموعات الاختيارات لصنف (من modifierGroups، أو من sizes/addons القديمة)
+const groupsOfItem = (item) => {
+  let groups = [...(item.modifierGroups || [])];
+  if (groups.length === 0 && (item.sizes?.length > 0 || item.addons?.length > 0)) {
+    if (item.sizes?.length > 0) groups.push({ name: 'اختر الحجم', min: 1, max: 1, options: item.sizes });
+    if (item.addons?.length > 0) groups.push({ name: 'الإضافات الاختيارية', min: 0, max: item.addons.length, options: item.addons });
+  }
+  return groups;
+};
+
+// إعادة الطلب بالأسعار الحالية — نفس منطق نص كفتة: السعر والاختيارات من المنيو الحالي بسعر اليوم، مش من الأوردر القديم
+const stripModPrice = (text) => String(text || '').replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*\)\s*$/, '').trim();
+// يرجع { price, mods, selections, name } بسعر اليوم، أو null لو الصنف مينفعش يتعاد زي ما هو
+// (مثلاً حجم إجباري اتشال من المنيو، أو محتوى بوكس اتشال فبقى ناقص)
+const buildReorderUnit = (cat, oldMods) => {
+  const groups = groupsOfItem(cat);
+  // بوكس: الاختيارات "2× اسم الصنف" ولازم مجموعها = عدد الأصناف المطلوب
+  if (cat.type === 'box' && Array.isArray(cat.boxItems) && cat.boxItems.length > 0 && groups.length === 0) {
+    const allowed = new Set(cat.boxItems.map((b) => String(b.name || '').trim()));
+    const picks = [];
+    let total = 0;
+    (Array.isArray(oldMods) ? oldMods : []).forEach((m) => {
+      const mm = /^\s*(\d+)\s*×\s*(.+?)\s*$/.exec(String(m || ''));
+      if (!mm) return;
+      const name = mm[2].trim();
+      const cnt = Number(mm[1]);
+      if (!allowed.has(name) || cnt < 1) return;
+      picks.push(`${cnt}× ${name}`);
+      total += cnt;
+    });
+    const boxMax = Number(cat.maxItems) || 0;
+    if (boxMax > 0 ? total !== boxMax : total === 0) return null;
+    return { price: getDiscountedPrice(cat.price, cat.discount), mods: picks, selections: [], name: cat.name };
+  }
+  const selectionsByGroup = groups.map(() => []);
+  (Array.isArray(oldMods) ? oldMods : []).forEach((modifier) => {
+    const text = String(modifier || '').trim();
+    const colon = text.indexOf(':');
+    if (colon < 0) return;
+    const groupName = text.slice(0, colon).trim();
+    const optionName = stripModPrice(text.slice(colon + 1));
+    let gi = groups.findIndex((g) => String(g.name || '').trim() === groupName);
+    if (gi < 0) gi = groups.findIndex((g) => (g.options || []).some((o) => String(o.name || '').trim() === optionName));
+    if (gi < 0) return;
+    const oi = (groups[gi].options || []).findIndex((o) => String(o.name || '').trim() === optionName);
+    if (oi >= 0 && !selectionsByGroup[gi].includes(oi)) selectionsByGroup[gi].push(oi);
+  });
+  const legacyMode = !(Array.isArray(cat.modifierGroups) && cat.modifierGroups.length > 0);
+  const legacySized = legacyMode && Array.isArray(cat.sizes) && cat.sizes.length > 0;
+  let unitPrice = !legacySized && Number(cat.price) > 0 ? getDiscountedPrice(cat.price, cat.discount) : 0;
+  const mods = [];
+  const selections = [];
+  for (let gi = 0; gi < groups.length; gi += 1) {
+    const group = groups[gi];
+    const selectedCount = selectionsByGroup[gi].length;
+    const min = Number.isFinite(Number(group.min)) ? Number(group.min) : 0;
+    const max = Number.isFinite(Number(group.max)) ? Number(group.max) : (group.options || []).length;
+    if (selectedCount < min || selectedCount > max) return null;
+    if (selectionsByGroup[gi].length) selections.push({ groupIndex: gi, optionIndices: [...selectionsByGroup[gi]] });
+    selectionsByGroup[gi].forEach((oi) => {
+      const option = (group.options || [])[oi];
+      if (!option) return;
+      const optionPrice = legacyMode && group.name === 'الإضافات الاختيارية' ? Math.round(Number(option.price) || 0) : getDiscountedPrice(option.price, cat.discount);
+      unitPrice += optionPrice;
+      mods.push(`${group.name}: ${option.name}${optionPrice > 0 ? ` (+${optionPrice} ج)` : ''}`);
+    });
+  }
+  return { price: unitPrice, mods, selections, name: cat.name };
+};
+
 const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
   const navigate = useNavigate();
   const [session, setSession] = useState(() => readCustomerSession());
@@ -2482,65 +2806,38 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
     setRatingBusy(null);
   };
 
-  const groupsOfItem = (item) => {
-    let groups = [...(item.modifierGroups || [])];
-    if (groups.length === 0 && (item.sizes?.length > 0 || item.addons?.length > 0)) {
-      if (item.sizes?.length > 0) groups.push({ name: "اختر الحجم", min: 1, max: 1, options: item.sizes });
-      if (item.addons?.length > 0) groups.push({ name: "الإضافات الاختيارية", min: 0, max: item.addons.length, options: item.addons });
+  const reorder = async (order) => {
+    setNotice('');
+    let fresh = [];
+    try {
+      const res = await fetch(`${API_BASE}/api/items`);
+      fresh = await res.json();
+    } catch (err) {
+      return setNotice('تعذر تحميل المنيو، حاول تاني.');
     }
-    return groups;
-  };
-
-  const reorder = (order) => {
-    if (!Array.isArray(menuItems) || menuItems.length === 0) return alert('المنيو لسه بيحمّل، استنى ثواني وحاول تاني.');
+    if (!Array.isArray(fresh)) return setNotice('تعذر تحميل المنيو، حاول تاني.');
+    const byId = new Map(fresh.map((i) => [String(i._id), i]));
     const entries = [];
     const skipped = [];
     for (const line of (order.items || [])) {
-      const menuItem = menuItems.find(mi => String(mi._id) === String(line.itemId));
+      const menuItem = byId.get(String(line.itemId));
       if (!menuItem || menuItem.available === false) { skipped.push(itemNameAr({ name: line.name }, lang)); continue; }
-      const groups = groupsOfItem(menuItem);
-      const selections = groups.map(() => []);
-      for (const mod of (line.modifiers || [])) {
-        const text = String(mod || '');
-        const colon = text.indexOf(':');
-        if (colon < 0) continue;
-        const groupName = text.slice(0, colon).trim();
-        const optionName = text.slice(colon + 1).replace(/\s*\(\s*\+?\s*\d+(?:\.\d+)?\s*ج\s*\)\s*$/, '').trim();
-        let gi = groups.findIndex(g => String(g.name || '').trim() === groupName);
-        if (gi < 0) gi = groups.findIndex(g => (g.options || []).some(o => String(o.name || '').trim() === optionName));
-        if (gi < 0) continue;
-        const oi = (groups[gi].options || []).findIndex(o => String(o.name || '').trim() === optionName);
-        if (oi >= 0 && !selections[gi].includes(oi)) selections[gi].push(oi);
-      }
-      let valid = true;
-      for (let gi = 0; gi < groups.length; gi++) {
-        const min = Number(groups[gi].min) || 0;
-        const max = Number.isFinite(Number(groups[gi].max)) ? Number(groups[gi].max) : (groups[gi].options || []).length;
-        if (selections[gi].length < min || selections[gi].length > max) { valid = false; break; }
-      }
-      if (!valid) { skipped.push(itemNameAr({ name: line.name }, lang)); continue; }
-      let price = getDiscountedPrice(menuItem.price, menuItem.discount);
-      const modifiersInfo = [];
-      const modifierSelections = [];
-      groups.forEach((g, gi) => {
-        if (!selections[gi].length) return;
-        modifierSelections.push({ groupIndex: gi, optionIndices: [...selections[gi]] });
-        selections[gi].forEach(oi => {
-          const opt = g.options[oi];
-          const op = getDiscountedPrice(opt.price, menuItem.discount);
-          price += op;
-          modifiersInfo.push(`${g.name}: ${opt.name} ${op > 0 ? `(+${op} ج)` : ''}`.trim());
-        });
-      });
-      const qty = Math.max(1, Number(line.quantity) || 1);
+      const built = buildReorderUnit(menuItem, line.modifiers);
+      if (!built) { skipped.push(itemNameAr({ name: line.name }, lang)); continue; }
+      const qty = Math.max(1, Math.min(99, Number(line.quantity) || 1));
       for (let k = 0; k < qty; k++) {
-        entries.push({ ...menuItem, cartId: Date.now() + Math.random() + k, price, modifiersInfo, modifierSelections, notes: line.notes || '' });
+        entries.push({ ...menuItem, cartId: Date.now() + Math.random() + k, price: built.price, modifiersInfo: built.mods, modifierSelections: built.selections, notes: line.notes || '' });
       }
     }
-    if (entries.length === 0) return alert('للأسف أصناف الأوردر ده مش متاحة حالياً من المنيو.');
-    setCart([...cart, ...entries]);
-    if (skipped.length > 0) alert('تمت إضافة الأوردر للسلة، ما عدا: ' + [...new Set(skipped)].join('، ') + ' (مش متاح حالياً أو اختياراته اتغيرت).');
-    navigate('/cart');
+    const skippedNote = skipped.length > 0 ? ('الأصناف دي مش متاحة دلوقتي ومتضافتش: ' + [...new Set(skipped)].join('، ')) : '';
+    if (entries.length > 0) {
+      setCart([...cart, ...entries]);
+      // التنبيه بيسافر مع العميل لصفحة السلة عشان يشوفه (مبيفضلش على صفحة طلباتي بعد ما يمشي منها)
+      navigate('/cart', skippedNote ? { state: { reorderNote: skippedNote } } : undefined);
+      return;
+    }
+    if (skippedNote) setNotice(skippedNote);
+    else setNotice('مفيش أصناف في الأوردر ده.');
   };
 
   if (!session?.token) {
@@ -2605,6 +2902,9 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
                     </div>
                     <p className="text-xs text-zinc-500 mb-3">{o.createdAt ? new Date(o.createdAt).toLocaleString('ar-EG') : ''} · {o.orderType === 'delivery' ? `توصيل (${o.zoneName || ''})` : 'استلام من الفرع'}</p>
                     <div className="mb-4"><OrderStepper order={o} /></div>
+                    {o.orderType === 'delivery' && Number(o.etaMinutes) > 0 && o.status !== 'completed' && o.status !== 'cancelled' && (
+                      <p className="text-sm font-black text-[#FFB800] bg-[#FFB800]/10 border border-[#FFB800]/40 rounded-xl px-3 py-2 mb-4 text-center">🕐 هيوصلك خلال {Number(o.etaMinutes)} دقيقة</p>
+                    )}
                     <div className="space-y-1 mb-3">
                       {(o.items || []).map((it, idx) => (
                         <div key={idx} className="text-sm">
@@ -3324,7 +3624,7 @@ const Receipt80 = ({ order, type, cashierName }) => {
           {order.orderType !== 'talabat' && order.customerName && order.customerName !== '-' && <div>الاسم: {order.customerName}</div>}
           {order.orderType !== 'talabat' && order.customerPhone && order.customerPhone !== '-' && <div>التليفون: <span dir="ltr">{order.customerPhone}</span></div>}
           {isDelivery && order.zoneName && <div>المنطقة: {order.zoneName}</div>}
-          {isDelivery && order.customerAddress && <div>العنوان: {order.customerAddress}</div>}
+          {isDelivery && order.customerAddress && <div>العنوان{order.addressLabel ? ` (${order.addressLabel})` : ''}: {order.customerAddress}</div>}
           {isDelivery && order.driverName && <div>السواق: {order.driverName}</div>}
           {isDelivery && mapUrl && (
             <div className="rc-center" style={{ margin: '6px 0' }}>
@@ -5827,6 +6127,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
   const [session, setSession] = useState(readSession);
   const [orders, setOrders] = useState([]);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [etaZones, setEtaZones] = useState([]); // مناطق التوصيل (لاقتراح وقت تلقائي في خانة وقت التوصيل)
   const [cashierTab, setCashierTab] = useState(initialTab === 'archive' ? 'active' : initialTab); // pos | active | shift | archive | stock | staff | chat
   const [soundReady, setSoundReady] = useState(false);
 
@@ -6095,6 +6396,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
     if (!token) return;
     fetchOrders();
     if (isAdmin) fetchShifts();
+    fetch(`${API_BASE}/api/zones`).then((r) => r.json()).then((d) => { if (Array.isArray(d)) setEtaZones(d); }).catch(() => {});
     const interval = setInterval(fetchOrders, 3000);
     return () => clearInterval(interval);
   }, [token]);
@@ -6396,7 +6698,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.source !== 'pos' && <p>🔗 <span className="text-zinc-300 text-xs">المصدر: {ord.attribution?.source || '—'}</span></p>}
           {ord.driverName && <p>🛵 <span className="text-zinc-300 text-xs">السواق: {ord.driverName}</span></p>}
           {ord.status === 'cancelled' && <p>✖ <span className="text-red-400 text-xs">سبب الإلغاء: {ord.cancelReason} ({ord.cancelledBy})</span></p>}
-          {ord.orderType === 'delivery' && <p>📍 <span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
+          {ord.orderType === 'delivery' && <p>📍 {ord.addressLabel && <span className="text-[#FFB800] text-xs font-bold">{ord.addressLabel === 'بيت' ? '🏠 بيت' : ord.addressLabel === 'شغل' ? '💼 شغل' : ord.addressLabel} — </span>}<span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
           {ord.orderType === 'delivery' && orderMapUrl(ord) && (
             <div className="mt-3 mb-3 rounded-xl border border-zinc-700 bg-white p-3 text-center">
               <p className="text-black font-bold text-xs mb-2">📍 QR موقع العميل — امسحه لفتح Google Maps</p>
@@ -6439,6 +6741,10 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           <span>الإجمالي:</span>
           <span className="text-[#FFB800] text-lg font-black">{ord.grandTotal} ج</span>
         </div>
+
+        {ord.orderType === 'delivery' && ord.status !== 'completed' && ord.status !== 'cancelled' && (
+          <OrderEtaControl key={`${ord.orderId}:${ord.etaMinutes || ''}:${ord.etaSetAt || ''}`} ord={ord} zones={etaZones} activeCount={activeOrders.length} authFetch={authFetch} onSaved={fetchOrders} />
+        )}
 
         <div className="flex gap-2 flex-wrap">
           {ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' && ord.status !== 'cancelled' && (
