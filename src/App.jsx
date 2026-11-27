@@ -2083,7 +2083,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                 {customerPhone.length === 11 && isFakeEgPhone(customerPhone) && <p className="text-xs text-red-400 mt-1">الرقم ده شكله مش حقيقي، اكتب رقمك الصح.</p>}
                 {customerPhone.length === 11 && !isEgMobile(customerPhone) && <p className="text-xs text-red-400 mt-1">لازم يبدأ بـ 010 أو 011 أو 012 أو 015.</p>}
                 {customerPhone.length === 11 && isEgMobile(customerPhone) && !isFakeEgPhone(customerPhone) && phoneInfo?.needsCallVerification && <p className="text-xs text-amber-300 mt-1">أول مرة؟ الكاشير هيتصل لتأكيد الرقم، وبعدها بياناتك هتتحفظ للطلبات الجاية.</p>}
-                {phoneInfo && <p className="text-xs text-green-400 mt-1">✅ أهلاً بيك تاني{phoneInfo.name ? ` يا ${phoneInfo.name}` : ''}! جبنالك بياناتك المحفوظة.</p>}
+                {phoneInfo?.name && <p className="text-xs text-green-400 mt-1">✅ أهلاً بيك تاني{phoneInfo.name ? ` يا ${phoneInfo.name}` : ''}! جبنالك بياناتك المحفوظة.</p>}
               </div>
               {!isLoggedInCustomer && (
                 <div><label className="block text-xs text-zinc-300 mb-1">رقم سري (4 أرقام) — اختياري</label><input type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={customerPin} onChange={(e) => setCustomerPin(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="مثال: 4826" className="w-full bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" dir="ltr" />
