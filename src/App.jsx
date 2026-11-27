@@ -1075,6 +1075,152 @@ const TalabatPricesEditor = ({ menuItems, categories, adminFetch, fetchItems }) 
   );
 };
 
+// ================= تقرير ساعات الذروة (للأدمن) =================
+const PeakHoursPanel = ({ adminFetch }) => {
+  const [days, setDays] = useState(7);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const load = async (d) => {
+    setLoading(true); setErr('');
+    try {
+      const r = await adminFetch(`/api/reports/peak-hours?days=${d}`);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'تعذر تحميل التقرير');
+      setData(j);
+    } catch (e) { if (e.message !== 'unauthorized') setErr(e.message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(days); }, [days]);
+  const maxHour = Math.max(1, ...((data?.byHour || []).map(h => h.count)));
+  const chip = 'px-3 py-2 rounded-xl text-xs font-black border border-[#1F0A0E] bg-[#050304] text-zinc-300 hover:border-[#FFB800]';
+  return (
+    <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
+      <h3 className="text-2xl font-black text-[#FFB800] mb-2">⏰ تقرير ساعات الذروة</h3>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button type="button" onClick={() => setDays(7)} className={chip + (days === 7 ? ' !border-[#FFB800] !text-white' : '')}>آخر 7 أيام</button>
+        <button type="button" onClick={() => setDays(30)} className={chip + (days === 30 ? ' !border-[#FFB800] !text-white' : '')}>آخر 30 يوم</button>
+        <button type="button" onClick={() => load(days)} className="bg-[#FF4500] px-4 py-2 rounded-xl text-sm font-black text-white">🔄 تحديث</button>
+      </div>
+      {err && <p className="text-red-400 text-sm mb-2">{err}</p>}
+      {loading && <p className="text-zinc-400 text-sm">⏳ بنحمّل...</p>}
+      {data && (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-[#050304] rounded-2xl p-4"><p className="text-zinc-400 text-xs">🔥 أعلى ساعة</p><p className="text-[#FFB800] text-xl font-black mt-1">{String(data.busiestHour.hour).padStart(2, '0')}:00 — {data.busiestHour.count} أوردر</p></div>
+            <div className="bg-[#050304] rounded-2xl p-4"><p className="text-zinc-400 text-xs">📅 أعلى يوم</p><p className="text-[#FFB800] text-xl font-black mt-1">{data.busiestDay.label} — {data.busiestDay.count} أوردر</p></div>
+          </div>
+          <p className="text-xs text-zinc-500 mb-3">إجمالي الأوردرات في الفترة: {data.total} أوردر (من غير الملغي)</p>
+          <div className="space-y-1 mb-4">
+            {data.byHour.map(h => (
+              <div key={h.hour} className="flex items-center gap-2 text-xs">
+                <span className="w-10 text-zinc-400 font-bold" dir="ltr">{String(h.hour).padStart(2, '0')}:00</span>
+                <div className="flex-1 bg-[#050304] rounded h-4 overflow-hidden"><div className="bg-[#FF4500] h-4 rounded" style={{ width: `${Math.round((h.count / maxHour) * 100)}%` }} /></div>
+                <span className="w-8 text-white font-bold">{h.count}</span>
+              </div>
+            ))}
+          </div>
+          <table className="w-full text-sm">
+            <thead><tr className="text-zinc-400 text-xs border-b border-[#1F0A0E]"><th className="p-2 text-right">اليوم</th><th className="p-2">عدد الأوردرات</th></tr></thead>
+            <tbody>
+              {data.byWeekday.map(d => (
+                <tr key={d.day} className="border-b border-[#1F0A0E]/60 text-center"><td className="p-2 text-right font-bold">{d.label}</td><td className="p-2 font-black text-[#FFB800]">{d.count}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ================= أكواد الخصم (للأدمن) =================
+const PromoCodesPanel = ({ adminFetch }) => {
+  const [codes, setCodes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+  const [code, setCode] = useState('');
+  const [type, setType] = useState('percent');
+  const [value, setValue] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [maxUses, setMaxUses] = useState('');
+  const [minOrder, setMinOrder] = useState('');
+  const inp = 'bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm w-full';
+  const load = async () => {
+    setLoading(true); setErr('');
+    try {
+      const r = await adminFetch('/api/admin/promo-codes');
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'تعذر تحميل الأكواد');
+      setCodes(Array.isArray(j) ? j : []);
+    } catch (e) { if (e.message !== 'unauthorized') setErr(e.message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+  const create = async (e) => {
+    e.preventDefault(); setErr(''); setMsg('');
+    try {
+      const r = await adminFetch('/api/admin/promo-codes', { method: 'POST', body: JSON.stringify({ code, type, value: Number(value), startDate: startDate || undefined, endDate: endDate || undefined, maxUses: maxUses ? Number(maxUses) : 0, minOrder: minOrder ? Number(minOrder) : 0 }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return setErr(j.error || 'تعذر إنشاء الكود');
+      setCode(''); setValue(''); setStartDate(''); setEndDate(''); setMaxUses(''); setMinOrder('');
+      setMsg('✅ الكود اتعمل');
+      load();
+    } catch { setErr('تعذر الاتصال بالسيرفر'); }
+  };
+  const toggle = async (c) => {
+    try { const r = await adminFetch(`/api/admin/promo-codes/${c._id}`, { method: 'PUT', body: JSON.stringify({ active: !c.active }) }); if (r.ok) load(); } catch {}
+  };
+  const remove = async (c) => {
+    if (!window.confirm(`حذف الكود ${c.code} نهائياً؟`)) return;
+    try { const r = await adminFetch(`/api/admin/promo-codes/${c._id}`, { method: 'DELETE' }); if (r.ok) load(); } catch {}
+  };
+  const fmtDate = (v) => v ? new Date(v).toLocaleDateString('ar-EG') : '—';
+  return (
+    <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#1F0A0E] mb-8 shadow-2xl">
+      <h3 className="text-2xl font-black text-[#FFB800] mb-2">🏷️ أكواد الخصم</h3>
+      <p className="text-xs text-zinc-500 mb-4">الكود مش بيتجمع مع خصم الأصناف الحالي (الـ30%) ولا مع استبدال النقاط — خصم واحد بس في الأوردر.</p>
+      <form onSubmit={create} className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20))} placeholder="الكود (مثال: RAMADAN30)" className={inp} dir="ltr" />
+        <select value={type} onChange={(e) => setType(e.target.value)} className={inp}>
+          <option value="percent">نسبة %</option>
+          <option value="amount">مبلغ ثابت (ج)</option>
+        </select>
+        <input type="number" min="1" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === 'percent' ? 'النسبة %' : 'المبلغ بالجنيه'} className={inp} dir="ltr" />
+        <input type="number" min="0" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder="حد أدنى للأوردر (ج)" className={inp} dir="ltr" />
+        <label className="text-xs text-zinc-400">من يوم<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inp + ' mt-1'} /></label>
+        <label className="text-xs text-zinc-400">إلى يوم<input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inp + ' mt-1'} /></label>
+        <input type="number" min="0" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="حد أقصى للاستخدام (0 = مفتوح)" className={inp} dir="ltr" />
+        <button type="submit" className="bg-[#FF4500] text-white font-black rounded-xl text-sm">➕ إنشاء الكود</button>
+      </form>
+      {err && <p className="text-red-400 text-sm mb-2">{err}</p>}
+      {msg && <p className="text-green-400 text-sm mb-2">{msg}</p>}
+      {loading ? <p className="text-zinc-400 text-sm">⏳ بنحمّل...</p> : codes.length === 0 ? <p className="text-zinc-500 text-sm">لسه مفيش أكواد.</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead><tr className="text-zinc-400 text-xs border-b border-[#1F0A0E]"><th className="p-2 text-right">الكود</th><th className="p-2">الخصم</th><th className="p-2">الصلاحية</th><th className="p-2">الاستخدام</th><th className="p-2">إجمالي الخصم</th><th className="p-2">الحالة</th><th className="p-2"></th></tr></thead>
+            <tbody>
+              {codes.map(c => (
+                <tr key={c._id} className="border-b border-[#1F0A0E]/60 text-center">
+                  <td className="p-2 text-right font-black text-[#FFB800]" dir="ltr">{c.code}</td>
+                  <td className="p-2">{c.type === 'percent' ? `${c.value}%` : `${c.value} ج`}{Number(c.minOrder) > 0 ? <span className="text-zinc-500 text-xs block">حد أدنى {c.minOrder} ج</span> : ''}</td>
+                  <td className="p-2 text-xs">{fmtDate(c.startDate)} ← {fmtDate(c.endDate)}</td>
+                  <td className="p-2 font-bold">{c.usedCount || 0}{c.maxUses > 0 ? ` / ${c.maxUses}` : ''}</td>
+                  <td className="p-2 text-green-400 font-bold">{c.totalDiscounted || 0} ج</td>
+                  <td className="p-2"><button type="button" onClick={() => toggle(c)} className={`px-3 py-1 rounded-lg text-xs font-black ${c.active ? 'bg-green-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{c.active ? 'شغال' : 'متوقف'}</button></td>
+                  <td className="p-2"><button type="button" onClick={() => remove(c)} className="text-red-400 bg-red-500/10 px-3 py-1 rounded-lg text-xs font-bold">🗑️ حذف</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fetchCategories, fetchSettings, token, onUnauthorized, onLogout }) => {
   const t = translations[lang];
   const adminFetch = (path, options = {}) => authRequest(token, path, options, onUnauthorized);
@@ -1088,6 +1234,7 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
   const [deliveryZones, setDeliveryZones] = useState([]);
   const [zoneName, setZoneName] = useState('');
   const [zoneFee, setZoneFee] = useState('');
+  const [zoneEta, setZoneEta] = useState('');
 
   const fetchZones = async () => {
     try {
@@ -1101,8 +1248,8 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
     e.preventDefault();
     if (!zoneName.trim() || !zoneFee) return;
     try {
-      const res = await adminFetch('/api/zones', { method: 'POST', body: JSON.stringify({ name: zoneName.trim(), fee: Number(zoneFee) }) });
-      if (res.ok) { setZoneName(''); setZoneFee(''); fetchZones(); }
+      const res = await adminFetch('/api/zones', { method: 'POST', body: JSON.stringify({ name: zoneName.trim(), fee: Number(zoneFee), etaMinutes: zoneEta ? Number(zoneEta) : undefined }) });
+      if (res.ok) { setZoneName(''); setZoneFee(''); setZoneEta(''); fetchZones(); }
     } catch (err) {}
   };
 
@@ -1360,17 +1507,22 @@ const AdminPanel = ({ menuItems, categories, siteSettings, lang, fetchItems, fet
 
       <StoreHoursPanel adminFetch={adminFetch} />
 
+      <PeakHoursPanel adminFetch={adminFetch} />
+
+      <PromoCodesPanel adminFetch={adminFetch} />
+
       <div className="bg-[#100609] p-8 rounded-[2.5rem] border border-[#FF4500]/40 mb-8 shadow-2xl">
         <h3 className="text-xl font-bold text-[#FFB800] mb-4">🚚 إدارة مناطق التوصيل وأسعارها</h3>
         <form onSubmit={handleAddZone} className="flex flex-col md:flex-row gap-4 mb-6">
           <input type="text" placeholder="اسم المنطقة (مثل: الشروق)" value={zoneName} onChange={(e) => setZoneName(e.target.value)} className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
           <input type="number" placeholder="سعر التوصيل (مثل: 30)" value={zoneFee} onChange={(e) => setZoneFee(e.target.value)} className="w-full md:w-40 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
+          <input type="number" min="5" max="120" placeholder="وقت التوصيل بالدقائق (اختياري — 30)" value={zoneEta} onChange={(e) => setZoneEta(e.target.value.replace(/\D/g, '').slice(0, 3))} className="w-full md:w-48 bg-[#050304] border border-[#1F0A0E] rounded-2xl p-4 text-white text-sm" />
           <button type="submit" className="bg-[#FF4500] text-white font-bold px-8 py-4 rounded-2xl hover:bg-[#E03D00] transition shadow cursor-pointer">➕ إضافة</button>
         </form>
         <div className="space-y-3">
           {deliveryZones.length === 0 ? <p className="text-zinc-500 text-sm">لم يتم إضافة مناطق توصيل بعد.</p> : deliveryZones.map((zone) => (
             <div key={zone._id} className="bg-[#050304] border border-[#1F0A0E] px-5 py-3.5 rounded-2xl flex items-center justify-between text-sm">
-              <span className="font-bold text-[#FFB800]">{zone.name} — <span className="text-white">{zone.fee} جنيه</span></span>
+              <span className="font-bold text-[#FFB800]">{zone.name} — <span className="text-white">{zone.fee} جنيه</span> · <span className="text-green-400">⏱️ {Number(zone.etaMinutes) || 30} دقيقة</span></span>
               <button onClick={() => handleDeleteZone(zone._id)} className="text-red-400 bg-red-500/10 px-3.5 py-1.5 rounded-xl font-bold text-xs">✕ مسح</button>
             </div>
           ))}
@@ -1786,6 +1938,13 @@ const CampaignReports = ({ token, onLogout }) => {
 };
 
 // ================= 4. صفحة السلة =================
+// وقت التوصيل المتوقع — نفس معادلة السيرفر: وقت أساس المنطقة (30 دقيقة لو مش متحدد) + 5 دقايق لكل أوردر نشط، بحد أقصى 90 دقيقة، ويظهر كمدى
+const deliveryEtaOf = (zone, activeOrders) => {
+  const base = Math.min(Math.max(Number(zone?.etaMinutes) || 30, 5), 120);
+  const low = Math.min(base + 5 * Math.max(0, Number(activeOrders) || 0), 90);
+  return { low, high: Math.min(low + 15, 90) };
+};
+
 const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const t = translations[lang];
   const itemsTotal = cart.reduce((sum, item) => sum + item.price, 0);
@@ -1802,6 +1961,12 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   const [loc, setLoc] = useState(null);
   const [locBusy, setLocBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [promoApplied, setPromoApplied] = useState(null); // {code, type, discountAmount}
+  const [promoMsg, setPromoMsg] = useState('');
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [loyaltyBalance, setLoyaltyBalance] = useState(0);
+  const [loyaltyBlocks, setLoyaltyBlocks] = useState(0); // كل بلوك = 100 نقطة = 10 ج
   const storeClosed = !!(storeStatus && storeStatus.isOpen === false);
   const customerSession = readCustomerSession();
   const isLoggedInCustomer = !!(customerSession && customerSession.token && customerSession.phone === customerPhone);
@@ -1813,6 +1978,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
   // لو الرقم ده عميل سابق: نجيب اسمه وعنوانه وموقعه المحفوظ
   useEffect(() => {
     setPhoneInfo(null);
+    setLoyaltyBalance(0);
     // رقم جديد؟ امسح بيانات الرقم السابق قبل البحث حتى لا تختلط بيانات عميل بآخر.
     setCustomerName('');
     setCustomerAddress('');
@@ -1848,6 +2014,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         if (!d || !d.profile) { runPublicLookup(); return; }
         const p = d.profile;
         setPhoneInfo({ known: true, name: p.name || '' });
+        setLoyaltyBalance(Number(p.points) || 0);
         setCustomerName(p.name || '');
         if (orderType === 'delivery') {
           setCustomerAddress(p.address || '');
@@ -1890,6 +2057,33 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
 
   const deliveryFee = orderType === 'delivery' && selectedZone ? selectedZone.fee : 0;
   const grandTotal = itemsTotal + deliveryFee;
+  // خصم الموقع: كود أو نقاط — واحد بس (السيرفر هو اللي بيحسم في الآخر)
+  const maxLoyaltyBlocks = Math.max(0, Math.min(Math.floor(loyaltyBalance / 100), Math.floor(itemsTotal / 10)));
+  const loyaltyDiscount = promoApplied ? 0 : Math.min(loyaltyBlocks, maxLoyaltyBlocks) * 10;
+  const promoDiscount = promoApplied ? Math.min(Number(promoApplied.discountAmount) || 0, itemsTotal) : 0;
+  const orderDiscount = promoDiscount + loyaltyDiscount;
+  const finalTotal = Math.max(0, itemsTotal - orderDiscount + deliveryFee);
+  // عدد الأوردرات النشطة بييجي من السيرفر (store-status بيتحدث كل دقيقة) — والوقت المتوقع بيتحسب منه ومن المنطقة
+  const activeOrders = Number(storeStatus?.activeOrders) || 0;
+  const deliveryEta = orderType === 'delivery' ? deliveryEtaOf(selectedZone, activeOrders) : null;
+
+  // لو السلة اتغيرت بعد تطبيق الكود/النقاط، الخصم يتلغي ويتطبق من تاني
+  useEffect(() => { setPromoApplied(null); setPromoMsg(''); setLoyaltyBlocks(0); }, [cart]);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return setPromoMsg('اكتب الكود الأول');
+    if (loyaltyBlocks > 0) return setPromoMsg('مينفعش تجمع كود الخصم مع استبدال النقاط');
+    setPromoBusy(true); setPromoMsg('');
+    try {
+      const r = await fetch(`${API_BASE}/api/promo-codes/validate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, itemsTotal, itemIds: [...new Set(cart.map(i => String(i._id)))], loyaltyPointsUsed: 0 }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return setPromoMsg(d.error || 'الكود مش صحيح');
+      setPromoApplied({ code: d.code, type: d.type, discountAmount: d.discountAmount });
+      setPromoMsg(`✅ اتطبق خصم ${d.discountAmount} ج (${d.code})`);
+    } catch { setPromoMsg('تعذر الاتصال بالسيرفر'); }
+    setPromoBusy(false);
+  };
 
   const handleRemoveCompletely = (cartId) => { setCart(cart.filter(i => i.cartId !== cartId)); };
 
@@ -1951,6 +2145,8 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
         modifiers: g.item.modifiersInfo || [], notes: g.item.notes || ''
       })),
       itemsTotal, grandTotal,
+      ...(promoApplied ? { promoCode: promoApplied.code } : {}),
+      ...(loyaltyBlocks > 0 && !promoApplied ? { loyaltyPointsUsed: loyaltyBlocks * 100 } : {}),
       ...(customerPin.trim() ? { pin: customerPin.trim() } : {}),
       attribution: readAttribution(),
       location: orderType === 'delivery' && loc ? { lat: Number(loc.lat), lng: Number(loc.lng) } : undefined
@@ -1959,7 +2155,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
     let savedOrder = null;
     try {
       const response = await fetch(`${API_BASE}/api/orders`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderPayload)
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(customerSession?.token ? { Authorization: `Bearer ${customerSession.token}` } : {}) }, body: JSON.stringify(orderPayload)
       });
       const responseData = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -2002,6 +2198,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
       if (item.notes) message += `   📝 ملاحظات: ${item.notes}\n`;
     });
     message += `\n-------------------\n🏷️ *قيمة الأصناف:* ${savedItemsTotal} ج\n`;
+    if (Number(savedOrder.discountAmount) > 0) message += `🏷️ *الخصم:* ${savedOrder.discountAmount} ج${savedOrder.promoCode ? ` (كود ${savedOrder.promoCode})` : savedOrder.loyaltyPointsUsed ? ' (نقاط ولاء)' : ''}\n`;
     if (savedOrder.orderType === 'delivery') message += `🚚 *سعر التوصيل:* ${savedDeliveryFee} ج\n`;
     message += `💰 *الإجمالي النهائي: ${savedGrandTotal} جنيه*\n`;
     // Meta Pixel: تم إرسال الأوردر (الـ orderId بيمنع تسجيل نفس الأوردر مرتين)
@@ -2052,6 +2249,7 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
                       <h4 className="text-base font-bold text-white">{g.qty > 1 && <span className="text-[#FF4500] font-black ml-1">{g.qty}×</span>} {itemNameAr(item, lang)}</h4>
                       {item.modifiersInfo && item.modifiersInfo.map((mod, idx) => (<p key={idx} className="text-xs text-zinc-400">- {localizeModifierOption(mod, lang)}</p>))}
                       {item.notes && <p className="text-xs text-[#FFB800] mt-1">📝 {item.notes}</p>}
+                      <input key={g.key + ':notes'} defaultValue={item.notes || ''} onBlur={(e) => { const v = e.target.value.slice(0, 300); if (v !== (item.notes || '')) setCart(prev => prev.map(ci => g.ids.includes(ci.cartId) ? { ...ci, notes: v } : ci)); }} placeholder="ملاحظات للصنف (مثال: من غير بصل)" className="w-full mt-1 bg-[#050304] border border-[#1F0A0E] rounded-lg px-2 py-1.5 text-white text-xs" />
                       <p className="text-[#FFB800] font-bold text-sm mt-1">
                         {item.price * g.qty} ج{g.qty > 1 && <span className="text-zinc-500 font-normal text-xs"> ({item.price} ج للواحد)</span>}
                       </p>
@@ -2069,8 +2267,37 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
             <div className="mt-6 pt-4 border-t border-[#1F0A0E] space-y-2 text-sm text-zinc-300">
               <div className="flex justify-between"><span>سعر الأصناف:</span><span className="font-bold text-white">{itemsTotal} ج</span></div>
               {orderType === 'delivery' && <div className="flex justify-between"><span>سعر التوصيل:</span><span className="font-bold text-[#FFB800]">{deliveryFee} ج</span></div>}
+              {orderType === 'delivery' && deliveryEta && <div className="flex justify-between"><span>⏱️ وقت التوصيل المتوقع:</span><span className="font-bold text-green-400">{deliveryEta.low === deliveryEta.high ? `${deliveryEta.low} دقيقة` : `${deliveryEta.low}–${deliveryEta.high} دقيقة`}</span></div>}
+              {orderType === 'delivery' && !selectedZone && <p className="text-[11px] text-zinc-500">الوقت التقريبي حسب المنطقة — هيتحدد لما تختار منطقتك.</p>}
             </div>
-            <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center"><span className="text-lg font-bold">{t.total}</span><span className="text-2xl font-black text-[#FFB800]">{grandTotal} جنيه</span></div>
+            <div className="pt-3 mt-2 border-t border-[#1F0A0E] space-y-2">
+              {promoApplied ? (
+                <div className="flex justify-between items-center"><span className="text-green-400 font-bold text-sm">🏷️ كود {promoApplied.code}: -{promoDiscount} ج</span><button type="button" onClick={() => { setPromoApplied(null); setPromoMsg(''); }} className="text-xs text-zinc-400 underline">إلغاء الكود</button></div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input value={promoInput} onChange={(e) => setPromoInput(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20))} placeholder="عندك كود خصم؟" className="flex-1 bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm" dir="ltr" />
+                    <button type="button" onClick={applyPromo} disabled={promoBusy || loyaltyBlocks > 0} className="bg-[#FFB800] text-black px-4 rounded-xl text-sm font-black disabled:opacity-50">تطبيق</button>
+                  </div>
+                  {promoMsg && <p className="text-[11px] mt-1 text-amber-300">{promoMsg}</p>}
+                </div>
+              )}
+              {isLoggedInCustomer && loyaltyBalance >= 100 && !promoApplied && (
+                <div>
+                  <p className="text-xs text-[#FFB800] font-bold">⭐ عندك {loyaltyBalance} نقطة (كل 100 نقطة = خصم 10 ج)</p>
+                  <div className="flex gap-2 items-center mt-1">
+                    <select value={loyaltyBlocks} onChange={(e) => setLoyaltyBlocks(Number(e.target.value))} className="bg-[#050304] border border-[#1F0A0E] rounded-xl px-3 py-2 text-white text-sm">
+                      <option value={0}>من غير استبدال نقاط</option>
+                      {Array.from({ length: maxLoyaltyBlocks }, (_, i) => i + 1).map(n => (<option key={n} value={n}>استبدل {n * 100} نقطة = خصم {n * 10} ج</option>))}
+                    </select>
+                  </div>
+                  {loyaltyDiscount > 0 && <p className="text-xs text-green-400 font-bold mt-1">خصم النقاط: -{loyaltyDiscount} ج</p>}
+                </div>
+              )}
+              {isLoggedInCustomer && loyaltyBalance > 0 && loyaltyBalance < 100 && <p className="text-[11px] text-zinc-500">⭐ عندك {loyaltyBalance} نقطة — لما توصل 100 نقطة تقدر تستبدلهم بخصم 10 ج.</p>}
+            </div>
+            {orderDiscount > 0 && <div className="flex justify-between"><span>الخصم:</span><span className="font-bold text-green-400">-{orderDiscount} ج</span></div>}
+            <div className="mt-4 pt-4 border-t-2 border-[#FF4500] flex justify-between items-center"><span className="text-lg font-bold">{t.total}</span><span className="text-2xl font-black text-[#FFB800]">{finalTotal} جنيه</span></div>
           </div>
           <div className="bg-[#100609] rounded-[2.5rem] p-8 border border-[#1F0A0E] flex flex-col justify-between">
             <div className="space-y-4">
@@ -2136,6 +2363,41 @@ const CartPage = ({ cart, setCart, lang, storeStatus }) => {
 };
 
 
+// ================= مراحل تتبع الأوردر للعميل =================
+// دليفيري: اتأكد → بيتحضر → خرج للتوصيل → اتسلم | استلام: اتأكد → بيتحضر → جاهز للاستلام → اتسلم
+const TRACK_STEPS = {
+  delivery: ['اتأكد', 'بيتحضر', 'خرج للتوصيل', 'اتسلم'],
+  pickup: ['اتأكد', 'بيتحضر', 'جاهز للاستلام', 'اتسلم']
+};
+const orderTrackingStage = (o) => {
+  const steps = o?.orderType === 'delivery' ? TRACK_STEPS.delivery : TRACK_STEPS.pickup;
+  if (!o) return { steps, current: -1, cancelled: false };
+  if (o.status === 'cancelled') return { steps, current: -1, cancelled: true };
+  if (o.status === 'completed') return { steps, current: 3, cancelled: false };
+  if (o.outForDeliveryAt || o.status === 'ready') return { steps, current: 2, cancelled: false };
+  if (o.status === 'preparing') return { steps, current: 1, cancelled: false };
+  if (o.status === 'accepted') return { steps, current: 0, cancelled: false };
+  return { steps, current: -1, cancelled: false }; // pending: بانتظار تأكيد المطعم
+};
+const OrderStepper = ({ order }) => {
+  const t = orderTrackingStage(order);
+  if (t.cancelled) return <p className="text-xs font-bold text-zinc-400">✖ الأوردر ملغي</p>;
+  return (
+    <div className="flex">
+      {t.steps.map((label, i) => (
+        <div key={label} className="flex-1 flex flex-col items-center">
+          <div className="flex items-center w-full">
+            <div className={`flex-1 h-0.5 ${i === 0 ? 'bg-transparent' : i <= t.current ? 'bg-[#FFB800]' : 'bg-zinc-800'}`} />
+            <div className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-black ${i < t.current ? 'bg-[#FFB800] text-black' : i === t.current ? 'bg-[#FF4500] text-white animate-pulse' : 'bg-zinc-800 text-zinc-500'}`}>{i < t.current ? '✓' : i + 1}</div>
+            <div className={`flex-1 h-0.5 ${i === t.steps.length - 1 ? 'bg-transparent' : i < t.current ? 'bg-[#FFB800]' : 'bg-zinc-800'}`} />
+          </div>
+          <span className={`text-[10px] mt-1 font-bold text-center leading-tight ${i <= t.current ? 'text-white' : 'text-zinc-500'}`}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // ================= صفحة "طلباتي" للعميل: بياناته المحفوظة + سجل أوردراته + إعادة الطلب + التقييم =================
 const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
   const navigate = useNavigate();
@@ -2155,19 +2417,25 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
   const [newPin2, setNewPin2] = useState('');
   const [pinMsg, setPinMsg] = useState('');
 
-  const loadMe = async (token) => {
-    setLoading(true);
+  const loadMe = async (token, quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       const r = await fetch(`${API_BASE}/api/customers/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (r.status === 401) { clearCustomerSession(); setSession(null); setProfile(null); setOrders([]); setLoading(false); return; }
+      if (r.status === 401) { clearCustomerSession(); setSession(null); setProfile(null); setOrders([]); if (!quiet) setLoading(false); return; }
       const d = await r.json().catch(() => ({}));
       setProfile(d.profile || null);
       setOrders(Array.isArray(d.orders) ? d.orders : []);
-    } catch { setNotice('تعذر الاتصال بالسيرفر، حاول تاني.'); }
-    setLoading(false);
+    } catch { if (!quiet) setNotice('تعذر الاتصال بالسيرفر، حاول تاني.'); }
+    if (!quiet) setLoading(false);
   };
 
   useEffect(() => { if (session?.token) loadMe(session.token); }, []);
+  // تتبع الأوردر: تحديث تلقائي كل 20 ثانية والصفحة مفتوحة (من غير ما يظهر "بنحمّل...")
+  useEffect(() => {
+    if (!session?.token) return;
+    const t = setInterval(() => loadMe(session.token, true), 20000);
+    return () => clearInterval(t);
+  }, [session?.token]);
 
   const handleLogin = async () => {
     const phone = normalizeEgPhoneInput(loginPhone);
@@ -2275,8 +2543,6 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
     navigate('/cart');
   };
 
-  const statusLabel = (s) => s === 'completed' ? 'مكتمل ✅' : s === 'cancelled' ? 'ملغي ✖' : s === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔';
-
   if (!session?.token) {
     return (
       <section className="px-6 py-12 max-w-xl mx-auto min-h-[60vh] bg-[#050304] text-white">
@@ -2309,6 +2575,7 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
               <h3 className="text-lg font-bold text-[#FFB800] mb-3">بياناتي المحفوظة</h3>
               <p className="text-sm text-zinc-300">👤 {profile.name || '—'} · 📞 <span dir="ltr">{profile.phone}</span></p>
               {profile.address && <p className="text-sm text-zinc-300 mt-1">📍 {profile.address}{profile.zoneName ? ` (${profile.zoneName})` : ''}</p>}
+              {typeof profile.points === 'number' && <p className="text-sm text-[#FFB800] font-bold mt-1">⭐ نقاطي: {profile.points} نقطة — كل 100 نقطة = خصم 10 ج في الأوردر الجاي</p>}
               <p className="text-[11px] text-zinc-500 mt-2">البيانات دي هتتملي تلقائياً وانت بتطلب الأوردر الجاي.</p>
               <div className="mt-4 pt-4 border-t border-[#1F0A0E]">
                 <h4 className="text-sm font-bold text-white mb-2">تغيير الرقم السري</h4>
@@ -2329,13 +2596,15 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
             <div className="space-y-4">
               {orders.map((o) => {
                 const draft = ratingDraft[o.orderId] || { stars: o.rating?.stars || 0, comment: o.rating?.comment || '' };
+                const stage = orderTrackingStage(o);
                 return (
                   <div key={o.orderId} className="anim-rise bg-[#100609] rounded-[2rem] p-6 border border-[#1F0A0E]">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-black text-[#FFB800]">#{o.orderId}</span>
-                      <span className="text-xs font-bold text-zinc-300">{statusLabel(o.status)}</span>
+                      <span className="text-xs font-bold text-zinc-300">{stage.cancelled ? '✖ ملغي' : stage.current < 0 ? '⏳ بانتظار تأكيد المطعم' : `📍 ${stage.steps[stage.current]}`}</span>
                     </div>
                     <p className="text-xs text-zinc-500 mb-3">{o.createdAt ? new Date(o.createdAt).toLocaleString('ar-EG') : ''} · {o.orderType === 'delivery' ? `توصيل (${o.zoneName || ''})` : 'استلام من الفرع'}</p>
+                    <div className="mb-4"><OrderStepper order={o} /></div>
                     <div className="space-y-1 mb-3">
                       {(o.items || []).map((it, idx) => (
                         <div key={idx} className="text-sm">
@@ -2349,21 +2618,27 @@ const MyOrdersPage = ({ cart, setCart, menuItems, lang }) => {
                     <div className="flex justify-between items-center pt-3 border-t border-[#1F0A0E] text-sm font-bold">
                       <span>الإجمالي:</span><span className="text-[#FFB800] text-lg font-black">{o.grandTotal} ج</span>
                     </div>
+                    {o.status === 'completed' && Number(o.loyaltyPointsEarned) > 0 && <p className="text-xs text-green-400 font-bold mt-2">🎉 تم إضافة {o.loyaltyPointsEarned} نقطة، تقدر تستبدلهم بخصم</p>}
                     <div className="flex gap-2 mt-4 flex-wrap">
                       <button onClick={() => reorder(o)} className="flex-1 min-w-[140px] bg-[#FF4500] text-white font-bold py-3 rounded-xl text-sm transition active:scale-[0.98]">🔁 اطلب تاني</button>
                     </div>
-                    {o.status === 'completed' && (
+                    {o.status === 'completed' && (o.rating ? (
                       <div className="mt-4 pt-4 border-t border-[#1F0A0E]">
-                        <p className="text-sm font-bold mb-2">{o.rating ? 'تقييمك للأوردر:' : 'قيّم الأوردر:'}</p>
+                        <p className="text-sm font-bold mb-1">تقييمك للأوردر: <span className="text-amber-300">{'★'.repeat(Number(o.rating.stars))}{'☆'.repeat(Math.max(0, 5 - Number(o.rating.stars)))}</span></p>
+                        {o.rating.comment && <p className="text-xs text-zinc-400">💬 {o.rating.comment}</p>}
+                      </div>
+                    ) : (
+                      <div className="mt-4 pt-4 border-t border-[#1F0A0E]">
+                        <p className="text-sm font-bold mb-2">قيّم الأوردر:</p>
                         <div className="flex gap-1 mb-2">
                           {[1, 2, 3, 4, 5].map(n => (
                             <button key={n} type="button" onClick={() => setRatingDraft(prev => ({ ...prev, [o.orderId]: { ...draft, stars: n } }))} className="text-3xl leading-none transition active:scale-125">{n <= (draft.stars || 0) ? '⭐' : '☆'}</button>
                           ))}
                         </div>
                         <textarea value={draft.comment || ''} onChange={(e) => setRatingDraft(prev => ({ ...prev, [o.orderId]: { ...draft, comment: e.target.value.slice(0, 300) } }))} placeholder="قولنا رأيك (اختياري)..." className="w-full bg-[#050304] border border-[#1F0A0E] rounded-xl p-3 text-sm mb-2" />
-                        <button onClick={() => submitRating(o)} disabled={ratingBusy === o.orderId} className="text-xs font-bold bg-[#FFB800] text-black px-4 py-2 rounded-xl disabled:opacity-60 transition active:scale-95">{o.rating ? 'تعديل التقييم' : 'إرسال التقييم'}</button>
+                        <button onClick={() => submitRating(o)} disabled={ratingBusy === o.orderId} className="text-xs font-bold bg-[#FFB800] text-black px-4 py-2 rounded-xl disabled:opacity-60 transition active:scale-95">إرسال التقييم</button>
                       </div>
-                    )}
+                    ))}
                   </div>
                 );
               })}
@@ -6076,7 +6351,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
   };
 
   const newCount = orders.filter(o => o.status === 'pending').length;
-  const preparingCount = orders.filter(o => o.status === 'accepted').length;
+  const preparingCount = orders.filter(o => o.status === 'accepted' || o.status === 'preparing').length;
   const hasNewOrders = newCount > 0;
 
   useEffect(() => {
@@ -6104,12 +6379,12 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
   const shiftOpen = shiftData ? !!shiftData.shift : null;
 
   const renderOrderCard = (ord) => (
-    <div key={ord._id || ord.orderId} className={`bg-[#100609] border rounded-2xl p-5 shadow-xl flex flex-col justify-between ${ord.status === 'cancelled' && ord.cancelledAfterPrint ? 'border-red-500 border-2 bg-red-950/30' : ord.status === 'cancelled' ? 'border-zinc-700 opacity-70' : ord.status === 'completed' ? 'border-[#1F0A0E]' : ord.status === 'accepted' ? 'border-yellow-500/60' : 'border-red-500 animate-pulse'}`}>
+    <div key={ord._id || ord.orderId} className={`bg-[#100609] border rounded-2xl p-5 shadow-xl flex flex-col justify-between ${ord.status === 'cancelled' && ord.cancelledAfterPrint ? 'border-red-500 border-2 bg-red-950/30' : ord.status === 'cancelled' ? 'border-zinc-700 opacity-70' : ord.status === 'completed' ? 'border-[#1F0A0E]' : ['accepted', 'preparing', 'ready'].includes(ord.status) ? 'border-yellow-500/60' : 'border-red-500 animate-pulse'}`}>
       <div>
         <div className="flex justify-between items-center mb-3 border-b border-[#1F0A0E] pb-2">
           <span className="font-black text-[#FFB800] text-lg">#{ord.orderId}</span>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'cancelled' ? 'bg-zinc-700 text-zinc-300' : ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' && ord.outForDeliveryAt ? 'bg-orange-500/30 text-orange-300' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-            {ord.status === 'cancelled' && ord.cancelledAfterPrint ? '⚠️ ملغي بعد الطباعة' : ord.status === 'cancelled' ? 'ملغي ✖' : ord.status === 'completed' ? 'مكتمل ✅' : ord.status === 'accepted' && ord.outForDeliveryAt ? '🛵 مع السواق — مستني النقدية' : ord.status === 'accepted' ? 'قيد التحضير 👨‍🍳' : 'جديد 🔔'}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${ord.status === 'cancelled' ? 'bg-zinc-700 text-zinc-300' : ord.status === 'completed' ? 'bg-green-500/20 text-green-400' : (ord.status === 'accepted' || ord.status === 'preparing') && ord.outForDeliveryAt ? 'bg-orange-500/30 text-orange-300' : ord.status === 'preparing' ? 'bg-yellow-500/20 text-yellow-400' : ord.status === 'ready' ? 'bg-green-500/20 text-green-400' : ord.status === 'accepted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+            {ord.status === 'cancelled' && ord.cancelledAfterPrint ? '⚠️ ملغي بعد الطباعة' : ord.status === 'cancelled' ? 'ملغي ✖' : ord.status === 'completed' ? 'مكتمل ✅' : (ord.status === 'accepted' || ord.status === 'preparing') && ord.outForDeliveryAt ? '🛵 مع السواق — مستني النقدية' : ord.status === 'preparing' ? 'قيد التحضير 👨‍🍳' : ord.status === 'ready' ? '📦 جاهز للاستلام' : ord.status === 'accepted' ? 'تم القبول ✅' : 'جديد 🔔'}
           </span>
         </div>
 
@@ -6118,6 +6393,7 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.orderType !== 'talabat' && ord.customerPhone && ord.customerPhone !== '-' && <p>📞 <strong className="text-white">{ord.customerPhone}</strong></p>}
           <p>📦 <strong className="text-white">{ord.orderType === 'delivery' ? `توصيل (${ord.zoneName})` : typeLabel(ord)}</strong>{ord.source === 'pos' && <span className="text-[10px] text-zinc-500 mr-2">من الكاشير</span>}</p>
           {ord.paymentMethod && <p>💰 <span className="text-zinc-300 text-xs">{payText(ord)}{ord.discountAmount > 0 ? ` · خصم ${discountLabel(ord)}${ord.discountType === 'amount' ? '' : ` (${ord.discountAmount} ج)`}` : ''}</span></p>}
+          {ord.source !== 'pos' && <p>🔗 <span className="text-zinc-300 text-xs">المصدر: {ord.attribution?.source || '—'}</span></p>}
           {ord.driverName && <p>🛵 <span className="text-zinc-300 text-xs">السواق: {ord.driverName}</span></p>}
           {ord.status === 'cancelled' && <p>✖ <span className="text-red-400 text-xs">سبب الإلغاء: {ord.cancelReason} ({ord.cancelledBy})</span></p>}
           {ord.orderType === 'delivery' && <p>📍 <span className="text-zinc-400 text-xs">{ord.customerAddress}</span></p>}
@@ -6181,15 +6457,24 @@ const CashierDashboard = ({ initialTab = 'active' }) => {
           {ord.status === 'pending' && (
             <button disabled={(ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known') || actingKey === `${ord._id || ord.orderId}::accepted`} title={ord.orderType === 'delivery' && ord.customerPhone && ord.customerPhone !== '-' && ord.phoneStatus !== 'verified' && ord.phoneStatus !== 'known' ? 'اتصل بالعميل وأكّد الرقم الأول' : 'قبول الأوردر'} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'accepted')} className="flex-1 disabled:opacity-40 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-black transition shadow-lg">✅ قبول الأوردر (إيقاف الصوت)</button>
           )}
-          {ord.status === 'accepted' && ord.outForDeliveryAt && (
+          {ord.status === 'accepted' && (
+            <button disabled={actingKey === `${ord._id || ord.orderId}::preparing`} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'preparing')} className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-bold transition">👨‍🍳 ابدأ التحضير</button>
+          )}
+          {(ord.status === 'accepted' || ord.status === 'preparing') && ord.outForDeliveryAt && (
             <button disabled={actingKey === `${ord._id || ord.orderId}::completed`} onClick={() => receiveDriverCash(ord)} className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-black transition shadow-lg animate-pulse">💵 استلمت النقدية من السواق ({Math.max(0, cashPartOf(ord) - (Number(ord.deliveryFee) || 0))} ج)</button>
           )}
-          {ord.status === 'accepted' && !ord.outForDeliveryAt && (
+          {ord.status === 'preparing' && !ord.outForDeliveryAt && ord.orderType === 'delivery' && (
+            <button disabled={actingKey === `${ord._id || ord.orderId}::completed`} onClick={() => finishOrder(ord)} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-bold transition">🛵 جاهز للتوصيل</button>
+          )}
+          {ord.status === 'preparing' && !ord.outForDeliveryAt && ord.orderType !== 'delivery' && (
+            <button disabled={actingKey === `${ord._id || ord.orderId}::ready`} onClick={() => updateOrderStatus(ord._id || ord.orderId, 'ready')} className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-bold transition">📦 جاهز للاستلام</button>
+          )}
+          {ord.status === 'ready' && (
             <button disabled={actingKey === `${ord._id || ord.orderId}::completed`} onClick={() => finishOrder(ord)} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-bold transition">{ord.orderType === 'delivery' ? '🛵 جاهز للتوصيل' : '🏁 تم التسليم'}</button>
           )}
           {ord.status === 'cancelled' && <span className="flex-1 text-center text-zinc-400 text-xs font-bold py-2">الأوردر ملغي</span>}
           {ord.status === 'completed' && <span className="flex-1 text-center text-green-400 text-xs font-bold py-2">تم تسليم الأوردر</span>}
-          {(ord.status === 'pending' || ord.status === 'accepted') && <button onClick={() => startCancel(ord)} title="إلغاء الأوردر" className="text-red-300 bg-red-500/15 hover:bg-red-500/30 px-3 rounded-xl text-xs font-bold">✖ إلغاء</button>}
+          {(ord.status === 'pending' || ord.status === 'accepted' || ord.status === 'preparing' || ord.status === 'ready') && <button onClick={() => startCancel(ord)} title="إلغاء الأوردر" className="text-red-300 bg-red-500/15 hover:bg-red-500/30 px-3 rounded-xl text-xs font-bold">✖ إلغاء</button>}
           {ord.source === 'pos' && ord.status !== 'cancelled' && shiftData?.shift && String(ord.shiftId) === String(shiftData.shift._id) && (
             <button onClick={() => { setEditingOrder(ord); setCashierTab('pos'); }} title="تعديل الأوردر (أصناف / دفع)" className="text-yellow-300 bg-yellow-500/15 hover:bg-yellow-500/30 px-3 rounded-xl text-xs font-bold">✏️ تعديل</button>
           )}
